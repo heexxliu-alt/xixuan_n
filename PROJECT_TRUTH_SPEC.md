@@ -6,8 +6,8 @@
 
 - 项目是一个静态 HTML/CSS/GSAP 个人作品集，当前只做两页：`首页（海面） → 海底页（DIVE MAP）`。
 - 设计基准是桌面横版 16:9；移动端只做适配，不得用竖版布局反推桌面版。
-- 当前最新状态：**除详情弹窗外，其余内容已回退到上一版**。
-- 当前唯一新增且保留的模块是海底页个性化详情弹窗：毛玻璃档案卡、专属图标、编号、标签切换、作品卡片、关闭按钮。
+- 当前最新状态：**上一版海面构图、拆分图层、下潜流程与海底页均保留**；首页生态运动与时间层为当前精修实现。
+- 当前唯一海底页新增模块是个性化详情弹窗：毛玻璃档案卡、专属图标、编号、标签切换、作品卡片、关闭按钮；首页生态精修不改变五个栏目。
 - 不使用 Three.js、3D 块状模型或通用 Modal。
 
 ## 1. 不可变锁定项
@@ -25,7 +25,15 @@
 
 ### 页面与角色
 
-- 首页背景：`assets/home-surface-background-v4.png`
+- 首页拆分场景图层（当前最新基线）：
+  - 天空与远山：`assets/surface-sky.png`
+  - 海面与海水：`assets/surface-sea.png`
+  - 云朵：`assets/surface-clouds.png`
+  - 星球：`assets/surface-planet.png`
+  - 水母：`assets/surface-jellyfish.png`
+  - 鱼群：`assets/surface-fish.png`
+- 首页独立生态裁切素材：`assets/surface-fish-near-school.png`、`assets/surface-fish-near-right.png`、`assets/surface-fish-near-curious.png`、`assets/surface-jellyfish-near.png`
+- 原始合成背景仍保留为参考/回退素材：`assets/home-surface-background-v4.png`
 - 海底背景：`assets/dive-world-final-v2-tech.png`
 - 潜水员：`assets/freediver-final-transparent-v1.png`
 - 首页标题字形：`assets/dreaming-title-transparent-v1.png`
@@ -60,7 +68,11 @@
 - 标题使用透明 PNG 双层叠放：水上层清晰，水下层保留轻微模糊/色相偏移折射；不得添加粉色矩形底、边框、阴影盒或新的文字 DOM。
 - 海面静态线已通过独立遮罩弱化，现有 SVG 波浪层 `.surface-wave-layer` 使用两条填充路径和 `MorphSVGPlugin` 循环变形；不要再添加僵硬的静态横线。
 - 云朵、星光、随机气泡仍由 GSAP 驱动；气泡起点、大小、漂移、速度和透明度随机。
-- 首页潜水员跟随鼠标，使用共享 `DiverPointerTracker`；不新增另一套跟随物理。
+- 首页潜水员跟随鼠标，使用共享 `DiverPointerTracker`；指针光/柔光读取全屏 `pointerPosition`，潜水员读取独立 `diverTarget`，不新增另一套跟随物理。
+- 首页 `DiverPointerTracker` 仅允许潜水员在海面以下活动，行为状态为 `UNDERWATER`、`SURFACE_APPROACH`、`SURFACE_FOLLOW`；采用水面、水平与底部的柔性边界，最终安全边界不允许潜水员中心高于 `55vh` 或低于 `85vh`；位置与旋转由 JS/GSAP 独占，`.diver` 不再使用位置/旋转 CSS transition。
+- 首页生态交互以 `tracker.getPosition()` 为唯一生物响应坐标：独立近景鱼群使用速度/航向连续巡游与 `CRUISE`、`WANDER`、`FLEE`、`RECOVER`、`CURIOUS` 状态，逃逸后从当前位置恢复，不回到旧锚点；水母使用更慢的自主漂移与温和避让，不直接读取鼠标坐标。
+- 首页 `data-time` 支持 `day`、`sunset`、`night` 三态；星球透明热点作为循环入口。昼夜在约 1.9 秒层过渡中同步影响 sky/sea/clouds/planet/jellyfish/fish/stars、生物运动强度和光标光色。
+- 潜水员快速移动时沿反方向产生少量额外气泡；静止约 2.35 秒进入 calm，生物逐渐回游；夜晚 calm 持续约 4.6 秒时会出现极轻的发光浮游反馈。
 - 下潜入口锚定在首页底部中右的书本/珊瑚区域，使用同一只水母 UI；文字为：
 
 ```text
@@ -111,19 +123,19 @@ THE SURFACE
 
 ## 6. 文件职责
 
-- `index.html`：首页结构、标题双层、动态海面 SVG、下潜入口、过场层。
+- `index.html`：首页结构、拆分 Surface Scene Layers、星球时间热点、独立生态生物、标题双层、动态海面 SVG、下潜入口、过场层。
 - `dive.html`：海底场景、五个栏目热区、详情卡、返回水母。
 - `styles.css`：布局、响应式规则、标题、光标、栏目热区和详情卡视觉。
-- `motion.css`：纯动效层，包含 SVG 波浪、气泡、云朵、星光、水母和过场 fallback。
-- `script.js`：共享潜水员跟随器、首页动效、下潜过场、海底 proximity scale、详情卡数据与标签交互。
+- `motion.css`：纯动效层，包含 SVG 波浪、气泡、云朵、星光、昼夜滤镜、独立生物、夜晚浮游反馈和过场 fallback。
+- `script.js`：共享潜水员跟随器（`pointerPosition`/`diverTarget` 解耦与显式水下状态）、首页柔性水域边界、连续巡游生态状态机、昼夜系统、速度气泡、idle/calm 反馈、首页动效、下潜过场、海底 proximity scale、详情卡数据与标签交互。
 - `vendor/gsap.min.js`、`vendor/MorphSVGPlugin.min.js`：本地 GSAP 运行时。
 
 ## 7. 当前预览地址
 
-- 首页：`http://localhost:8765/index.html?v=20260826-final4`
-- 海底页：`http://localhost:8765/dive.html?v=20260826-final4`
+- 首页：`http://localhost:8765/index.html?v=20260826-eco2`
+- 海底页：`http://localhost:8765/dive.html?v=20260826-eco2`
 
-本地服务默认端口为 `8765`。如果看到旧页面，使用带 `?v=20260826-final4` 的地址刷新缓存。
+本地服务默认端口为 `8765`。如果看到旧页面，使用带 `?v=20260826-eco2` 的地址刷新缓存。
 
 ## 8. 新任务执行协议
 
@@ -142,3 +154,5 @@ THE SURFACE
 - 详情卡在不同屏幕比例下的定位和可读性需要继续视觉复核。
 - 首页标题水下折射强度、海面动态波幅可继续微调，但不得改变标题字形、背景和整体位置。
 - 五个定版栏目素材、位置和背景绝不因上述精修而改变。
+
+本版本说明：拆分后的 Surface Scene Layers、独立近景生态与指针/潜水员解耦已纳入当前基线；原始单背景仅作为参考/回退素材，不作为首页实际加载背景。五个定版栏目素材、位置和海底背景保持不变。
