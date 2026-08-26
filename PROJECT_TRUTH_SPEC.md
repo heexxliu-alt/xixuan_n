@@ -71,8 +71,8 @@
 - 首页潜水员跟随鼠标，使用共享 `DiverPointerTracker`；指针光/柔光读取全屏 `pointerPosition`，潜水员读取独立 `diverTarget`，不新增另一套跟随物理。
 - 首页 `DiverPointerTracker` 仅允许潜水员在海面以下活动，行为状态为 `UNDERWATER`、`SURFACE_APPROACH`、`SURFACE_FOLLOW`；采用水面、水平与底部的柔性边界，最终安全边界不允许潜水员中心高于 `55vh` 或低于 `85vh`；位置与旋转由 JS/GSAP 独占，`.diver` 不再使用位置/旋转 CSS transition。
 - Round 1 当前首页暂不初始化新增互动生物系统：三组近景互动鱼已从首页 DOM 移除，普通生态水母已删除；`initSurfaceCreatures()` 保留为未来复用代码，但不得在首页运行时调用。首页唯一保留的水母是具有明确功能语义的 `.dive-entry`，使用 `assets/return-jellyfish-v1.png`。
-- 首页 `data-time` 支持 `day`、`sunset`、`night` 三态；星球透明热点作为循环入口。昼夜在约 1.9 秒层过渡中同步影响 sky/sea/clouds/planet/jellyfish/fish/stars、生物运动强度和光标光色。
-- 潜水员快速移动时沿反方向产生少量额外气泡；静止约 2.35 秒进入 calm，生物逐渐回游；夜晚 calm 持续约 4.6 秒时会出现极轻的发光浮游反馈。
+- 首页 `data-time` 支持 `day`、`sunset`、`blue-hour` 三态；星球透明热点作为循环入口。时间层在约 1.9 秒过渡中同步影响 sky/sea/clouds/planet/jellyfish/fish/stars、生物运动强度和光标光色。
+- 潜水员快速移动时沿反方向产生少量额外气泡；静止约 2.35 秒进入 calm，生物逐渐回游；蓝调时刻 calm 持续约 4.6 秒时会出现极轻的发光浮游反馈。
 - 下潜入口锚定在首页底部中右的书本/珊瑚区域，使用同一只水母 UI；文字为：
 
 ```text
@@ -115,11 +115,21 @@ THE SURFACE
 
 - `DAY` 是首页默认基准：天空明亮、粉紫/淡蓝、海水清透、水下层次可读，星星极弱，星球存在感较低。
 - `SUNSET` 必须使用独立的 Lighting Composition：天空保持紫蓝高空与暖粉中部，海平线出现橙红/珊瑚橙光带，海面出现暖色余晖反射，云层按高度获得不同暖色染色，星星仅开始出现。
-- `NIGHT` 必须使用独立的 Lighting Composition，不得仅通过降低 `brightness()` 制作：天空进入深蓝紫，星球成为主要柔光源，星星明显增强，海面保留冷色亮带，水下保持可见的青蓝/蓝紫层次。
-- 三态顺序固定为：`DAY → SUNSET → NIGHT → DAY`；时间层之间使用约 1.8–2.6 秒的平滑、轻微错峰过渡。
-- 星球是时间系统唯一入口。星球附近必须保留轻量可见提示，当前文案为 `/ TURN THE SKY /`；默认低存在感，光标靠近或键盘聚焦时增强，夜晚仍保持可读。
+- `BLUE HOUR` 必须使用独立的蓝紫暮色 Lighting Composition，不得仅通过降低 `brightness()` 制作：天空保持蓝紫层次与远山/云纹理，地平线保留淡紫暮光，海面保留冷色亮带，水下维持清透青蓝/蓝紫可读性，星球成为主要柔光源之一但不刺眼。
+- 三态顺序固定为：`DAY → SUNSET → BLUE HOUR → DAY`；时间层之间使用约 1.8–2.6 秒的平滑、轻微错峰过渡。
+- 星球是时间系统唯一入口。星球附近的 `/ TURN THE SKY /` 必须在页面加载后默认可见（约 10–12px、opacity 0.6–0.72），光标靠近或键盘聚焦时增强；点击后短暂显示目标状态 `/ SUNSET /`、`/ BLUE HOUR /` 或 `/ DAY /`，随后恢复提示。提示颜色按状态区分：DAY 为深紫灰，SUNSET 为深莓紫，BLUE HOUR 为淡紫白/冷白紫。
 - 星球 hover 显示轻 halo 与轨道光环，点击先产生局部 glow pulse，再进入下一时间状态；不使用传统按钮、卡片或复杂生态交互。
 - Round 2 不重新初始化 `initSurfaceCreatures()`，不新增鱼、水母或其他生物，不改变 Round 1 的 2D / 2.5D 分层规则。
+
+### 3.3 Round 3 潜水员运动与姿态规则（锁定）
+
+- `pointerPosition`、光标核心、柔光与拖尾可在整个 viewport 自由移动；光标不受水域边界限制。
+- 潜水员只能生活在水中，继续使用 `DiverPointerTracker` 的 `UNDERWATER`、`SURFACE_APPROACH`、`SURFACE_FOLLOW` 三种状态。
+- movement direction 与 character pose 分离：水平速度决定左右 facing，垂直意图只驱动受限 pitch；禁止把完整 `atan2` 角度直接作为人物 rotation。
+- 潜水员禁止 360° rotation、仰躺、倒立和 90° 以上翻转。`UNDERWATER` pitch 上限约 ±25°（极端不超过 ±30°），`SURFACE_APPROACH` 约 ±12°，`SURFACE_FOLLOW` 约 ±5°并保持近水平，只追踪 cursor X，带 1–3px 轻微浮动。
+- 左右转向使用水平速度 dead zone 与 hysteresis，并通过平滑镜像完成转身，禁止因速度过零产生抖动式翻面。
+- 鼠标进入天空时，潜水员保持在水面下自然深度并沿水面追光；鼠标回到水下时平滑恢复完整的垂直追踪。
+- 接近海面的垂直跟随速度必须连续衰减：以 `waterline` 与 `approachStart` 计算 `surfaceProximity`，从深水正常速度平滑过渡到接近水面的最低速度，不使用突兀的状态档位切换。
 
 ## 4. 海底页（DIVE MAP）当前行为
 
@@ -163,13 +173,13 @@ THE SURFACE
 - `index.html`：首页结构、拆分 Surface Scene Layers、星球时间热点、独立生态生物、标题双层、动态海面 SVG、下潜入口、过场层。
 - `dive.html`：海底场景、五个栏目热区、详情卡、返回水母。
 - `styles.css`：布局、响应式规则、标题、光标、栏目热区和详情卡视觉。
-- `motion.css`：纯动效层，包含 SVG 波浪、气泡、云朵、星光、昼夜滤镜、独立生物、夜晚浮游反馈和过场 fallback。
+- `motion.css`：纯动效层，包含 SVG 波浪、气泡、云朵、星光、昼夜滤镜、独立生物、蓝调时刻浮游反馈和过场 fallback。
 - `script.js`：共享潜水员跟随器（`pointerPosition`/`diverTarget` 解耦与显式水下状态）、首页柔性水域边界、连续巡游生态状态机、昼夜系统、速度气泡、idle/calm 反馈、首页动效、下潜过场、海底 proximity scale、详情卡数据与标签交互。
 - `vendor/gsap.min.js`、`vendor/MorphSVGPlugin.min.js`：本地 GSAP 运行时。
 
 ## 7. 当前预览地址
 
-- 首页：`http://localhost:8765/index.html?v=20260826-round2`
+- 首页：`http://localhost:8765/index.html?v=20260826-blue-hour`
 - 海底页：`http://localhost:8765/dive.html?v=20260826-round2`
 
 本地服务默认端口为 `8765`。如果看到旧页面，使用带 `?v=20260826-round2` 的地址刷新缓存。

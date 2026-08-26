@@ -7,6 +7,17 @@
   const gs = window.gsap;
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  // The source PNG faces left and its body axis sits roughly 34deg nose-up.
+  // Surface rotation is therefore expressed as a constrained pose around this
+  // neutral heading instead of using the pointer's full atan2 angle.
+  const DIVER_BASE_HEADING = -34;
+  const DIVER_MAX_UNDERWATER_PITCH = 25;
+  const DIVER_MAX_APPROACH_PITCH = 12;
+  const DIVER_MAX_FOLLOW_PITCH = 5;
+  const DIVER_FACING_THRESHOLD = .18;
+  const DIVER_VERTICAL_INPUT_EASE = .06;
+  const DIVER_VERTICAL_DEAD_ZONE = 28;
+  const DIVER_MAX_POSE_DELTA = 1.1;
   if (gs && window.MorphSVGPlugin) gs.registerPlugin(window.MorphSVGPlugin);
 
   class DiverPointerTracker {
@@ -23,12 +34,22 @@
       const start = swimmer ? swimmer.getBoundingClientRect() : { left: this.box.width * .5, top: this.box.height * .52, width: 0, height: 0 };
       this.pointerPosition = { x: start.left - this.box.left + start.width / 2, y: start.top - this.box.top + start.height / 2 };
       this.refreshMetrics();
+      this.behaviorState = this.isSurface ? 'UNDERWATER' : 'FREE';
+      this.surfaceProximity = 0;
       this.diverTarget = this.getDiverTarget(this.pointerPosition.x, this.pointerPosition.y);
       this.position = { ...this.diverTarget };
       this.previous = { ...this.position };
       this.velocity = { x: 0, y: 0, speed: 0 };
-      this.behaviorState = this.isSurface ? 'UNDERWATER' : 'FREE';
-      this.heading = -180;
+      this.heading = this.isSurface ? DIVER_BASE_HEADING : -180;
+      this.poseAngle = 0;
+      this.targetPoseAngle = 0;
+      this.smoothedVerticalIntent = 0;
+      this.followBlend = 0;
+      this.facing = 'left';
+      this.facingTarget = 'left';
+      this.facingScale = 1;
+      this.targetFacingScale = 1;
+      this.turning = false;
       this.history = Array.from({ length: 34 }, () => ({ ...this.position }));
       this.trailIndexes = [3, 8, 14, 19, 25, 31];
       this.calm = false;
@@ -40,7 +61,8 @@
         left: '50%', top: '50%', xPercent: -50, yPercent: -50,
         x: this.position.x - this.box.width / 2,
         y: this.position.y - this.box.height / 2,
-        rotation: this.heading
+        rotation: this.heading,
+        scaleX: this.facingScale
       });
       this.setter = (el, prop, unit = 'px') => gs && el ? gs.quickSetter(el, prop, unit) : null;
       this.quickLightX = this.setter(this.light, 'left');
@@ -52,10 +74,14 @@
       this.quickDiverX = this.setter(swimmer, 'x');
       this.quickDiverY = this.setter(swimmer, 'y');
       this.quickDiverRotation = this.setter(swimmer, 'rotation', 'deg');
+      this.quickDiverScaleX = this.setter(swimmer, 'scaleX', '');
       this.onPointerMove = this.onPointerMove.bind(this);
       this.onResize = this.onResize.bind(this);
       this.tick = this.tick.bind(this);
-      root.addEventListener('pointermove', this.onPointerMove, { passive: true });
+      // Listen at the viewport level so the diver still chases the light when
+      // the pointer is in the letterboxed margin around the 16:9 scene.
+      window.addEventListener('pointermove', this.onPointerMove, { passive: true });
+      window.addEventListener('mousemove', this.onPointerMove, { passive: true });
       window.addEventListener('resize', this.onResize, { passive: true });
       this.renderPosition(this.pointerPosition.x, this.pointerPosition.y);
       if (gs) gs.ticker.add(this.tick); else this.raf = requestAnimationFrame(this.tick);
@@ -99,6 +125,7 @@
       const waterline = this.box.height * .5;
       const approachStart = this.box.height * .62;
       const followY = this.box.height * .61;
+      this.surfaceProximity = clamp((approachStart - pointerY) / Math.max(1, approachStart - waterline), 0, 1);
       const safeX = this.softLimit(pointerX, this.bounds.minX, this.bounds.maxX, .08);
       // Keep the visible boundary springy: the hard margin is only a final
       // safety net so the diver never disappears beyond the scene edge.
@@ -108,7 +135,7 @@
       if (pointerY < waterline) {
         state = 'SURFACE_FOLLOW';
         const skyAmount = clamp((waterline - pointerY) / Math.max(1, waterline), 0, 1);
-        y = followY + (1 - skyAmount) * this.box.height * .035;
+        y = followY + (1 - skyAmount) * this.box.height * .004;
       } else if (pointerY < approachStart) {
         state = 'SURFACE_APPROACH';
         const approach = clamp((approachStart - pointerY) / Math.max(1, approachStart - waterline), 0, 1);
@@ -151,15 +178,69 @@
       this.calmFloat = calmY;
       const offsetX = this.position.x - this.box.width / 2;
       const offsetY = this.position.y - this.box.height / 2 + calmY;
-      if (this.quickDiverX) this.quickDiverX(offsetX); else this.swimmer.style.transform = `translate(-50%,-50%) translate3d(${offsetX}px,${offsetY}px,0) rotate(${this.heading}deg)`;
+      const surfaceFacingSign = this.facingScale < 0 ? -1 : 1;
+      const surfaceRotation = DIVER_BASE_HEADING + this.poseAngle * surfaceFacingSign;
+      const rotation = this.isSurface ? surfaceRotation : this.heading;
+      if (this.quickDiverX) this.quickDiverX(offsetX); else this.swimmer.style.transform = `translate(-50%,-50%) translate3d(${offsetX}px,${offsetY}px,0) rotate(${rotation}deg) scaleX(${this.facingScale})`;
       if (this.quickDiverY) this.quickDiverY(offsetY);
-      if (this.quickDiverRotation) this.quickDiverRotation(this.heading);
+      if (this.quickDiverRotation) this.quickDiverRotation(rotation);
+      if (this.quickDiverScaleX) this.quickDiverScaleX(this.isSurface ? this.facingScale : 1);
+    }
+
+    updateSurfacePose() {
+      const speed = this.velocity.speed;
+      const horizontalSpeed = this.velocity.x;
+      if (Math.abs(horizontalSpeed) > DIVER_FACING_THRESHOLD) {
+        const nextFacing = horizontalSpeed > 0 ? 'right' : 'left';
+        if (nextFacing !== this.facingTarget) {
+          this.facingTarget = nextFacing;
+          this.targetFacingScale = nextFacing === 'right' ? -1 : 1;
+          this.turning = true;
+        }
+      }
+      const facingEase = this.turning ? .14 : .2;
+      this.facingScale += (this.targetFacingScale - this.facingScale) * facingEase;
+      if (Math.abs(this.targetFacingScale - this.facingScale) < .025) {
+        this.facingScale = this.targetFacingScale;
+        this.facing = this.facingTarget;
+        this.turning = false;
+      }
+
+      // Pose follows a filtered target-position intent rather than the current
+      // frame's velocity. This prevents a quick pointer reversal from flipping
+      // the diver's pitch in a single update.
+      const rawVerticalIntent = this.diverTarget.y - this.position.y;
+      this.smoothedVerticalIntent += (rawVerticalIntent - this.smoothedVerticalIntent) * DIVER_VERTICAL_INPUT_EASE;
+      const intentMagnitude = Math.abs(this.smoothedVerticalIntent);
+      const intentSign = Math.sign(this.smoothedVerticalIntent);
+      const verticalReference = Math.max(120, this.box.height * .22);
+      const deadZoneRatio = clamp((intentMagnitude - DIVER_VERTICAL_DEAD_ZONE) / verticalReference, 0, 1);
+      const verticalRatio = intentSign * deadZoneRatio;
+
+      // Keep horizontal swimming dominant when the pointer is almost directly
+      // above/below the diver, even if the vertical target distance is large.
+      const horizontalActivity = clamp(Math.abs(horizontalSpeed) / .9, 0, 1);
+      const horizontalBias = .2 + horizontalActivity * .8;
+
+      const smoothSurfaceProximity = this.surfaceProximity * this.surfaceProximity * (3 - 2 * this.surfaceProximity);
+      const approachPitch = DIVER_MAX_UNDERWATER_PITCH + (DIVER_MAX_APPROACH_PITCH - DIVER_MAX_UNDERWATER_PITCH) * smoothSurfaceProximity;
+      const followTarget = this.behaviorState === 'SURFACE_FOLLOW' ? 1 : 0;
+      this.followBlend += (followTarget - this.followBlend) * .08;
+      const maxPitch = approachPitch + (DIVER_MAX_FOLLOW_PITCH - approachPitch) * this.followBlend;
+      this.targetPoseAngle = clamp(verticalRatio * horizontalBias * maxPitch, -maxPitch, maxPitch);
+      if (this.turning || speed < .08 || intentMagnitude <= DIVER_VERTICAL_DEAD_ZONE) this.targetPoseAngle = 0;
+      const poseEase = this.behaviorState === 'SURFACE_FOLLOW' ? .12 : this.behaviorState === 'SURFACE_APPROACH' ? .14 : .18;
+      const desiredPose = this.poseAngle + (this.targetPoseAngle - this.poseAngle) * poseEase;
+      const poseDelta = clamp(desiredPose - this.poseAngle, -DIVER_MAX_POSE_DELTA, DIVER_MAX_POSE_DELTA);
+      this.poseAngle += poseDelta;
     }
 
     tick() {
       const horizontalEase = this.behaviorState === 'SURFACE_APPROACH' ? .12 : this.behaviorState === 'SURFACE_FOLLOW' ? .15 : .18;
-      const verticalEase = this.behaviorState === 'SURFACE_APPROACH' ? .072 : this.behaviorState === 'SURFACE_FOLLOW' ? .095 : .18;
-      this.position.x += (this.diverTarget.x - this.position.x) * horizontalEase;
+      const smoothSurfaceProximity = this.surfaceProximity * this.surfaceProximity * (3 - 2 * this.surfaceProximity);
+      const verticalEase = this.isSurface ? .18 - (.18 - .072) * smoothSurfaceProximity : .18;
+      const turnBrake = this.isSurface && this.turning ? .68 : 1;
+      this.position.x += (this.diverTarget.x - this.position.x) * horizontalEase * turnBrake;
       this.position.y += (this.diverTarget.y - this.position.y) * verticalEase;
       if (this.swimmer) {
         const dx = this.position.x - this.previous.x;
@@ -168,16 +249,14 @@
         this.velocity.x = dx;
         this.velocity.y = dy;
         this.velocity.speed = speed;
-        if (speed > .08) {
+        if (this.isSurface) {
+          this.updateSurfacePose();
+        } else if (speed > .08) {
           let next = Math.atan2(dy, dx) * 180 / Math.PI - 180;
           while (next - this.heading > 180) next -= 360;
           while (next - this.heading < -180) next += 360;
-          const turnEase = this.behaviorState === 'SURFACE_APPROACH' ? .12 : this.behaviorState === 'SURFACE_FOLLOW' ? .16 : .22;
-          // Approach and follow states turn more gently, preserving the sense
-          // that the diver is swimming through water instead of hitting a wall.
+          const turnEase = .22;
           this.heading += (next - this.heading) * turnEase;
-          // Keep the heading bounded so repeated pointer changes never build
-          // an unbounded CSS rotation value.
           this.heading = ((this.heading + 180) % 360 + 360) % 360 - 180;
         }
         this.renderDiver();
@@ -211,7 +290,8 @@
     setCalm(isCalm) { this.calm = Boolean(isCalm); }
 
     destroy() {
-      this.root.removeEventListener('pointermove', this.onPointerMove);
+      window.removeEventListener('pointermove', this.onPointerMove);
+      window.removeEventListener('mousemove', this.onPointerMove);
       window.removeEventListener('resize', this.onResize);
       if (gs) gs.ticker.remove(this.tick); else cancelAnimationFrame(this.raf);
     }
@@ -301,28 +381,38 @@
 
   function initSurfaceTimeSystem(surface) {
     const hotspot = surface.querySelector('.planet-hotspot');
-    const states = ['day', 'sunset', 'night'];
-    const labels = { day: '切换到黄昏', sunset: '切换到夜晚', night: '切换到白天' };
-    let pulseTimer = 0;
+    const hint = surface.querySelector('.planet-hint');
+    const states = ['day', 'sunset', 'blue-hour'];
+    const labels = { day: '切换到黄昏', sunset: '切换到蓝调时刻', 'blue-hour': '切换到白天' };
+    const hintLabels = { day: '/ DAY /', sunset: '/ SUNSET /', 'blue-hour': '/ BLUE HOUR /' };
+    let hintTimer = 0;
+    let currentIndex = states.indexOf(surface.dataset.time || 'day');
+    if (currentIndex < 0) currentIndex = 0;
     const setState = (next) => {
       const state = states.includes(next) ? next : 'day';
+      currentIndex = states.indexOf(state);
       surface.dataset.time = state;
       hotspot?.setAttribute('aria-label', labels[state]);
+      if (hint && !hint.classList.contains('is-state-feedback')) hint.textContent = '/ TURN THE SKY /';
       surface.dispatchEvent(new CustomEvent('surface:timechange', { detail: { state } }));
       return state;
     };
-    setState(surface.dataset.time || 'day');
+    setState(states[currentIndex]);
     hotspot?.addEventListener('click', () => {
-      const current = states.indexOf(surface.dataset.time || 'day');
-      const next = states[(current + 1) % states.length];
+      currentIndex = (currentIndex + 1) % states.length;
+      const nextState = setState(states[currentIndex]);
+      if (hint) {
+        window.clearTimeout(hintTimer);
+        hint.textContent = hintLabels[nextState];
+        hint.classList.add('is-state-feedback');
+        hintTimer = window.setTimeout(() => {
+          hint.textContent = '/ TURN THE SKY /';
+          hint.classList.remove('is-state-feedback');
+        }, 800);
+      }
       hotspot.classList.remove('is-pulsing');
-      hotspot.offsetWidth;
+      void hotspot.offsetWidth;
       hotspot.classList.add('is-pulsing');
-      window.clearTimeout(pulseTimer);
-      pulseTimer = window.setTimeout(() => {
-        hotspot.classList.remove('is-pulsing');
-        setState(next);
-      }, 160);
     });
     return { getState: () => surface.dataset.time || 'day', setState };
   }
@@ -390,7 +480,7 @@
 
     const speedMultiplier = () => {
       const mode = timeSystem.getState();
-      return mode === 'night' ? .52 : mode === 'sunset' ? .74 : 1;
+      return mode === 'blue-hour' ? .66 : mode === 'sunset' ? .74 : 1;
     };
     const setState = (creature, state, now) => {
       if (creature.state === state) return;
@@ -527,9 +617,9 @@
     let calm = false;
     let lastBubble = 0;
     let hiddenEventShown = false;
-    const motes = [...(surface.querySelectorAll('.surface-night-motes i') || [])];
-    const moteField = surface.querySelector('.surface-night-motes');
-    const showHiddenNightLife = () => {
+    const motes = [...(surface.querySelectorAll('.surface-blue-hour-motes i') || [])];
+    const moteField = surface.querySelector('.surface-blue-hour-motes');
+    const showBlueHourMotes = () => {
       if (reducedMotion || !gs || !moteField) return;
       const box = surface.getBoundingClientRect();
       const diver = tracker.getPosition();
@@ -558,12 +648,12 @@
         lastBubble = performance.now();
         spawnSurfaceSpeedBubble(surface, tracker);
       }
-      const nightCalm = timeSystem.getState() === 'night' && calm && stillFor >= 4.6;
-      if (nightCalm && !hiddenEventShown) {
+      const blueHourCalm = timeSystem.getState() === 'blue-hour' && calm && stillFor >= 4.6;
+      if (blueHourCalm && !hiddenEventShown) {
         hiddenEventShown = true;
-        showHiddenNightLife();
+        showBlueHourMotes();
       }
-      if (!nightCalm) hiddenEventShown = false;
+      if (!blueHourCalm) hiddenEventShown = false;
     };
     if (gs) gs.ticker.add(tick); else {
       let last = performance.now();
