@@ -801,7 +801,6 @@
     initSurfaceEffects(surface);
     const surfaceTracker = new DiverPointerTracker(surface, surface.querySelector('.home-diver'));
     const surfaceTime = initSurfaceTimeSystem(surface);
-    initSurfaceCreatures(surface, surfaceTracker, surfaceTime);
     initSurfaceIdleSystem(surface, surfaceTracker, surfaceTime);
     const entry = surface.querySelector('.dive-entry');
     entry?.addEventListener('click', (event) => { event.preventDefault(); playJellyClick(entry, () => playDiveTransition(entry)); });

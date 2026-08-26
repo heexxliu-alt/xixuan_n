@@ -36,18 +36,6 @@
 .sky-star{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff7d3;box-shadow:0 0 10px 2px rgba(255,244,206,.72);opacity:.46;animation:star-breathe 3.4s ease-in-out infinite alternate}
 .surface-hero[data-time="sunset"] .sky-star{opacity:.72!important;box-shadow:0 0 11px 2px rgba(255,220,213,.64)}
 .surface-hero[data-time="night"] .sky-star{opacity:.98!important;box-shadow:0 0 14px 3px rgba(226,235,255,.92)}
-.surface-creatures{position:absolute;inset:0;z-index:4;overflow:hidden;pointer-events:none}
-.surface-creature{position:absolute;display:block;transform:translate3d(0,0,0);transform-origin:center center;transform-style:preserve-3d;pointer-events:none;will-change:transform,opacity;opacity:.74;filter:drop-shadow(0 6px 7px rgba(91,75,140,.14));transition:filter 1.9s ease,opacity 1.9s ease}
-.surface-creature::before{content:"";position:absolute;inset:8% 12%;border-radius:50%;background:radial-gradient(ellipse at 42% 32%,rgba(255,255,255,.26),transparent 58%);mix-blend-mode:screen;opacity:.42;pointer-events:none;transform:translateZ(3px);filter:blur(7px)}
-.surface-creature::after{content:"";position:absolute;left:20%;right:20%;bottom:3%;height:18%;border-radius:50%;background:rgba(55,74,134,.15);filter:blur(8px);opacity:.42;pointer-events:none;transform:translateZ(-2px)}
-.surface-creature img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;filter:saturate(1.04) contrast(1.02)}
-.creature-fish-shy{left:20%;top:56%;width:clamp(150px,20vw,260px);aspect-ratio:640/245}
-.creature-fish-normal{left:69%;top:63%;width:clamp(110px,14vw,190px);aspect-ratio:415/215;opacity:.68}
-.creature-fish-curious{left:44%;top:73%;width:clamp(74px,9vw,125px);aspect-ratio:175/155;opacity:.76}
-.creature-jelly-curious{left:60%;top:60%;width:clamp(140px,15vw,230px);aspect-ratio:720/475;opacity:.32;filter:drop-shadow(0 0 14px rgba(175,236,244,.2))}
-.surface-hero[data-time="sunset"] .surface-creature{opacity:.62;filter:saturate(1.06) drop-shadow(0 8px 10px rgba(137,68,128,.2))}
-.surface-hero[data-time="night"] .surface-creature{opacity:.3;filter:brightness(.76) saturate(.84) drop-shadow(0 6px 10px rgba(83,103,181,.28))}
-.surface-hero[data-time="night"] .creature-jelly-curious{opacity:.72;filter:brightness(1.18) saturate(1.2) drop-shadow(0 0 18px rgba(181,236,255,.68))}
 .surface-night-motes{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden;opacity:0;transition:opacity 1.2s ease}
 .surface-night-motes i{position:absolute;display:block;width:5px;height:5px;border-radius:50%;background:#e8fff6;box-shadow:0 0 12px 4px rgba(174,243,231,.76);opacity:0;transform:translate3d(0,0,0);will-change:transform,opacity}
 .surface-hero[data-time="night"] .surface-night-motes.is-revealing{opacity:1}
@@ -77,4 +65,4 @@ body.is-transitioning .transition-wave:nth-of-type(3){animation-delay:.48s}
 body.is-transitioning .transition-emoji{opacity:1;animation:transition-emoji-in 1.5s cubic-bezier(.2,.8,.2,1) forwards}
 @keyframes transition-wave-in{0%{transform:translateY(100%) scaleY(1.05)}68%{transform:translateY(-3%) scaleY(1.14)}82%{transform:translateY(1%) scaleY(1.04)}100%{transform:translateY(0) scaleY(1)}}
 @keyframes transition-emoji-in{0%{transform:translate(-50%,-50%) scale(.25) rotate(-10deg)}28%{transform:translate(-50%,-50%) scale(.92) rotate(0)}62%{transform:translate(-50%,-62%) scale(1.02) rotate(3deg)}100%{transform:translate(-50%,-72%) scale(.22) rotate(10deg);opacity:0}}
-@media(prefers-reduced-motion:reduce){.surface-scene-layer,.sky-cloud,.sky-star,.surface-bubble,.surface-wave-layer,.surface-wave-fill,.surface-wave-sheen,.title-underwater,.jelly-return,.jelly-float,.dive-rays,.transition-wave,.transition-emoji{animation:none!important;transition:none!important}.surface-creature,.sky-details::after{transition:none!important}.surface-night-motes{transition:none!important}.dive-entry{transition:none!important}}
+@media(prefers-reduced-motion:reduce){.surface-scene-layer,.sky-cloud,.sky-star,.surface-bubble,.surface-wave-layer,.surface-wave-fill,.surface-wave-sheen,.title-underwater,.jelly-return,.jelly-float,.dive-rays,.transition-wave,.transition-emoji{animation:none!important;transition:none!important}.sky-details::after{transition:none!important}.surface-night-motes{transition:none!important}.dive-entry{transition:none!important}}
