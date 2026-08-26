@@ -256,17 +256,20 @@
       const nearPlanet = x > .08 && x < .4 && y < .3;
       const nearFish = x > .12 && x < .52 && y > .14 && y < .4;
       surface.classList.toggle('is-sky-hotspot', y < .47 && (nearPlanet || nearFish));
+      surface.classList.toggle('is-planet-hover', nearPlanet);
       surface.style.setProperty('--sky-hover-x', `${x * 100}%`);
       surface.style.setProperty('--sky-hover-y', `${y * 100}%`);
     };
     surface.addEventListener('pointermove', updateSkyHotspot, { passive: true });
-    surface.addEventListener('pointerleave', () => surface.classList.remove('is-sky-hotspot'));
+    surface.addEventListener('pointerleave', () => {
+      surface.classList.remove('is-sky-hotspot', 'is-planet-hover');
+    });
     if (!gs || reducedMotion) return;
     gs.utils.toArray('.sky-cloud', skyDetails).forEach((cloud, index) => {
       gs.to(cloud, { x: index % 2 ? 72 : -64, y: index % 2 ? 6 : -3, duration: (20 + index * 4) / 2, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: index * -.8 });
     });
     gs.utils.toArray('.sky-star', skyDetails).forEach((star, index) => {
-      gs.to(star, { opacity: .2 + Math.random() * .8, scale: .75 + Math.random() * .55, duration: 1.9 + Math.random() * 2.2, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: index * .13 });
+      gs.to(star, { opacity: .08 + Math.random() * .18, scale: .75 + Math.random() * .3, duration: 1.9 + Math.random() * 2.2, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: index * .13 });
     });
     gs.utils.toArray('.surface-bubble', bubbleField).forEach((bubble, index) => {
       const duration = 3 + Math.random() * 4;
@@ -300,6 +303,7 @@
     const hotspot = surface.querySelector('.planet-hotspot');
     const states = ['day', 'sunset', 'night'];
     const labels = { day: '切换到黄昏', sunset: '切换到夜晚', night: '切换到白天' };
+    let pulseTimer = 0;
     const setState = (next) => {
       const state = states.includes(next) ? next : 'day';
       surface.dataset.time = state;
@@ -310,7 +314,15 @@
     setState(surface.dataset.time || 'day');
     hotspot?.addEventListener('click', () => {
       const current = states.indexOf(surface.dataset.time || 'day');
-      setState(states[(current + 1) % states.length]);
+      const next = states[(current + 1) % states.length];
+      hotspot.classList.remove('is-pulsing');
+      hotspot.offsetWidth;
+      hotspot.classList.add('is-pulsing');
+      window.clearTimeout(pulseTimer);
+      pulseTimer = window.setTimeout(() => {
+        hotspot.classList.remove('is-pulsing');
+        setState(next);
+      }, 160);
     });
     return { getState: () => surface.dataset.time || 'day', setState };
   }
