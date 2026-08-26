@@ -157,9 +157,10 @@
     }
 
     tick() {
-      const followEase = this.behaviorState === 'SURFACE_APPROACH' ? .115 : this.behaviorState === 'SURFACE_FOLLOW' ? .14 : .18;
-      this.position.x += (this.diverTarget.x - this.position.x) * followEase;
-      this.position.y += (this.diverTarget.y - this.position.y) * followEase;
+      const horizontalEase = this.behaviorState === 'SURFACE_APPROACH' ? .12 : this.behaviorState === 'SURFACE_FOLLOW' ? .15 : .18;
+      const verticalEase = this.behaviorState === 'SURFACE_APPROACH' ? .072 : this.behaviorState === 'SURFACE_FOLLOW' ? .095 : .18;
+      this.position.x += (this.diverTarget.x - this.position.x) * horizontalEase;
+      this.position.y += (this.diverTarget.y - this.position.y) * verticalEase;
       if (this.swimmer) {
         const dx = this.position.x - this.previous.x;
         const dy = this.position.y - this.previous.y;
@@ -171,9 +172,13 @@
           let next = Math.atan2(dy, dx) * 180 / Math.PI - 180;
           while (next - this.heading > 180) next -= 360;
           while (next - this.heading < -180) next += 360;
+          const turnEase = this.behaviorState === 'SURFACE_APPROACH' ? .12 : this.behaviorState === 'SURFACE_FOLLOW' ? .16 : .22;
+          // Approach and follow states turn more gently, preserving the sense
+          // that the diver is swimming through water instead of hitting a wall.
+          this.heading += (next - this.heading) * turnEase;
           // Keep the heading bounded so repeated pointer changes never build
           // an unbounded CSS rotation value.
-          this.heading = ((next + 180) % 360 + 360) % 360 - 180;
+          this.heading = ((this.heading + 180) % 360 + 360) % 360 - 180;
         }
         this.renderDiver();
       }
@@ -345,7 +350,9 @@
         bounds: null,
         setX: gs ? gs.quickSetter(element, 'x', 'px') : null,
         setY: gs ? gs.quickSetter(element, 'y', 'px') : null,
-        setRotation: gs ? gs.quickSetter(element, 'rotation', 'deg') : null
+        setRotation: gs ? gs.quickSetter(element, 'rotation', 'deg') : null,
+        setScaleX: gs ? gs.quickSetter(element, 'scaleX') : null,
+        setScaleY: gs ? gs.quickSetter(element, 'scaleY') : null
       };
       creature.bounds = makeBounds(creature);
       element.dataset.state = creature.state;
@@ -419,6 +426,13 @@
       } else if (creature.mode === 'jelly' && proximity > .16 && !reducedMotion) {
         desiredHeading = Math.atan2(dy, dx) + Math.PI * .42;
       }
+      if (!reducedMotion && creature.mode !== 'jelly' && creature.state !== 'CURIOUS') {
+        // Avoidance begins as a low-amplitude steering bias and grows with
+        // proximity; only the close range escalates into the FLEE state.
+        const awayHeading = Math.atan2(dy, dx);
+        const avoidanceStrength = clamp(proximity * (creature.state === 'FLEE' ? 1.35 : .48), 0, .92);
+        desiredHeading += angleDelta(desiredHeading, awayHeading) * avoidanceStrength;
+      }
       const edgeX = creature.position.x < bounds.minX ? 1 : creature.position.x > bounds.maxX ? -1 : 0;
       const edgeY = creature.position.y < bounds.minY ? 1 : creature.position.y > bounds.maxY ? -1 : 0;
       if (edgeX || edgeY) desiredHeading = Math.atan2(edgeY || Math.sin(creature.heading), edgeX || Math.cos(creature.heading));
@@ -440,11 +454,16 @@
       creature.position.x = clamp(creature.position.x, bounds.minX - box.width * .012, bounds.maxX + box.width * .012);
       creature.position.y = clamp(creature.position.y, bounds.minY - box.height * .012, bounds.maxY + box.height * .012);
       const rotation = creature.mode === 'jelly' ? Math.sin(now * .00042 + creature.phase) * 2.5 : clamp(creature.velocity.y * 2.2, -7, 7);
+      const bodyPulse = creature.mode === 'jelly'
+        ? 1 + Math.sin(now * .0011 + creature.phase) * .016
+        : 1 + Math.sin(now * .0015 + creature.phase) * .006;
       const offsetX = creature.position.x - box.width / 2;
       const offsetY = creature.position.y - box.height / 2;
       if (creature.setX) creature.setX(offsetX); else creature.element.style.transform = `translate(-50%,-50%) translate3d(${offsetX}px,${offsetY}px,0) rotate(${rotation}deg)`;
       if (creature.setY) creature.setY(offsetY);
       if (creature.setRotation) creature.setRotation(rotation);
+      if (creature.setScaleX) creature.setScaleX(bodyPulse);
+      if (creature.setScaleY) creature.setScaleY(1 - (bodyPulse - 1) * .45);
     };
 
     const tick = (_, deltaTime = 16.67) => {
