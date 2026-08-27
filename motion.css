@@ -51,15 +51,17 @@
 .surface-bubble{position:absolute;bottom:0;border:1px solid rgba(242,255,249,.55);border-radius:50%;background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.72),rgba(206,245,244,.14) 42%,rgba(155,207,227,.06) 68%,transparent 72%);box-shadow:inset -2px -2px 4px rgba(126,170,207,.16),0 0 11px rgba(204,251,241,.25);will-change:transform,opacity}
 .surface-fish-prototype-field{display:none;position:absolute;inset:0;z-index:3;overflow:hidden;pointer-events:none}
 .surface-hero[data-fish-prototype="true"] .surface-fish-prototype-field{display:block}
-.surface-fish-prototype{position:absolute;left:0;top:0;display:block;width:clamp(46px,5.2vw,82px);height:auto;object-fit:contain;transform-origin:center;pointer-events:none;will-change:transform;filter:saturate(.82) contrast(.88)}
-.surface-fish-prototype[data-depth="far"]{width:clamp(38px,4vw,64px);opacity:.42;filter:saturate(.62) contrast(.78)}
-.surface-fish-prototype[data-depth="mid"]{width:clamp(52px,5.2vw,82px);opacity:.58}
-.surface-fish-prototype[data-depth="near"]{width:clamp(68px,6.4vw,100px);opacity:.72;filter:saturate(.92) contrast(.94)}
-.fish-prototype-debug{display:none;position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
-.surface-fish-prototype-field.is-debug .fish-prototype-debug{display:block}
-.fish-prototype-debug polyline{fill:none;stroke:rgba(255,245,197,.68);stroke-width:.18;stroke-dasharray:.8 .55;vector-effect:non-scaling-stroke}
-.fish-prototype-debug circle{fill:rgba(196,241,255,.82);stroke:rgba(255,255,255,.72);stroke-width:.14;vector-effect:non-scaling-stroke}
-.fish-prototype-debug line{stroke:rgba(255,213,190,.72);stroke-width:.16;vector-effect:non-scaling-stroke}
+.surface-fish-prototype{position:absolute;left:0;top:0;display:block;width:clamp(52px,5.6vw,88px);height:auto;object-fit:contain;transform-origin:center;pointer-events:none;will-change:transform;filter:saturate(.82) contrast(.88)}
+.surface-fish-prototype[data-depth="mid"]{width:clamp(52px,5.6vw,88px);opacity:.58}
+.surface-fish-prototype[data-depth="near"]{width:clamp(68px,6.5vw,102px);opacity:.72;filter:saturate(.92) contrast(.94)}
+.fish-prototype-debug{display:block;position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.fish-prototype-debug circle,.fish-prototype-debug line{vector-effect:non-scaling-stroke}
+.fish-prototype-debug .fish-debug-diver-medium{fill:rgba(255,222,163,.05);stroke:rgba(255,229,181,.8);stroke-width:.42;stroke-dasharray:2.5 2}
+.fish-prototype-debug .fish-debug-diver-near{fill:rgba(255,166,150,.08);stroke:rgba(255,185,157,.92);stroke-width:.46;stroke-dasharray:1.5 1.8}
+.fish-prototype-debug .fish-debug-velocity{stroke:rgba(168,242,255,.96);stroke-width:.48}
+.fish-prototype-debug .fish-debug-heading{stroke:rgba(255,243,186,.95);stroke-width:.52}
+.fish-prototype-debug .fish-debug-steering{stroke:rgba(255,174,201,.92);stroke-width:.4;stroke-dasharray:1.5 1}
+.fish-prototype-debug .fish-debug-state,.fish-prototype-debug .fish-debug-diver-label{font:600 2px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;fill:rgba(255,249,221,.94);paint-order:stroke;stroke:rgba(65,62,128,.6);stroke-width:.35px;stroke-linejoin:round}
 .surface-hero[data-time="sunset"] .surface-bubble{border-color:rgba(255,235,219,.55);box-shadow:inset -2px -2px 4px rgba(126,170,207,.16),0 0 12px rgba(250,206,222,.3)}
 .surface-hero[data-time="blue-hour"] .surface-bubble{border-color:rgba(214,236,255,.6);box-shadow:inset -2px -2px 4px rgba(89,126,190,.18),0 0 12px rgba(175,225,255,.3)}
 .dive-entry::after{content:"";position:absolute;z-index:-1;left:16px;top:16px;width:104px;height:96px;border-radius:50%;background:radial-gradient(ellipse,rgba(193,245,242,.38) 0,rgba(167,220,240,.14) 42%,transparent 72%);filter:blur(10px);opacity:.48;animation:jelly-glow 2.8s ease-in-out infinite}

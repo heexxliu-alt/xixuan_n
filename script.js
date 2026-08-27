@@ -521,111 +521,114 @@
   // Round 4A is deliberately opt-in. The production homepage keeps its
   // ecology-free baseline; adding ?round=4a-fish-prototype enables this
   // temporary motion study without changing any locked surface systems.
-  function initSurfaceFishPrototype(surface, tracker, timeSystem) {
+  function initSurfaceFishPrototype(surface, tracker) {
     const params = new URLSearchParams(window.location.search);
     const enabled = params.get('round') === '4a-fish-prototype'
       || params.get('fishPrototype') === '1'
       || params.has('fishPrototype');
     const field = surface.querySelector('.surface-fish-prototype-field');
     const nodes = [...(field?.querySelectorAll('.surface-fish-prototype') || [])];
-    if (!enabled || !field || nodes.length < 3) return { destroy() {} };
+    if (!enabled || !field || nodes.length !== 3) return { destroy() {} };
 
-    const debug = params.get('fishDebug') === '1' || params.get('debug') === 'fish';
+    // Debug is intentionally always on for this final behavior-only study.
+    // The production homepage remains ecology-free because this initializer is
+    // still gated behind the explicit prototype query parameter.
     const debugSvg = field.querySelector('.fish-prototype-debug');
     surface.dataset.fishPrototype = 'true';
-    field.classList.toggle('is-debug', debug);
+    field.classList.add('is-debug');
 
-    const routes = [
+    const DIVER_AWARENESS_RADIUS = 220;
+    const DIVER_AVOIDANCE_RADIUS = 112;
+    const HABITAT_TOP_RATIO = .59;
+    const HABITAT_BOTTOM_RATIO = .86;
+    const configs = [
       {
-        name: 'wide horizontal cruise',
-        points: [[.04, .67], [.2, .61], [.44, .66], [.7, .6], [.96, .68], [.74, .75], [.46, .72], [.18, .77]],
-        rate: .0092, cruiseSpeed: 18, turnRate: .052, inertia: .075, fearRadius: 168, reactionEase: .052, phase: .4, depth: 'far'
+        id: 'A', start: [.2, .66], heading: .06, cruiseSpeed: 17,
+        preferredDepth: .64, wanderPhase: .4, wanderFrequency: .00019,
+        wanderStrength: .18, turnResponsiveness: .86, maxTurnRate: .42,
+        awarenessRadius: 225, avoidanceRadius: 108, avoidanceStrength: .9,
+        personalSpace: 100, depth: 'upper'
       },
       {
-        name: 'long arcing rise',
-        points: [[.08, .8], [.24, .72], [.43, .58], [.67, .61], [.9, .75], [.7, .84], [.42, .8], [.22, .84]],
-        rate: .0078, cruiseSpeed: 22, turnRate: .046, inertia: .068, fearRadius: 156, reactionEase: .064, phase: 1.9, depth: 'mid'
+        id: 'B', start: [.52, .74], heading: Math.PI - .22, cruiseSpeed: 21,
+        preferredDepth: .73, wanderPhase: 2.35, wanderFrequency: .00016,
+        wanderStrength: .14, turnResponsiveness: 1.02, maxTurnRate: .36,
+        awarenessRadius: 210, avoidanceRadius: 100, avoidanceStrength: .82,
+        personalSpace: 110, depth: 'mid'
       },
       {
-        name: 'deep small loop',
-        points: [[.34, .82], [.48, .76], [.66, .8], [.6, .89], [.43, .9], [.28, .85]],
-        rate: .0064, cruiseSpeed: 15, turnRate: .058, inertia: .062, fearRadius: 132, reactionEase: .076, phase: 3.2, depth: 'near'
-      },
-      {
-        name: 'edge entry and return',
-        points: [[-.08, .64], [.12, .58], [.38, .6], [.7, .66], [1.08, .62], [.82, .57], [.42, .55], [.06, .59]],
-        rate: .011, cruiseSpeed: 20, turnRate: .043, inertia: .071, fearRadius: 184, reactionEase: .045, phase: 4.7, depth: 'far'
-      },
-      {
-        name: 'short midwater loop',
-        points: [[.58, .73], [.7, .68], [.84, .72], [.8, .79], [.65, .78], [.54, .75]],
-        rate: .0087, cruiseSpeed: 19, turnRate: .05, inertia: .07, fearRadius: 148, reactionEase: .058, phase: 6.1, depth: 'mid'
+        id: 'C', start: [.79, .81], heading: .22, cruiseSpeed: 15,
+        preferredDepth: .81, wanderPhase: 4.8, wanderFrequency: .00022,
+        wanderStrength: .2, turnResponsiveness: .74, maxTurnRate: .47,
+        awarenessRadius: 240, avoidanceRadius: 120, avoidanceStrength: .98,
+        personalSpace: 116, depth: 'lower'
       }
     ];
-    const smoothstep = (value) => value * value * (3 - 2 * value);
-    const wrap = (value) => ((value % 1) + 1) % 1;
     const angleDelta = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - from));
     const direction = (x, y, fallback = { x: 1, y: 0 }) => {
       const length = Math.hypot(x, y);
       return length > .0001 ? { x: x / length, y: y / length } : fallback;
     };
-    const sampleClosedRoute = (points, progress) => {
-      const scaled = wrap(progress) * points.length;
-      const segment = Math.floor(scaled);
-      const t = scaled - segment;
-      const p0 = points[(segment - 1 + points.length) % points.length];
-      const p1 = points[segment % points.length];
-      const p2 = points[(segment + 1) % points.length];
-      const p3 = points[(segment + 2) % points.length];
-      const t2 = t * t;
-      const t3 = t2 * t;
-      const interpolate = (a, b, c, d) => .5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
-      const derivative = (a, b, c, d) => .5 * ((-a + c) + 2 * (2 * a - 5 * b + 4 * c - d) * t + 3 * (-a + 3 * b - 3 * c + d) * t2);
+    const smoothstep = (value) => value * value * (3 - 2 * value);
+    const lerp = (a, b, t) => a + (b - a) * t;
+    let box = surface.getBoundingClientRect();
+    const renderDebug = () => {
+      if (!debugSvg) return { fishGroups: [], diverAwareness: null, diverAvoidance: null, diverLabel: null, habitatTop: null, habitatBottom: null, depthLines: [] };
+      debugSvg.innerHTML = `
+        <g class="fish-debug-diver-field">
+          <circle class="fish-debug-diver-awareness" cx="0" cy="0" r="0"></circle>
+          <circle class="fish-debug-diver-avoidance" cx="0" cy="0" r="0"></circle>
+          <text class="fish-debug-diver-label" x="0" y="0">DIVER</text>
+        </g>
+        <line class="fish-debug-habitat-top" x1="0" y1="0" x2="100" y2="0"></line>
+        <line class="fish-debug-habitat-bottom" x1="0" y1="0" x2="100" y2="0"></line>
+        ${configs.map((config, index) => `<line class="fish-debug-depth-line fish-debug-depth-${index}" x1="0" y1="0" x2="100" y2="0"></line>`).join('')}
+        ${configs.map((config, index) => `<g data-fish-debug="${index}">
+          <line class="fish-debug-velocity" x1="0" y1="0" x2="0" y2="0"></line>
+          <line class="fish-debug-heading" x1="0" y1="0" x2="0" y2="0"></line>
+          <line class="fish-debug-steering" x1="0" y1="0" x2="0" y2="0"></line>
+          <text class="fish-debug-state" x="0" y="0">${config.id} / CRUISE</text>
+        </g>`).join('')}`;
       return {
-        x: interpolate(p0[0], p1[0], p2[0], p3[0]),
-        y: interpolate(p0[1], p1[1], p2[1], p3[1]),
-        dx: derivative(p0[0], p1[0], p2[0], p3[0]),
-        dy: derivative(p0[1], p1[1], p2[1], p3[1])
+        fishGroups: configs.map((_, index) => debugSvg.querySelector(`[data-fish-debug="${index}"]`)),
+        diverAwareness: debugSvg.querySelector('.fish-debug-diver-awareness'),
+        diverAvoidance: debugSvg.querySelector('.fish-debug-diver-avoidance'),
+        diverLabel: debugSvg.querySelector('.fish-debug-diver-label'),
+        habitatTop: debugSvg.querySelector('.fish-debug-habitat-top'),
+        habitatBottom: debugSvg.querySelector('.fish-debug-habitat-bottom'),
+        depthLines: configs.map((_, index) => debugSvg.querySelector(`.fish-debug-depth-${index}`))
       };
     };
-    const renderDebugRoutes = () => {
-      if (!debug || !debugSvg) return [];
-      debugSvg.innerHTML = routes.map((route, index) => {
-        const points = route.points.map(([x, y]) => `${x * 100},${y * 100}`).join(' ');
-        const controls = route.points.map(([x, y]) => `<circle cx="${x * 100}" cy="${y * 100}" r=".55"></circle>`).join('');
-        return `<g data-fish-debug="${index}"><polyline points="${points}"></polyline>${controls}<line class="fish-debug-heading" x1="0" y1="0" x2="0" y2="0"></line></g>`;
-      }).join('');
-      return routes.map((_, index) => debugSvg.querySelector(`[data-fish-debug="${index}"]`));
-    };
-    const debugGroups = renderDebugRoutes();
-    const activeNodes = reducedMotion ? nodes.slice(0, 3) : nodes;
-    nodes.forEach((node) => { node.hidden = !activeNodes.includes(node); });
-    let box = surface.getBoundingClientRect();
+    const debugParts = renderDebug();
     const initialTime = performance.now();
-    const fishes = activeNodes.map((element, index) => {
-      const config = routes[index % routes.length];
-      const progress = wrap(.08 + index * .187 + config.phase * .007);
-      const sample = sampleClosedRoute(config.points, progress);
-      const tangent = direction(sample.dx * box.width, sample.dy * box.height);
+    const fishes = nodes.map((element, index) => {
+      const config = configs[index];
+      const heading = config.heading;
       return {
         element,
         config,
-        progress,
-        position: { x: sample.x * box.width, y: sample.y * box.height },
-        velocity: { x: tangent.x * config.cruiseSpeed, y: tangent.y * config.cruiseSpeed },
-        heading: Math.atan2(tangent.y, tangent.x),
+        position: { x: config.start[0] * box.width, y: config.start[1] * box.height },
+        velocity: { x: Math.cos(heading) * config.cruiseSpeed, y: Math.sin(heading) * config.cruiseSpeed },
+        heading,
+        wanderState: 0,
+        wanderPhase: config.wanderPhase,
         proximity: 0,
-        avoidBlend: 0,
+        nearProximity: 0,
+        avoidance: 0,
+        steering: { x: 0, y: 0 },
+        poseAngle: 0,
+        facing: Math.cos(heading) >= 0 ? 'right' : 'left',
+        facingCandidate: Math.cos(heading) >= 0 ? 'right' : 'left',
+        facingCandidateSince: initialTime,
         state: 'CRUISE',
         stateAt: initialTime,
-        phase: config.phase + index * .71,
         lastRendered: { x: 0, y: 0 }
       };
     });
 
     const renderFish = (fish) => {
-      const rotation = fish.heading;
-      fish.element.style.transform = `translate3d(${fish.position.x}px,${fish.position.y}px,0) translate(-50%,-50%) rotate(${rotation}rad)`;
+      const facingScale = fish.facing === 'right' ? 1 : -1;
+      fish.element.style.transform = `translate3d(${fish.position.x}px,${fish.position.y}px,0) translate(-50%,-50%) rotate(${fish.poseAngle}deg) scaleX(${facingScale})`;
       fish.lastRendered = { x: fish.position.x, y: fish.position.y };
     };
     fishes.forEach((fish) => {
@@ -639,10 +642,6 @@
       fish.stateAt = now;
       fish.element.dataset.state = state;
     };
-    const getTimeScale = () => {
-      const state = timeSystem?.getState?.();
-      return state === 'blue-hour' ? .78 : state === 'sunset' ? .88 : 1;
-    };
     const refreshBounds = () => {
       const previousBox = box;
       box = surface.getBoundingClientRect();
@@ -654,14 +653,25 @@
     const onResize = () => refreshBounds();
     window.addEventListener('resize', onResize, { passive: true });
 
-    const tick = (_, deltaTime = 16.67) => {
-      const deltaSeconds = clamp(deltaTime / 1000, .008, .06);
-      const frame = Math.min(3.6, Math.max(.45, deltaSeconds * 60));
-      const now = performance.now();
+    const tick = (now = performance.now()) => {
+      const deltaSeconds = clamp((now - (tick.lastTime || now)) / 1000, .008, .05);
+      tick.lastTime = now;
       const diver = tracker.getPosition();
-      const timeScale = getTimeScale();
-      const waterTop = box.height * .545;
-      const waterBottom = box.height * .91;
+      const diverVelocity = tracker.getVelocity?.() || { x: 0, y: 0, speed: 0 };
+      const habitatTop = box.height * HABITAT_TOP_RATIO;
+      const habitatBottom = box.height * HABITAT_BOTTOM_RATIO;
+      const boundaryBandX = box.width * .16;
+      const boundaryBandY = box.height * .09;
+      const projectedDiver = {
+        x: diver.x + clamp(diverVelocity.x, -34, 34) * 16,
+        y: diver.y + clamp(diverVelocity.y, -34, 34) * 16
+      };
+      const diverSpeed = Number.isFinite(diverVelocity.speed) ? diverVelocity.speed : Math.hypot(diverVelocity.x || 0, diverVelocity.y || 0);
+      const predictionBlend = clamp(diverSpeed / 7, 0, .68);
+      const threatPoint = {
+        x: lerp(diver.x, projectedDiver.x, predictionBlend),
+        y: lerp(diver.y, projectedDiver.y, predictionBlend)
+      };
       const separations = fishes.map((fish, index) => {
         let x = 0;
         let y = 0;
@@ -670,112 +680,175 @@
           const dx = fish.position.x - other.position.x;
           const dy = fish.position.y - other.position.y;
           const distance = Math.hypot(dx, dy) || 1;
-          const personalSpace = (fish.config.depth === 'near' ? 112 : 86);
+          const personalSpace = Math.max(fish.config.personalSpace, other.config.personalSpace);
           if (distance < personalSpace) {
-            const strength = (1 - distance / personalSpace) ** 2;
+            const strength = smoothstep(1 - distance / personalSpace);
             x += (dx / distance) * strength;
             y += (dy / distance) * strength;
           }
         });
-        return direction(x, y, { x: 0, y: 0 });
+        return { x, y };
       });
 
       fishes.forEach((fish, index) => {
-        fish.progress = wrap(fish.progress + fish.config.rate * deltaSeconds * timeScale);
-        const sample = sampleClosedRoute(fish.config.points, fish.progress);
-        const pathPosition = { x: sample.x * box.width, y: sample.y * box.height };
-        const tangent = direction(sample.dx * box.width, sample.dy * box.height, { x: Math.cos(fish.heading), y: Math.sin(fish.heading) });
-        const pathErrorX = pathPosition.x - fish.position.x;
-        const pathErrorY = pathPosition.y - fish.position.y;
-        const pathErrorLength = Math.hypot(pathErrorX, pathErrorY);
-        const pathCorrection = pathErrorLength > 1 ? direction(pathErrorX, pathErrorY) : { x: 0, y: 0 };
-        const correctionWeight = clamp(pathErrorLength / 220, 0, .28);
-        const baseX = tangent.x + pathCorrection.x * correctionWeight;
-        const baseY = tangent.y + pathCorrection.y * correctionWeight;
-        const baseDirection = direction(baseX, baseY, tangent);
-
-        const dx = fish.position.x - diver.x;
-        const dy = fish.position.y - diver.y;
-        const distance = Math.hypot(dx, dy) || 1;
-        const rawProximity = clamp(1 - distance / fish.config.fearRadius, 0, 1);
-        fish.proximity += (rawProximity - fish.proximity) * clamp(fish.config.reactionEase * frame, 0, .25);
-        const proximity = smoothstep(fish.proximity);
-        if (proximity > .56 && fish.state !== 'AVOID') setState(fish, 'AVOID', now);
-        if (fish.state === 'AVOID' && proximity < .14 && now - fish.stateAt > 1050) setState(fish, 'RETURN', now);
-        if (fish.state === 'RETURN' && now - fish.stateAt > 1450) setState(fish, 'CRUISE', now);
-        const avoidTarget = fish.state === 'AVOID' ? clamp(proximity * 1.08, 0, 1) : proximity * .34;
-        fish.avoidBlend += (avoidTarget - fish.avoidBlend) * clamp((fish.state === 'AVOID' ? .07 : .035) * frame, 0, .22);
-        const away = direction(dx, dy, { x: -baseDirection.x, y: -baseDirection.y });
-        const avoidDirection = direction(baseDirection.x + away.x * fish.avoidBlend * .92, baseDirection.y + away.y * fish.avoidBlend * .92, baseDirection);
-
-        const wanderAngle = Math.sin(now * .00013 + fish.phase) * .11 + Math.cos(now * .000077 + fish.phase * 1.7) * .055;
-        const wanderCos = Math.cos(wanderAngle);
-        const wanderSin = Math.sin(wanderAngle);
-        const wanderX = avoidDirection.x * wanderCos - avoidDirection.y * wanderSin;
-        const wanderY = avoidDirection.x * wanderSin + avoidDirection.y * wanderCos;
-        const boundary = { x: 0, y: 0 };
-        if (fish.position.y < waterTop) boundary.y += clamp((waterTop - fish.position.y) / (box.height * .11), 0, 1);
-        if (fish.position.y > waterBottom) boundary.y -= clamp((fish.position.y - waterBottom) / (box.height * .1), 0, 1);
-        if (fish.position.x < -box.width * .1) boundary.x += clamp((-box.width * .1 - fish.position.x) / (box.width * .14), 0, 1);
-        if (fish.position.x > box.width * 1.1) boundary.x -= clamp((fish.position.x - box.width * 1.1) / (box.width * .14), 0, 1);
-        const desiredDirection = direction(
-          wanderX + separations[index].x * .34 + boundary.x * .66,
-          wanderY + separations[index].y * .34 + boundary.y * .66,
-          avoidDirection
+        const forward = { x: Math.cos(fish.heading), y: Math.sin(fish.heading) };
+        const lateral = { x: -forward.y, y: forward.x };
+        const motionScale = reducedMotion ? .34 : 1;
+        const wanderTarget = Math.sin(now * fish.config.wanderFrequency + fish.wanderPhase) * fish.config.wanderStrength * motionScale;
+        fish.wanderState += (wanderTarget - fish.wanderState) * clamp(deltaSeconds * .55, .004, .04);
+        const wander = direction(
+          forward.x + lateral.x * fish.wanderState,
+          forward.y + lateral.y * fish.wanderState,
+          forward
         );
+
+        const boundary = {
+          x: clamp((box.width * .08 + boundaryBandX - fish.position.x) / boundaryBandX, 0, 1)
+            - clamp((fish.position.x - (box.width * .92 - boundaryBandX)) / boundaryBandX, 0, 1),
+          y: clamp((habitatTop + boundaryBandY - fish.position.y) / boundaryBandY, 0, 1)
+            - clamp((fish.position.y - (habitatBottom - boundaryBandY)) / boundaryBandY, 0, 1)
+        };
+        const preferredY = fish.config.preferredDepth * box.height;
+        const depthTendency = clamp((preferredY - fish.position.y) / Math.max(1, box.height * .16), -.7, .7);
+
+        const threatDx = fish.position.x - threatPoint.x;
+        const threatDy = fish.position.y - threatPoint.y;
+        const threatDistance = Math.hypot(threatDx, threatDy) || 1;
+        const toFish = direction(fish.position.x - diver.x, fish.position.y - diver.y, { x: -forward.x, y: -forward.y });
+        const approachSpeed = (diverVelocity.x || 0) * toFish.x + (diverVelocity.y || 0) * toFish.y;
+        const approachFactor = clamp(.42 + approachSpeed / 8, .24, 1.12);
+        const awarenessPressure = smoothstep(clamp(1 - threatDistance / fish.config.awarenessRadius, 0, 1)) * approachFactor;
+        const avoidancePressure = smoothstep(clamp(1 - threatDistance / fish.config.avoidanceRadius, 0, 1)) * approachFactor;
+        fish.proximity += (awarenessPressure - fish.proximity) * clamp(deltaSeconds * 3.2, .01, .18);
+        fish.nearProximity += (avoidancePressure - fish.nearProximity) * clamp(deltaSeconds * 4.2, .01, .22);
+        if (fish.state === 'CRUISE' && fish.proximity > .1) setState(fish, 'AWARE', now);
+        if (fish.state === 'AWARE' && (fish.nearProximity > .2 || fish.proximity > .58)) setState(fish, 'AVOID', now);
+        if (fish.state === 'AWARE' && fish.proximity < .045 && now - fish.stateAt > 700) setState(fish, 'CRUISE', now);
+        if (fish.state === 'AVOID' && fish.nearProximity < .08 && fish.proximity < .22 && now - fish.stateAt > 520) setState(fish, 'RECOVER', now);
+        if (fish.state === 'RECOVER' && fish.proximity < .06 && now - fish.stateAt > 1050) setState(fish, 'CRUISE', now);
+        if (fish.state === 'RECOVER' && fish.proximity > .2) setState(fish, 'AVOID', now);
+        const stateWeight = fish.state === 'AVOID' ? 1 : fish.state === 'AWARE' ? .42 : fish.state === 'RECOVER' ? .2 : 0;
+        const avoidanceForce = clamp((fish.proximity * .48 + fish.nearProximity * .82) * stateWeight * fish.config.avoidanceStrength, 0, 1.12);
+        fish.avoidance = avoidanceForce;
+        const away = direction(threatDx, threatDy, { x: -forward.x, y: -forward.y });
+        const side = { x: -away.y, y: away.x };
+        const sideSign = Math.sign(forward.x * away.y - forward.y * away.x) || (fish.config.id === 'B' ? -1 : 1);
+        const escape = direction(away.x * .82 + side.x * sideSign * .34, away.y * .82 + side.y * sideSign * .34, away);
+        const separation = direction(separations[index].x, separations[index].y, { x: 0, y: 0 });
+        const desiredDirection = direction(
+          wander.x + boundary.x * .82 + separation.x * .5 + escape.x * avoidanceForce,
+          wander.y + boundary.y * .82 + separation.y * .5 + depthTendency * .4 + escape.y * avoidanceForce,
+          forward
+        );
+        fish.steering = {
+          x: desiredDirection.x - forward.x,
+          y: desiredDirection.y - forward.y
+        };
         const desiredHeading = Math.atan2(desiredDirection.y, desiredDirection.x);
-        fish.heading += angleDelta(fish.heading, desiredHeading) * clamp(fish.config.turnRate * frame * (fish.state === 'AVOID' ? 1.16 : 1), 0, .24);
-        const speedVariation = 1 + Math.sin(now * .00011 + fish.phase * 2.1) * .035 + Math.cos(now * .000061 + fish.phase) * .018;
-        const stateSpeed = fish.state === 'AVOID' ? 1.12 : fish.state === 'RETURN' ? 1.03 : 1;
-        const targetSpeed = fish.config.cruiseSpeed * speedVariation * stateSpeed * timeScale;
-        const velocityEase = clamp(fish.config.inertia * frame, 0, .24);
+        const maxHeadingDelta = fish.config.maxTurnRate * fish.config.turnResponsiveness * deltaSeconds;
+        fish.heading += clamp(angleDelta(fish.heading, desiredHeading), -maxHeadingDelta, maxHeadingDelta);
+        const targetSpeed = fish.config.cruiseSpeed * (reducedMotion ? .42 : 1) * (1 + fish.nearProximity * .045);
+        const velocityEase = clamp(deltaSeconds * (2.2 + fish.config.turnResponsiveness), .018, .14);
         fish.velocity.x += (Math.cos(fish.heading) * targetSpeed - fish.velocity.x) * velocityEase;
         fish.velocity.y += (Math.sin(fish.heading) * targetSpeed - fish.velocity.y) * velocityEase;
-        const speed = Math.hypot(fish.velocity.x, fish.velocity.y) || 1;
-        const maxSpeed = fish.config.cruiseSpeed * (fish.state === 'AVOID' ? 1.34 : 1.22);
-        if (speed > maxSpeed) {
-          fish.velocity.x = fish.velocity.x / speed * maxSpeed;
-          fish.velocity.y = fish.velocity.y / speed * maxSpeed;
-        }
         fish.position.x += fish.velocity.x * deltaSeconds;
         fish.position.y += fish.velocity.y * deltaSeconds;
-        fish.position.x = clamp(fish.position.x, -box.width * .15, box.width * 1.15);
-        fish.position.y = clamp(fish.position.y, box.height * .52, box.height * .95);
+        fish.position.x = clamp(fish.position.x, box.width * .035, box.width * .965);
+        fish.position.y = clamp(fish.position.y, box.height * .52, box.height * .93);
+        const horizontalVelocity = fish.velocity.x;
+        const velocitySign = horizontalVelocity > .55 ? 'right' : horizontalVelocity < -.55 ? 'left' : fish.facing;
+        if (velocitySign !== fish.facingCandidate) {
+          fish.facingCandidate = velocitySign;
+          fish.facingCandidateSince = now;
+        } else if (velocitySign !== fish.facing && now - fish.facingCandidateSince > 360) {
+          fish.facing = velocitySign;
+        }
+        const speed = Math.hypot(fish.velocity.x, fish.velocity.y) || 1;
+        const pitchLimit = fish.state === 'AVOID' ? 8 : 4.5;
+        const targetPitch = clamp((fish.velocity.y / speed) * pitchLimit, -pitchLimit, pitchLimit);
+        const pitchEase = clamp(deltaSeconds * (fish.state === 'AVOID' ? 2.1 : 1.35), .012, .1);
+        fish.poseAngle += (targetPitch - fish.poseAngle) * pitchEase;
         renderFish(fish);
 
-        const group = debugGroups[index];
+        const group = debugParts.fishGroups[index];
         if (group) {
-          const line = group.querySelector('.fish-debug-heading');
           const x = fish.position.x / Math.max(1, box.width) * 100;
           const y = fish.position.y / Math.max(1, box.height) * 100;
-          const hx = x + Math.cos(fish.heading) * 5;
-          const hy = y + Math.sin(fish.heading) * 5;
-          line?.setAttribute('x1', String(x));
-          line?.setAttribute('y1', String(y));
-          line?.setAttribute('x2', String(hx));
-          line?.setAttribute('y2', String(hy));
+          const velocityScale = 1.7;
+          const headingScale = 7;
+          const steeringScale = 12;
+          const headingX = x + Math.cos(fish.heading) * headingScale;
+          const headingY = y + Math.sin(fish.heading) * headingScale;
+          const velocityX = x + fish.velocity.x / Math.max(1, box.width) * 100 * velocityScale;
+          const velocityY = y + fish.velocity.y / Math.max(1, box.height) * 100 * velocityScale;
+          const steeringX = x + fish.steering.x * steeringScale;
+          const steeringY = y + fish.steering.y * steeringScale;
+          const headingLine = group.querySelector('.fish-debug-heading');
+          const velocityLine = group.querySelector('.fish-debug-velocity');
+          const steeringLine = group.querySelector('.fish-debug-steering');
+          [headingLine, velocityLine, steeringLine].forEach((line) => {
+            line?.setAttribute('x1', String(x));
+            line?.setAttribute('y1', String(y));
+          });
+          headingLine?.setAttribute('x2', String(headingX));
+          headingLine?.setAttribute('y2', String(headingY));
+          velocityLine?.setAttribute('x2', String(velocityX));
+          velocityLine?.setAttribute('y2', String(velocityY));
+          steeringLine?.setAttribute('x2', String(steeringX));
+          steeringLine?.setAttribute('y2', String(steeringY));
+          const label = group.querySelector('.fish-debug-state');
+          label?.setAttribute('x', String(x + 1.2));
+          label?.setAttribute('y', String(y - 2.5));
+          if (label) label.textContent = `${fish.config.id} / ${fish.state}`;
           group.dataset.state = fish.state;
         }
       });
+      const diverX = diver.x / Math.max(1, box.width) * 100;
+      const diverY = diver.y / Math.max(1, box.height) * 100;
+      const awarenessRadiusX = DIVER_AWARENESS_RADIUS / Math.max(1, box.width) * 100;
+      const awarenessRadiusY = DIVER_AWARENESS_RADIUS / Math.max(1, box.height) * 100;
+      const avoidanceRadiusX = DIVER_AVOIDANCE_RADIUS / Math.max(1, box.width) * 100;
+      const avoidanceRadiusY = DIVER_AVOIDANCE_RADIUS / Math.max(1, box.height) * 100;
+      debugParts.diverAwareness?.setAttribute('cx', String(diverX));
+      debugParts.diverAwareness?.setAttribute('cy', String(diverY));
+      debugParts.diverAwareness?.setAttribute('r', String((awarenessRadiusX + awarenessRadiusY) / 2));
+      debugParts.diverAvoidance?.setAttribute('cx', String(diverX));
+      debugParts.diverAvoidance?.setAttribute('cy', String(diverY));
+      debugParts.diverAvoidance?.setAttribute('r', String((avoidanceRadiusX + avoidanceRadiusY) / 2));
+      debugParts.diverLabel?.setAttribute('x', String(diverX + 1));
+      debugParts.diverLabel?.setAttribute('y', String(diverY - (awarenessRadiusY + awarenessRadiusX) / 2 - 1.8));
+      debugParts.habitatTop?.setAttribute('x1', '0');
+      debugParts.habitatTop?.setAttribute('x2', '100');
+      debugParts.habitatTop?.setAttribute('y1', String(HABITAT_TOP_RATIO * 100));
+      debugParts.habitatTop?.setAttribute('y2', String(HABITAT_TOP_RATIO * 100));
+      debugParts.habitatBottom?.setAttribute('x1', '0');
+      debugParts.habitatBottom?.setAttribute('x2', '100');
+      debugParts.habitatBottom?.setAttribute('y1', String(HABITAT_BOTTOM_RATIO * 100));
+      debugParts.habitatBottom?.setAttribute('y2', String(HABITAT_BOTTOM_RATIO * 100));
+      debugParts.depthLines.forEach((line, index) => {
+        const y = configs[index].preferredDepth * 100;
+        line?.setAttribute('y1', String(y));
+        line?.setAttribute('y2', String(y));
+      });
     };
     let rafId = 0;
-    if (gs) gs.ticker.add(tick);
-    else {
-      let last = performance.now();
-      const loop = (now) => { tick(now, now - last); last = now; rafId = window.requestAnimationFrame(loop); };
-      rafId = window.requestAnimationFrame(loop);
-    }
+    const loop = (now) => { tick(now); rafId = window.requestAnimationFrame(loop); };
+    rafId = window.requestAnimationFrame(loop);
     window.__surfaceFishPrototypeDebug = {
       enabled: true,
       count: fishes.length,
-      motionPath: 'closed Catmull-Rom cruise tendency + steering',
-      motionPathHelper: false,
+      motionPath: false,
+      controller: 'velocity-steering',
+      debug: true,
+      diverAwarenessRadius: DIVER_AWARENESS_RADIUS,
+      diverAvoidanceRadius: DIVER_AVOIDANCE_RADIUS,
+      habitatTop: HABITAT_TOP_RATIO,
+      habitatBottom: HABITAT_BOTTOM_RATIO,
       get states() { return fishes.map((fish) => fish.state); },
-      get fish() { return fishes.map((fish) => ({ state: fish.state, x: fish.position.x, y: fish.position.y, heading: fish.heading, proximity: fish.proximity })); }
+      get fish() { return fishes.map((fish) => ({ id: fish.config.id, state: fish.state, x: fish.position.x, y: fish.position.y, heading: fish.heading, poseAngle: fish.poseAngle, facing: fish.facing, proximity: fish.proximity, nearProximity: fish.nearProximity, velocity: { ...fish.velocity } })); }
     };
     return {
       destroy() {
-        if (gs) gs.ticker.remove(tick);
         if (rafId) window.cancelAnimationFrame(rafId);
         window.removeEventListener('resize', onResize);
         delete window.__surfaceFishPrototypeDebug;

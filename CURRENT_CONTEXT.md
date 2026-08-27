@@ -4,41 +4,41 @@
 
 ## 当前目标
 
-完成 Round 4A Fish Behavior Prototype，只验证临时鱼在无用户操作时是否自然自主巡游，以及对 Diver 的轻量感知与避让。Prototype 仅通过 URL 开关启用，生产首页默认保持无鱼基线。当前不制作正式 Fish Assets，不开始 Marine Ecology。
+完成 Round 4A Fish Behavior Prototype 的重新验证：只用两条临时鱼检验“自主巡游是否有生命感”以及鱼是否能感知 Diver 并以曲线方式避让。本轮仍是行为原型，不制作正式鱼素材，不进入 Marine Ecology 或 Fish Visual 阶段。
 
 ## 关键决策
 
-- 使用 5 条临时低细节鱼，分别承担宽阔横向、长弧线、深水小回游、边缘进入/离开和中景短回游等运动角色。
-- 鱼使用闭合 Catmull–Rom 巡游曲线作为基础趋势，再叠加轻微 organic wander、惯性转向、个体速度/相位/反应差异；不是随机目标点 tween，也不是固定路径上的同步列车。
-- 鱼的朝向由平滑后的实际运动 heading 决定，不读取鼠标，不使用即时 `scaleX` flip；转向通过角度插值完成。
-- Diver proximity 只提供 steering influence：FAR 无反应，接近后渐进进入 `AVOID`，离开后经过 `RETURN` 逐步回到 `CRUISE`；不创建固定逃跑目的地，不做 panic scatter。
-- 使用轻量 fish–fish separation 与软水域边界；不实现 alignment、cohesion、完整 boids 或新渲染依赖。
-- Prototype 入口：`index.html?round=4a-fish-prototype`；可选 `&fishDebug=1` 显示巡游曲线、控制点和 heading 线。Debug 默认关闭，生产页面不显示路径。未启用 MotionPathHelper，使用同一套轻量调试 overlay。
+- 5 条闭合 Catmull–Rom 路径方案已否决；不再以 MotionPath、路径进度、固定 waypoint 或 tween 作为正常游动控制器。
+- Prototype 仅在 `index.html?round=4a-fish-prototype`（或 `fishPrototype=1`）启用；正式首页默认仍无生态鱼。原型调试层在该 URL 下始终显示。
+- 首页临时鱼严格为 2 条。每条鱼独立持有 `position`、`velocity`、`heading`、`cruiseSpeed`、`wanderState`。
+- 每帧唯一 steering 来源为：WANDER、软边界、鱼间 separation、Diver avoidance。速度推动位置，平滑速度 heading 决定朝向；无预设路线、同步列车、随机目标点、CSS keyframe 或 180° 瞬时翻转。
+- Diver 避让使用当前位置加速度预测位置：中距离半径约 190px、近距离约 104px；避让力连续增强，转向仍受最大角速度限制，离开后直接由 WANDER 接管，不回到旧路径。
+- 原型 Debug 始终显示 Diver 中/近距离圆环、鱼 velocity 向量、heading 向量、steering 向量和 `A / WANDER`、`B / AVOID` 状态文字。
 
 ## 核心约束
 
 - `PROJECT_TRUTH_SPEC.md` 的不可变锁定项全部有效：Planet、Planet 序列/旋转/点击、DAY / SUNSET / BLUE HOUR、TURN THE SKY、标题、Diver 运动与姿态、海面、下潜入口、背景构图、五个栏目和 `dive.html` 均不得修改。
-- Whale 必须继续隐藏；不得恢复、移动、缩放、改透明度、改素材或添加动画。
-- 当前 Dive Jellyfish placeholder 保持原样；不美化、不移动、不删除。
-- Fish Prototype 只在显式 URL 开关下运行；不调用旧的 `initSurfaceCreatures()`，不把临时鱼当作正式首页生态。
-- Reduced Motion 下只保留 3 条鱼，降低速度与运动幅度；不增加高频动画。不得引入 Three.js、物理引擎、WebGL 或新的动画依赖。
-- 本阶段结束后停止，不开始正式 Fish Art、Marine Ecology、Surface Decision Boundary、Dive Transition 或 Responsive Round；不执行 `git add`、commit 或 push，除非用户明确授权。
+- Whale 继续隐藏；不恢复、移动、缩放、改透明度、改素材或添加动画。Dive Jellyfish placeholder 保持原样。
+- 不修改 `initSurfaceCreatures()` 的未来复用代码，也不在正式首页调用它；本原型不使用 Three.js、物理引擎、WebGL 或新的动画依赖。
+- Reduced Motion 仍保持两条鱼但降低运动幅度/速度；调试信息保留以便检查行为。
+- 本阶段结束即停止，不开始正式 Fish Art、Marine Ecology、Surface Decision Boundary、Dive Transition 或 Responsive Round；不执行 `git add`、commit 或 push，除非用户明确授权。
 
 ## 当前进度
 
-- `index.html` 新增隐藏的 `.surface-fish-prototype-field` 和 5 个临时鱼节点，均复用现有 `assets/surface-fish-near-curious.png`；默认 `display:none`，不影响正式首页。
-- `motion.css` 新增 Prototype 鱼的水域层、远/中/近景尺寸与透明度、Debug SVG 样式；Whale 仍由 `.surface-whale-layer{display:none!important;animation:none!important}` 隐藏。
-- `script.js` 新增 `initSurfaceFishPrototype()`，仅在 Prototype URL 下启动。系统包含 5 条差异化闭合曲线、平滑 heading/惯性、micro wander、软 surface/edge steering、fish separation、Diver proximity 的 AVOID/RETURN/CRUISE 状态和 Debug 数据。
-- 已验证：默认首页字段 `display:none` 且可见鱼为 0；Prototype 页面显示 5 条鱼并持续移动；Diver 靠近时至少一条鱼进入 `AVOID`，移开后回到 `CRUISE`；Whale 仍隐藏，下潜水母仍为 1 只。
-- 已验证 `fishDebug=1` 只在调试参数下显示 5 条曲线；Node 语法检查和 `git diff --check` 通过。未执行 Git 操作。
+- `index.html` 已将原型 DOM 收敛为两条临时鱼，资源仍复用 `assets/surface-fish-near-curious.png`；默认字段 `display:none`，不影响正式首页。
+- `script.js` 已将原型控制器改为 requestAnimationFrame 驱动的 velocity-steering：两条鱼有不同起点、巡航速度、wander 相位和最大转向速率；Diver 速度参与威胁点预测；无 MotionPath/路径进度。
+- `motion.css` 已更新为两鱼尺寸/透明度及始终可见的行为 Debug 样式；Whale 规则保持 `display:none!important` 与无动画。
+- 首页脚本与样式 cache-bust 更新为 `20260827-round4a-v2`。
+- 尚待执行本轮浏览器验证：默认首页无鱼；原型页恰好两鱼且 Debug 可见；静止巡游、Diver 从不同方向接近、停止追逐后自然续游、两鱼独立反应；控制台无异常。
 
 ## 未解决问题
 
-- 尚未完成用户要求的 30–60 秒无操作长时间观测，以及全部边界组合（近表面、左右边缘、交叉、转向中遇到 Diver）的人工验收；这些是当前 Prototype 的待验收项，不应通过扩大功能范围解决。
-- 当前临时鱼仅用于行为判断，正式插画鱼资产、数量和是否回归首页尚未决定。
+- 需要在原型 URL 上完成用户要求的长时间无操作和五项人工行为验收；这些只用于判断 steering 参数，不应通过扩大系统范围解决。
+- 临时鱼仍是行为测试素材，正式插画鱼资产、数量和是否回归首页尚未决定。
 
 ## 下一步行动
 
-1. 等待用户在 `index.html?round=4a-fish-prototype` 预览并验收行为；需要路径辅助时追加 `&fishDebug=1`。
-2. 根据验收结果只修正鱼的运动参数；不修改 Diver、Planet、Whale、时间系统、背景或下潜系统。
-3. 用户确认 Prototype 通过后再停止本阶段；正式 Fish Assets / Marine Ecology 需另行授权。
+1. 运行脚本语法检查与 `git diff --check`。
+2. 用本地首页和 `?round=4a-fish-prototype` 验证默认/原型 DOM、两鱼移动、Debug 圆环/向量、Diver 避让和控制台。
+3. 只在行为验收失败时调整本原型 steering 参数；保持所有锁定系统不变。
+4. 向用户报告本轮实现与测试结果，然后停止等待验收。
