@@ -179,7 +179,12 @@
       const offsetX = this.position.x - this.box.width / 2;
       const offsetY = this.position.y - this.box.height / 2 + calmY;
       const surfaceFacingSign = this.facingScale < 0 ? -1 : 1;
-      const surfaceRotation = DIVER_BASE_HEADING + this.poseAngle * surfaceFacingSign;
+      // Mirroring the PNG also mirrors its intrinsic ~34deg body tilt. Apply
+      // the neutral heading compensation in the same facing space so LEFT and
+      // RIGHT share a horizontal neutral pose; pitch remains mirrored around
+      // that facing-specific baseline.
+      const surfaceBaseHeading = DIVER_BASE_HEADING * surfaceFacingSign;
+      const surfaceRotation = surfaceBaseHeading + this.poseAngle * surfaceFacingSign;
       const rotation = this.isSurface ? surfaceRotation : this.heading;
       if (this.quickDiverX) this.quickDiverX(offsetX); else this.swimmer.style.transform = `translate(-50%,-50%) translate3d(${offsetX}px,${offsetY}px,0) rotate(${rotation}deg) scaleX(${this.facingScale})`;
       if (this.quickDiverY) this.quickDiverY(offsetY);
@@ -379,9 +384,10 @@
     if (underwater) gs.to(underwater, { x: 3, skewX: -2.5, scaleY: 1.02, duration: 4.8, repeat: -1, yoyo: true, ease: 'sine.inOut' });
   }
 
-  function initSurfaceTimeSystem(surface) {
+  function initSurfaceTimeSystem(surface, options = {}) {
     const hotspot = surface.querySelector('.planet-hotspot');
     const hint = surface.querySelector('.planet-hint');
+    const enableClickPulse = options.feedback !== false;
     const states = ['day', 'sunset', 'blue-hour'];
     const labels = { day: '切换到黄昏', sunset: '切换到蓝调时刻', 'blue-hour': '切换到白天' };
     const hintLabels = { day: '/ DAY /', sunset: '/ SUNSET /', 'blue-hour': '/ BLUE HOUR /' };
@@ -410,11 +416,374 @@
           hint.classList.remove('is-state-feedback');
         }, 800);
       }
-      hotspot.classList.remove('is-pulsing');
-      void hotspot.offsetWidth;
-      hotspot.classList.add('is-pulsing');
+      if (enableClickPulse && hotspot) {
+        hotspot.classList.remove('is-pulsing');
+        void hotspot.offsetWidth;
+        hotspot.classList.add('is-pulsing');
+      }
     });
     return { getState: () => surface.dataset.time || 'day', setState };
+  }
+
+  function initSurfacePlanetSequence(surface) {
+    const layer = surface.querySelector('.surface-planet-layer');
+    const frame = layer?.querySelector('.surface-planet-frame');
+    if (!layer || !frame) return { destroy() {} };
+
+    const states = ['day', 'sunset', 'blue-hour'];
+    const frameCount = 36;
+    const rotationSeconds = 30;
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const initialState = states.includes(surface.dataset.time) ? surface.dataset.time : 'day';
+    const images = new Map();
+    let activeState = initialState;
+    let frameIndex = 0;
+    let startedAt = 0;
+    let ready = false;
+    let running = !reducedMotion;
+    let rafId = 0;
+
+    const sourceFor = (state, index) => {
+      const name = state === 'blue-hour' ? 'planet-blue-hour' : `planet-${state}`;
+      return `assets/planet-final/${state}/${name}-${String(index + 1).padStart(3, '0')}.webp`;
+    };
+    const frameSource = (state, index) => sourceFor(state, ((index % frameCount) + frameCount) % frameCount);
+    const setFrame = (state, index) => {
+      const image = images.get(frameSource(state, index));
+      if (image) frame.src = image.src;
+    };
+    const currentState = () => states.includes(surface.dataset.time) ? surface.dataset.time : 'day';
+    const onTimeChange = (event) => {
+      const nextState = states.includes(event.detail?.state) ? event.detail.state : currentState();
+      activeState = nextState;
+      if (ready) setFrame(activeState, frameIndex);
+    };
+    surface.addEventListener('surface:timechange', onTimeChange);
+
+    const sources = states.flatMap((state) => Array.from({ length: frameCount }, (_, index) => sourceFor(state, index)));
+    const preload = Promise.all(sources.map((src) => new Promise((resolve, reject) => {
+      const image = new Image();
+      image.decoding = 'async';
+      image.onload = () => { images.set(src, image); resolve(); };
+      image.onerror = () => reject(new Error(`Unable to load planet frame: ${src}`));
+      image.src = src;
+    })));
+
+    const tick = (now) => {
+      if (!running) return;
+      const nextState = currentState();
+      if (nextState !== activeState) {
+        activeState = nextState;
+        setFrame(activeState, frameIndex);
+      }
+      const elapsed = Math.max(0, now - startedAt);
+      const nextFrame = Math.floor((elapsed / 1000 / rotationSeconds) * frameCount) % frameCount;
+      if (nextFrame !== frameIndex) {
+        frameIndex = nextFrame;
+        setFrame(activeState, frameIndex);
+      }
+      rafId = window.requestAnimationFrame(tick);
+    };
+
+    preload.then(() => {
+      ready = true;
+      activeState = currentState();
+      if (!running) {
+        frameIndex = 17;
+        setFrame(activeState, frameIndex);
+        return;
+      }
+      startedAt = performance.now();
+      frameIndex = 0;
+      setFrame(activeState, frameIndex);
+      rafId = window.requestAnimationFrame(tick);
+    }).catch((error) => {
+      console.error('[surface-planet-sequence] preload failed', error);
+    });
+
+    window.__surfacePlanetSequenceDebug = {
+      get frameIndex() { return frameIndex; },
+      get state() { return activeState; },
+      get ready() { return ready; },
+      get running() { return running && ready; },
+      rotationSeconds,
+      frameCount
+    };
+    return {
+      destroy() {
+        running = false;
+        if (rafId) window.cancelAnimationFrame(rafId);
+        surface.removeEventListener('surface:timechange', onTimeChange);
+      }
+    };
+  }
+
+  // Round 4A is deliberately opt-in. The production homepage keeps its
+  // ecology-free baseline; adding ?round=4a-fish-prototype enables this
+  // temporary motion study without changing any locked surface systems.
+  function initSurfaceFishPrototype(surface, tracker, timeSystem) {
+    const params = new URLSearchParams(window.location.search);
+    const enabled = params.get('round') === '4a-fish-prototype'
+      || params.get('fishPrototype') === '1'
+      || params.has('fishPrototype');
+    const field = surface.querySelector('.surface-fish-prototype-field');
+    const nodes = [...(field?.querySelectorAll('.surface-fish-prototype') || [])];
+    if (!enabled || !field || nodes.length < 3) return { destroy() {} };
+
+    const debug = params.get('fishDebug') === '1' || params.get('debug') === 'fish';
+    const debugSvg = field.querySelector('.fish-prototype-debug');
+    surface.dataset.fishPrototype = 'true';
+    field.classList.toggle('is-debug', debug);
+
+    const routes = [
+      {
+        name: 'wide horizontal cruise',
+        points: [[.04, .67], [.2, .61], [.44, .66], [.7, .6], [.96, .68], [.74, .75], [.46, .72], [.18, .77]],
+        rate: .0092, cruiseSpeed: 18, turnRate: .052, inertia: .075, fearRadius: 168, reactionEase: .052, phase: .4, depth: 'far'
+      },
+      {
+        name: 'long arcing rise',
+        points: [[.08, .8], [.24, .72], [.43, .58], [.67, .61], [.9, .75], [.7, .84], [.42, .8], [.22, .84]],
+        rate: .0078, cruiseSpeed: 22, turnRate: .046, inertia: .068, fearRadius: 156, reactionEase: .064, phase: 1.9, depth: 'mid'
+      },
+      {
+        name: 'deep small loop',
+        points: [[.34, .82], [.48, .76], [.66, .8], [.6, .89], [.43, .9], [.28, .85]],
+        rate: .0064, cruiseSpeed: 15, turnRate: .058, inertia: .062, fearRadius: 132, reactionEase: .076, phase: 3.2, depth: 'near'
+      },
+      {
+        name: 'edge entry and return',
+        points: [[-.08, .64], [.12, .58], [.38, .6], [.7, .66], [1.08, .62], [.82, .57], [.42, .55], [.06, .59]],
+        rate: .011, cruiseSpeed: 20, turnRate: .043, inertia: .071, fearRadius: 184, reactionEase: .045, phase: 4.7, depth: 'far'
+      },
+      {
+        name: 'short midwater loop',
+        points: [[.58, .73], [.7, .68], [.84, .72], [.8, .79], [.65, .78], [.54, .75]],
+        rate: .0087, cruiseSpeed: 19, turnRate: .05, inertia: .07, fearRadius: 148, reactionEase: .058, phase: 6.1, depth: 'mid'
+      }
+    ];
+    const smoothstep = (value) => value * value * (3 - 2 * value);
+    const wrap = (value) => ((value % 1) + 1) % 1;
+    const angleDelta = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - from));
+    const direction = (x, y, fallback = { x: 1, y: 0 }) => {
+      const length = Math.hypot(x, y);
+      return length > .0001 ? { x: x / length, y: y / length } : fallback;
+    };
+    const sampleClosedRoute = (points, progress) => {
+      const scaled = wrap(progress) * points.length;
+      const segment = Math.floor(scaled);
+      const t = scaled - segment;
+      const p0 = points[(segment - 1 + points.length) % points.length];
+      const p1 = points[segment % points.length];
+      const p2 = points[(segment + 1) % points.length];
+      const p3 = points[(segment + 2) % points.length];
+      const t2 = t * t;
+      const t3 = t2 * t;
+      const interpolate = (a, b, c, d) => .5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
+      const derivative = (a, b, c, d) => .5 * ((-a + c) + 2 * (2 * a - 5 * b + 4 * c - d) * t + 3 * (-a + 3 * b - 3 * c + d) * t2);
+      return {
+        x: interpolate(p0[0], p1[0], p2[0], p3[0]),
+        y: interpolate(p0[1], p1[1], p2[1], p3[1]),
+        dx: derivative(p0[0], p1[0], p2[0], p3[0]),
+        dy: derivative(p0[1], p1[1], p2[1], p3[1])
+      };
+    };
+    const renderDebugRoutes = () => {
+      if (!debug || !debugSvg) return [];
+      debugSvg.innerHTML = routes.map((route, index) => {
+        const points = route.points.map(([x, y]) => `${x * 100},${y * 100}`).join(' ');
+        const controls = route.points.map(([x, y]) => `<circle cx="${x * 100}" cy="${y * 100}" r=".55"></circle>`).join('');
+        return `<g data-fish-debug="${index}"><polyline points="${points}"></polyline>${controls}<line class="fish-debug-heading" x1="0" y1="0" x2="0" y2="0"></line></g>`;
+      }).join('');
+      return routes.map((_, index) => debugSvg.querySelector(`[data-fish-debug="${index}"]`));
+    };
+    const debugGroups = renderDebugRoutes();
+    const activeNodes = reducedMotion ? nodes.slice(0, 3) : nodes;
+    nodes.forEach((node) => { node.hidden = !activeNodes.includes(node); });
+    let box = surface.getBoundingClientRect();
+    const initialTime = performance.now();
+    const fishes = activeNodes.map((element, index) => {
+      const config = routes[index % routes.length];
+      const progress = wrap(.08 + index * .187 + config.phase * .007);
+      const sample = sampleClosedRoute(config.points, progress);
+      const tangent = direction(sample.dx * box.width, sample.dy * box.height);
+      return {
+        element,
+        config,
+        progress,
+        position: { x: sample.x * box.width, y: sample.y * box.height },
+        velocity: { x: tangent.x * config.cruiseSpeed, y: tangent.y * config.cruiseSpeed },
+        heading: Math.atan2(tangent.y, tangent.x),
+        proximity: 0,
+        avoidBlend: 0,
+        state: 'CRUISE',
+        stateAt: initialTime,
+        phase: config.phase + index * .71,
+        lastRendered: { x: 0, y: 0 }
+      };
+    });
+
+    const renderFish = (fish) => {
+      const rotation = fish.heading;
+      fish.element.style.transform = `translate3d(${fish.position.x}px,${fish.position.y}px,0) translate(-50%,-50%) rotate(${rotation}rad)`;
+      fish.lastRendered = { x: fish.position.x, y: fish.position.y };
+    };
+    fishes.forEach((fish) => {
+      fish.element.dataset.state = fish.state;
+      renderFish(fish);
+    });
+
+    const setState = (fish, state, now) => {
+      if (fish.state === state) return;
+      fish.state = state;
+      fish.stateAt = now;
+      fish.element.dataset.state = state;
+    };
+    const getTimeScale = () => {
+      const state = timeSystem?.getState?.();
+      return state === 'blue-hour' ? .78 : state === 'sunset' ? .88 : 1;
+    };
+    const refreshBounds = () => {
+      const previousBox = box;
+      box = surface.getBoundingClientRect();
+      fishes.forEach((fish) => {
+        fish.position.x = previousBox.width ? fish.position.x / previousBox.width * box.width : box.width * .5;
+        fish.position.y = previousBox.height ? fish.position.y / previousBox.height * box.height : box.height * .7;
+      });
+    };
+    const onResize = () => refreshBounds();
+    window.addEventListener('resize', onResize, { passive: true });
+
+    const tick = (_, deltaTime = 16.67) => {
+      const deltaSeconds = clamp(deltaTime / 1000, .008, .06);
+      const frame = Math.min(3.6, Math.max(.45, deltaSeconds * 60));
+      const now = performance.now();
+      const diver = tracker.getPosition();
+      const timeScale = getTimeScale();
+      const waterTop = box.height * .545;
+      const waterBottom = box.height * .91;
+      const separations = fishes.map((fish, index) => {
+        let x = 0;
+        let y = 0;
+        fishes.forEach((other, otherIndex) => {
+          if (index === otherIndex) return;
+          const dx = fish.position.x - other.position.x;
+          const dy = fish.position.y - other.position.y;
+          const distance = Math.hypot(dx, dy) || 1;
+          const personalSpace = (fish.config.depth === 'near' ? 112 : 86);
+          if (distance < personalSpace) {
+            const strength = (1 - distance / personalSpace) ** 2;
+            x += (dx / distance) * strength;
+            y += (dy / distance) * strength;
+          }
+        });
+        return direction(x, y, { x: 0, y: 0 });
+      });
+
+      fishes.forEach((fish, index) => {
+        fish.progress = wrap(fish.progress + fish.config.rate * deltaSeconds * timeScale);
+        const sample = sampleClosedRoute(fish.config.points, fish.progress);
+        const pathPosition = { x: sample.x * box.width, y: sample.y * box.height };
+        const tangent = direction(sample.dx * box.width, sample.dy * box.height, { x: Math.cos(fish.heading), y: Math.sin(fish.heading) });
+        const pathErrorX = pathPosition.x - fish.position.x;
+        const pathErrorY = pathPosition.y - fish.position.y;
+        const pathErrorLength = Math.hypot(pathErrorX, pathErrorY);
+        const pathCorrection = pathErrorLength > 1 ? direction(pathErrorX, pathErrorY) : { x: 0, y: 0 };
+        const correctionWeight = clamp(pathErrorLength / 220, 0, .28);
+        const baseX = tangent.x + pathCorrection.x * correctionWeight;
+        const baseY = tangent.y + pathCorrection.y * correctionWeight;
+        const baseDirection = direction(baseX, baseY, tangent);
+
+        const dx = fish.position.x - diver.x;
+        const dy = fish.position.y - diver.y;
+        const distance = Math.hypot(dx, dy) || 1;
+        const rawProximity = clamp(1 - distance / fish.config.fearRadius, 0, 1);
+        fish.proximity += (rawProximity - fish.proximity) * clamp(fish.config.reactionEase * frame, 0, .25);
+        const proximity = smoothstep(fish.proximity);
+        if (proximity > .56 && fish.state !== 'AVOID') setState(fish, 'AVOID', now);
+        if (fish.state === 'AVOID' && proximity < .14 && now - fish.stateAt > 1050) setState(fish, 'RETURN', now);
+        if (fish.state === 'RETURN' && now - fish.stateAt > 1450) setState(fish, 'CRUISE', now);
+        const avoidTarget = fish.state === 'AVOID' ? clamp(proximity * 1.08, 0, 1) : proximity * .34;
+        fish.avoidBlend += (avoidTarget - fish.avoidBlend) * clamp((fish.state === 'AVOID' ? .07 : .035) * frame, 0, .22);
+        const away = direction(dx, dy, { x: -baseDirection.x, y: -baseDirection.y });
+        const avoidDirection = direction(baseDirection.x + away.x * fish.avoidBlend * .92, baseDirection.y + away.y * fish.avoidBlend * .92, baseDirection);
+
+        const wanderAngle = Math.sin(now * .00013 + fish.phase) * .11 + Math.cos(now * .000077 + fish.phase * 1.7) * .055;
+        const wanderCos = Math.cos(wanderAngle);
+        const wanderSin = Math.sin(wanderAngle);
+        const wanderX = avoidDirection.x * wanderCos - avoidDirection.y * wanderSin;
+        const wanderY = avoidDirection.x * wanderSin + avoidDirection.y * wanderCos;
+        const boundary = { x: 0, y: 0 };
+        if (fish.position.y < waterTop) boundary.y += clamp((waterTop - fish.position.y) / (box.height * .11), 0, 1);
+        if (fish.position.y > waterBottom) boundary.y -= clamp((fish.position.y - waterBottom) / (box.height * .1), 0, 1);
+        if (fish.position.x < -box.width * .1) boundary.x += clamp((-box.width * .1 - fish.position.x) / (box.width * .14), 0, 1);
+        if (fish.position.x > box.width * 1.1) boundary.x -= clamp((fish.position.x - box.width * 1.1) / (box.width * .14), 0, 1);
+        const desiredDirection = direction(
+          wanderX + separations[index].x * .34 + boundary.x * .66,
+          wanderY + separations[index].y * .34 + boundary.y * .66,
+          avoidDirection
+        );
+        const desiredHeading = Math.atan2(desiredDirection.y, desiredDirection.x);
+        fish.heading += angleDelta(fish.heading, desiredHeading) * clamp(fish.config.turnRate * frame * (fish.state === 'AVOID' ? 1.16 : 1), 0, .24);
+        const speedVariation = 1 + Math.sin(now * .00011 + fish.phase * 2.1) * .035 + Math.cos(now * .000061 + fish.phase) * .018;
+        const stateSpeed = fish.state === 'AVOID' ? 1.12 : fish.state === 'RETURN' ? 1.03 : 1;
+        const targetSpeed = fish.config.cruiseSpeed * speedVariation * stateSpeed * timeScale;
+        const velocityEase = clamp(fish.config.inertia * frame, 0, .24);
+        fish.velocity.x += (Math.cos(fish.heading) * targetSpeed - fish.velocity.x) * velocityEase;
+        fish.velocity.y += (Math.sin(fish.heading) * targetSpeed - fish.velocity.y) * velocityEase;
+        const speed = Math.hypot(fish.velocity.x, fish.velocity.y) || 1;
+        const maxSpeed = fish.config.cruiseSpeed * (fish.state === 'AVOID' ? 1.34 : 1.22);
+        if (speed > maxSpeed) {
+          fish.velocity.x = fish.velocity.x / speed * maxSpeed;
+          fish.velocity.y = fish.velocity.y / speed * maxSpeed;
+        }
+        fish.position.x += fish.velocity.x * deltaSeconds;
+        fish.position.y += fish.velocity.y * deltaSeconds;
+        fish.position.x = clamp(fish.position.x, -box.width * .15, box.width * 1.15);
+        fish.position.y = clamp(fish.position.y, box.height * .52, box.height * .95);
+        renderFish(fish);
+
+        const group = debugGroups[index];
+        if (group) {
+          const line = group.querySelector('.fish-debug-heading');
+          const x = fish.position.x / Math.max(1, box.width) * 100;
+          const y = fish.position.y / Math.max(1, box.height) * 100;
+          const hx = x + Math.cos(fish.heading) * 5;
+          const hy = y + Math.sin(fish.heading) * 5;
+          line?.setAttribute('x1', String(x));
+          line?.setAttribute('y1', String(y));
+          line?.setAttribute('x2', String(hx));
+          line?.setAttribute('y2', String(hy));
+          group.dataset.state = fish.state;
+        }
+      });
+    };
+    let rafId = 0;
+    if (gs) gs.ticker.add(tick);
+    else {
+      let last = performance.now();
+      const loop = (now) => { tick(now, now - last); last = now; rafId = window.requestAnimationFrame(loop); };
+      rafId = window.requestAnimationFrame(loop);
+    }
+    window.__surfaceFishPrototypeDebug = {
+      enabled: true,
+      count: fishes.length,
+      motionPath: 'closed Catmull-Rom cruise tendency + steering',
+      motionPathHelper: false,
+      get states() { return fishes.map((fish) => fish.state); },
+      get fish() { return fishes.map((fish) => ({ state: fish.state, x: fish.position.x, y: fish.position.y, heading: fish.heading, proximity: fish.proximity })); }
+    };
+    return {
+      destroy() {
+        if (gs) gs.ticker.remove(tick);
+        if (rafId) window.cancelAnimationFrame(rafId);
+        window.removeEventListener('resize', onResize);
+        delete window.__surfaceFishPrototypeDebug;
+        delete surface.dataset.fishPrototype;
+        field.classList.remove('is-debug');
+        nodes.forEach((node) => { node.hidden = false; node.style.transform = ''; delete node.dataset.state; });
+      }
+    };
   }
 
   function initSurfaceCreatures(surface, tracker, timeSystem) {
@@ -898,11 +1267,15 @@
     if (gs) gs.ticker.add(revealTicker); else window.setInterval(revealTicker, 80);
   }
 
+  window.initSurfaceTimeSystem = initSurfaceTimeSystem;
+
   const surface = document.querySelector('.surface-hero');
   if (surface) {
     initSurfaceEffects(surface);
     const surfaceTracker = new DiverPointerTracker(surface, surface.querySelector('.home-diver'));
     const surfaceTime = initSurfaceTimeSystem(surface);
+    initSurfacePlanetSequence(surface);
+    initSurfaceFishPrototype(surface, surfaceTracker, surfaceTime);
     initSurfaceIdleSystem(surface, surfaceTracker, surfaceTime);
     const entry = surface.querySelector('.dive-entry');
     entry?.addEventListener('click', (event) => { event.preventDefault(); playJellyClick(entry, () => playDiveTransition(entry)); });

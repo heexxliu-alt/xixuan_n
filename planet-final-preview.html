@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Planet Final Asset — Round 3.5B Preview</title>
+  <style>
+    :root { color-scheme: dark; --ink:#e8e7f6; --muted:#aaa9c6; --line:rgba(218,215,255,.16); --panel:rgba(17,18,39,.72); }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:radial-gradient(circle at 50% 0,#24265a 0,#101126 50%,#080912 100%); color:var(--ink); font:14px/1.5 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    main { width:min(1180px, calc(100% - 36px)); margin:0 auto; padding:42px 0 72px; }
+    header { display:flex; justify-content:space-between; gap:24px; align-items:flex-end; border-bottom:1px solid var(--line); padding-bottom:22px; }
+    h1 { margin:0; font:500 clamp(24px,4vw,42px)/1.1 Georgia,serif; letter-spacing:.02em; }
+    .eyebrow { margin:0 0 8px; color:#c7c4fa; font-size:11px; letter-spacing:.22em; text-transform:uppercase; }
+    .lede { max-width:560px; margin:12px 0 0; color:var(--muted); }
+    .notice { margin:24px 0 30px; padding:12px 15px; border:1px solid rgba(187,180,255,.25); border-radius:12px; color:#ccc9ec; background:rgba(110,104,204,.1); }
+    .controls { display:flex; align-items:center; flex-wrap:wrap; gap:9px; margin:0 0 28px; }
+    button { border:1px solid rgba(220,216,255,.28); border-radius:999px; padding:9px 14px; background:rgba(255,255,255,.06); color:var(--ink); font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.08em; cursor:pointer; }
+    button:hover,button:focus-visible { background:rgba(214,207,255,.16); outline:2px solid #b9b0ff; outline-offset:2px; }
+    .frame { margin-left:auto; color:var(--muted); font:12px ui-monospace,SFMono-Regular,Menlo,monospace; }
+    section { margin-top:34px; }
+    section h2 { margin:0 0 12px; font:500 18px Georgia,serif; }
+    .sub { color:var(--muted); margin:0 0 16px; }
+    .master-card,.state-card,.rotation-card { border:1px solid var(--line); border-radius:18px; background:var(--panel); overflow:hidden; }
+    .master-card { display:grid; grid-template-columns:minmax(250px,400px) 1fr; align-items:center; gap:28px; padding:24px; }
+    .master-card img { width:100%; max-width:400px; aspect-ratio:1; object-fit:contain; display:block; background:radial-gradient(circle,rgba(151,145,244,.14),transparent 70%); }
+    .meta { color:var(--muted); }
+    .meta strong { display:block; color:var(--ink); font-weight:500; margin-bottom:6px; }
+    .rotations,.states { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    .rotation-card { padding:14px; }
+    .rotation-card figcaption { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; color:#d6d3f3; text-transform:uppercase; letter-spacing:.12em; font-size:11px; }
+    .planet-view { position:relative; aspect-ratio:1; display:grid; place-items:center; overflow:hidden; border-radius:12px; background:radial-gradient(circle,rgba(119,130,235,.12),rgba(2,3,12,.28) 68%); }
+    .planet-view::before { content:""; position:absolute; width:73%; height:73%; border-radius:50%; background:radial-gradient(circle,rgba(185,193,255,.22),transparent 69%); filter:blur(18px); opacity:.55; transition:opacity .35s ease,transform .35s ease; }
+    .halo-off .planet-view::before { opacity:0; }
+    .planet-view img { position:relative; z-index:1; width:83%; height:83%; object-fit:contain; display:block; }
+    .states .state-card { padding:14px; }
+    .state-card h3 { margin:0 0 8px; font-size:11px; text-transform:uppercase; letter-spacing:.12em; font-weight:500; }
+    .state-card img { width:100%; display:block; aspect-ratio:1; object-fit:contain; border-radius:10px; background:rgba(0,0,0,.16); }
+    .context-stage { position:relative; min-height:430px; overflow:hidden; border-radius:18px; border:1px solid var(--line); background:#a89ed9; isolation:isolate; }
+    .context-stage > img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+    .context-stage .context-sky { z-index:-3; }
+    .context-stage .context-sea { z-index:-2; top:50%; height:50%; object-position:center bottom; }
+    .context-stage .context-clouds { z-index:-1; opacity:.72; }
+    .context-planet { position:absolute; left:14%; top:3%; width:16.5%; min-width:120px; }
+    .context-planet img { width:100%; display:block; filter:drop-shadow(0 12px 22px rgba(33,30,90,.2)); }
+    .context-copy { position:absolute; right:9%; bottom:15%; max-width:300px; color:rgba(255,255,255,.82); text-shadow:0 2px 14px rgba(48,38,104,.4); }
+    .context-copy strong { display:block; font:500 clamp(20px,3vw,32px) Georgia,serif; }
+    @media (max-width:760px) { header { display:block; } .master-card { grid-template-columns:1fr; } .rotations,.states { grid-template-columns:1fr; } .context-stage { min-height:340px; } .context-planet { width:38%; left:5%; } .frame { margin-left:0; } }
+    @media (prefers-reduced-motion:reduce) { .planet-view::before { transition:none; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div><p class="eyebrow">Round 3.5B · Phase 1</p><h1>Final Planet Asset</h1><p class="lede">A standalone review of the supplied no-ring Planet Master and its DAY / SUNSET / BLUE HOUR sequence candidates.</p></div>
+      <div class="frame" data-current-frame>01 / 36</div>
+    </header>
+    <p class="notice">Candidate preview only. The formal homepage has not been replaced or modified. This page intentionally contains no time controller, pointer interaction, or click-to-change behavior.</p>
+    <div class="controls"><button type="button" data-rotation-toggle aria-pressed="true">ROTATION ON</button><button type="button" data-halo-toggle aria-pressed="true">HALO ON</button><span class="frame">36 frames · 30s loop · ease none</span><span class="frame" data-preview-status>LOADING…</span></div>
+
+    <section><h2>A · Master Asset</h2><p class="sub">Exact user-supplied PNG, preserved as the visual source of truth.</p><article class="master-card"><img src="assets/planet-final/master-v1.png" alt="Supplied pastel no-ring Planet Master"><div class="meta"><strong>master-v1.png</strong>1261 × 1247 · RGBA PNG<br>No ring, no re-styling, no CSS volume treatment.<br><br>The master’s painterly bands, pastel palette, soft light falloff, and internal surface marks are retained.</div></article></section>
+
+    <section><h2>A.1 · Coherent Surface Texture</h2><p class="sub">One 2:1 equirectangular surface is prepared before projection. The horizontal cut is chosen at the lowest adjacent-column difference and checked before export.</p><article class="master-card"><img src="assets/planet-final/planet-texture-equirect-v1.png" alt="Seam-tested 2 to 1 equirectangular planet texture"><div class="meta"><strong>planet-texture-equirect-v1.png</strong>1024 × 512 · RGB PNG<br>Single coherent texture for all frames.<br>Left/right edge continuity is tested before spherical projection; no per-frame regeneration.</div></article></section>
+
+    <section><h2>B–D · Rotation by Lighting State</h2><p class="sub">Each column uses the same sphere geometry and 36-frame longitude progression; only the color response changes.</p><div class="rotations">
+      <figure class="rotation-card" data-planet-rotation="day"><figcaption><span>DAY</span><span>01–36</span></figcaption><div class="planet-view"><img src="assets/planet-final/day/planet-day-001.webp" alt="DAY planet sequence"></div></figure>
+      <figure class="rotation-card" data-planet-rotation="sunset"><figcaption><span>SUNSET</span><span>01–36</span></figcaption><div class="planet-view"><img src="assets/planet-final/sunset/planet-sunset-001.webp" alt="SUNSET planet sequence"></div></figure>
+      <figure class="rotation-card" data-planet-rotation="blue-hour"><figcaption><span>BLUE HOUR</span><span>01–36</span></figcaption><div class="planet-view"><img src="assets/planet-final/blue-hour/planet-blue-hour-001.webp" alt="BLUE HOUR planet sequence"></div></figure>
+    </div></section>
+
+    <section><h2>E · Static State Comparison</h2><p class="sub">Representative frame 18, side by side for palette and lighting comparison.</p><div class="states">
+      <article class="state-card"><h3>DAY</h3><img src="assets/planet-final/day/planet-day-018.webp" alt="DAY representative frame"></article>
+      <article class="state-card"><h3>SUNSET</h3><img src="assets/planet-final/sunset/planet-sunset-018.webp" alt="SUNSET representative frame"></article>
+      <article class="state-card"><h3>BLUE HOUR</h3><img src="assets/planet-final/blue-hour/planet-blue-hour-018.webp" alt="BLUE HOUR representative frame"></article>
+    </div></section>
+
+    <section><h2>F · Context Preview</h2><p class="sub">A non-production composition check against the existing surface background assets. Nothing here is wired into <code>index.html</code>.</p><div class="context-stage"><img class="context-sky" src="assets/surface-sky.png" alt=""><img class="context-sea" src="assets/surface-sea.png" alt=""><img class="context-clouds" src="assets/surface-clouds.png" alt=""><div class="context-planet"><img src="assets/planet-final/day/planet-day-018.webp" alt="Planet candidate in context"></div><div class="context-copy"><strong>Dreaming of the sea</strong>Final Planet candidate · context only</div></div></section>
+  </main>
+  <script src="planet-final-preview.js"></script>
+</body>
+</html>
