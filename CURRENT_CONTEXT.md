@@ -1,44 +1,49 @@
 # 当前任务摘要
 
-本摘要只保留当前可继续执行的状态。项目事实唯一来源是根目录 `PROJECT_TRUTH_SPEC.md`；旧聊天过程稿、被否决方案、重复日志和历史试验记录均不作为事实。
+本文件只记录当前可继续执行的事实。项目事实唯一来源是根目录 `PROJECT_TRUTH_SPEC.md`；旧聊天过程稿、被否决方案、重复日志和历史试验不作为当前依据。
 
 ## 当前目标
 
-完成 Round 4A Fish Behavior Prototype 的重新验证：只用两条临时鱼检验“自主巡游是否有生命感”以及鱼是否能感知 Diver 并以曲线方式避让。本轮仍是行为原型，不制作正式鱼素材，不进入 Marine Ecology 或 Fish Visual 阶段。
+完成 Round 4A Surface Ecology 的跟随效果预览：在潜水员移动时，水流尾迹与潜水员来源气泡沿其运动产生并独立消散。此阶段只验证跟随关系与可见性，不进入下一轮。
 
 ## 关键决策
 
-- 5 条闭合 Catmull–Rom 路径方案已否决；不再以 MotionPath、路径进度、固定 waypoint 或 tween 作为正常游动控制器。
-- Prototype 仅在 `index.html?round=4a-fish-prototype`（或 `fishPrototype=1`）启用；正式首页默认仍无生态鱼。原型调试层在该 URL 下始终显示。
-- 首页临时鱼严格为 2 条。每条鱼独立持有 `position`、`velocity`、`heading`、`cruiseSpeed`、`wanderState`。
-- 每帧唯一 steering 来源为：WANDER、软边界、鱼间 separation、Diver avoidance。速度推动位置，平滑速度 heading 决定朝向；无预设路线、同步列车、随机目标点、CSS keyframe 或 180° 瞬时翻转。
-- Diver 避让使用当前位置加速度预测位置：中距离半径约 190px、近距离约 104px；避让力连续增强，转向仍受最大角速度限制，离开后直接由 WANDER 接管，不回到旧路径。
-- 原型 Debug 始终显示 Diver 中/近距离圆环、鱼 velocity 向量、heading 向量、steering 向量和 `A / WANDER`、`B / AVOID` 状态文字。
+- Fish 是非交互的 2D 背景生态；游动恢复自 Git 提交 `b08ecb1` 的散开交互前版本：持续 velocity、慢速 wander、软边界和独立参数。
+- Fish 不读取 Diver、鼠标、距离、预测或交互状态；不启用 scatter、awareness、avoidance、escape steering、状态机或 debug 层。
+- Fish 原型仅通过 `?round=4a-fish-prototype` / `fishPrototype=1` 显示；正式首页默认隐藏。
+- Surface 不再使用鼠标拖尾或自主随机气泡。尾流与气泡只由潜水员实际移动触发，生成后固定在世界坐标并独立淡出。
+- 尾流与气泡由 Diver 实际移动触发，沿历史轨迹生成后留在世界坐标中独立消散；两者互不替代。
+- Wake 采用多枚海水色、细长、断续的柔性扰动单元，跟随 Diver 曲线历史分布；气泡独立从 Diver 后方生成并上浮。
 
 ## 核心约束
 
-- `PROJECT_TRUTH_SPEC.md` 的不可变锁定项全部有效：Planet、Planet 序列/旋转/点击、DAY / SUNSET / BLUE HOUR、TURN THE SKY、标题、Diver 运动与姿态、海面、下潜入口、背景构图、五个栏目和 `dive.html` 均不得修改。
-- Whale 继续隐藏；不恢复、移动、缩放、改透明度、改素材或添加动画。Dive Jellyfish placeholder 保持原样。
-- 不修改 `initSurfaceCreatures()` 的未来复用代码，也不在正式首页调用它；本原型不使用 Three.js、物理引擎、WebGL 或新的动画依赖。
-- Reduced Motion 仍保持两条鱼但降低运动幅度/速度；调试信息保留以便检查行为。
-- 本阶段结束即停止，不开始正式 Fish Art、Marine Ecology、Surface Decision Boundary、Dive Transition 或 Responsive Round；不执行 `git add`、commit 或 push，除非用户明确授权。
+- 不修改 Fish locomotion、Planet、Diver 运动核心、DAY / SUNSET / BLUE HOUR、背景、标题、下潜入口、Dive Map 或五个栏目。
+- 尾流和气泡必须在海水背景之上、潜水员之后：当前层级为 `z-index:4`，潜水员为 `z-index:6`。
+- 尾流从潜水员后方生成；气泡从潜水员后方/下方生成，向上独立漂移并在海面前淡出。
+- `prefers-reduced-motion` 下不生成尾流/来源气泡；Fish 降速，悬浮水粒子动画关闭。
+- Whale 继续隐藏；Dive Map 原有 `.trail` 保留。
+- 禁止 `git add`、commit、push，除非用户另行明确授权。
 
 ## 当前进度
 
-- `index.html` 已将原型 DOM 收敛为两条临时鱼，资源仍复用 `assets/surface-fish-near-curious.png`；默认字段 `display:none`，不影响正式首页。
-- `script.js` 已将原型控制器改为 requestAnimationFrame 驱动的 velocity-steering：两条鱼有不同起点、巡航速度、wander 相位和最大转向速率；Diver 速度参与威胁点预测；无 MotionPath/路径进度。
-- `motion.css` 已更新为两鱼尺寸/透明度及始终可见的行为 Debug 样式；Whale 规则保持 `display:none!important` 与无动画。
-- 首页脚本与样式 cache-bust 更新为 `20260827-round4a-v2`。
-- 尚待执行本轮浏览器验证：默认首页无鱼；原型页恰好两鱼且 Debug 可见；静止巡游、Diver 从不同方向接近、停止追逐后自然续游、两鱼独立反应；控制台无异常。
+- `index.html`：Surface 光标层仅保留 glow/cursor-light；加入水粒子、尾流、来源气泡容器；原型鱼节点仍为 3 条且默认隐藏。
+- `script.js`：Fish 交互层已移除；尾流/气泡生成、世界坐标脱离、水面边界、独立清理和调试级可见度已实现。
+- `motion.css`：尾流/气泡均位于海水背景之上（`z-index:4`、`pointer-events:none`）；尾流为海水色断续水纹，气泡为独立上浮单元。
+- 已用实际浏览器移动测试确认 DOM 会生成尾流与 Diver 气泡；当前正在补做实际截图验收。
+- 已确认正式首页默认不显示临时鱼/动态尾流/动态气泡，Whale 隐藏；Dive Map 的 `.trail` 保留。
+- 当前 cache-bust：脚本 `20260827-wake-follow-v2`；样式 `20260827-wake-follow-v2`。
 
 ## 未解决问题
 
-- 需要在原型 URL 上完成用户要求的长时间无操作和五项人工行为验收；这些只用于判断 steering 参数，不应通过扩大系统范围解决。
-- 临时鱼仍是行为测试素材，正式插画鱼资产、数量和是否回归首页尚未决定。
+- 需要用户先确认截图中的跟随关系、层级、位置和独立运动是否符合预期；美术强度仍可后续单独调整。
+- 正式鱼素材、数量及是否回归首页仍未决定。
 
 ## 下一步行动
 
-1. 运行脚本语法检查与 `git diff --check`。
-2. 用本地首页和 `?round=4a-fish-prototype` 验证默认/原型 DOM、两鱼移动、Debug 圆环/向量、Diver 避让和控制台。
-3. 只在行为验收失败时调整本原型 steering 参数；保持所有锁定系统不变。
-4. 向用户报告本轮实现与测试结果，然后停止等待验收。
+1. 等待用户验收调试截图；不自动进入 Fish Visual、Marine Ecology 或其他新任务。
+2. 仅当用户明确要求时，再单独把尾流/气泡从调试级参数收回最终审美值。
+3. 任何后续修改前，先重新读取 `PROJECT_TRUTH_SPEC.md` 并确认影响范围。
+
+## 当前工作树
+
+本轮相关未提交修改涉及：`CURRENT_CONTEXT.md`、`index.html`、`script.js`、`motion.css`。`PROJECT_TRUTH_SPEC.md`、`styles.css`、`dive.html` 和素材未改动。
