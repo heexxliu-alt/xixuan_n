@@ -54,7 +54,10 @@
 .surface-blue-hour-motes{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden;opacity:0;transition:opacity 1.2s ease}
 .surface-blue-hour-motes i{position:absolute;display:block;width:5px;height:5px;border-radius:50%;background:#e8f1ff;box-shadow:0 0 11px 3px rgba(174,220,255,.62);opacity:0;transform:translate3d(0,0,0);will-change:transform,opacity}
 .surface-hero[data-time="blue-hour"] .surface-blue-hour-motes.is-revealing{opacity:1}
-.surface-water-particles{position:absolute;left:0;right:0;top:50%;bottom:0;z-index:1;overflow:hidden;pointer-events:none}
+.surface-water-particles{position:absolute;left:0;right:0;top:50%;bottom:0;z-index:1;overflow:hidden;pointer-events:none;background:linear-gradient(180deg,rgba(235,255,251,.075) 0%,rgba(196,237,236,.035) 30%,rgba(86,151,172,.06) 66%,rgba(42,99,137,.1) 100%)}
+.surface-water-particles::before,.surface-water-particles::after{content:"";position:absolute;inset:-18% -25%;display:block;border-radius:50%;pointer-events:none;filter:blur(34px);mix-blend-mode:soft-light;will-change:transform,opacity}
+.surface-water-particles::before{opacity:.34;background:radial-gradient(ellipse 58% 44% at 24% 22%,rgba(233,253,247,.42),transparent 72%),radial-gradient(ellipse 70% 54% at 74% 66%,rgba(204,241,237,.24),transparent 76%);animation:surface-diffuse-luminance-a 22s ease-in-out infinite alternate}
+.surface-water-particles::after{opacity:.28;background:radial-gradient(ellipse 68% 48% at 72% 28%,rgba(224,249,245,.34),transparent 74%),radial-gradient(ellipse 56% 58% at 30% 76%,rgba(193,232,231,.22),transparent 78%);animation:surface-diffuse-luminance-b 29s ease-in-out -8s infinite alternate}
 .surface-water-particle{position:absolute;display:block;border-radius:50%;background:rgba(216,247,245,.28);opacity:.12;will-change:transform,opacity;pointer-events:none}
 .surface-wake-field{display:none!important;position:absolute;left:0;right:0;top:50%;bottom:0;z-index:4;overflow:hidden;pointer-events:none}
 .surface-wake-trace{position:absolute;display:block;border-radius:55% 45% 52% 48%;background:repeating-linear-gradient(176deg,transparent 0 6px,rgba(110,220,222,.56) 7px 9px,transparent 10px 15px),linear-gradient(90deg,transparent 0 15%,rgba(61,167,187,.2) 28%,rgba(103,215,217,.38) 45%,rgba(67,177,193,.24) 60%,transparent 86%);filter:blur(var(--wake-blur,.38px));mix-blend-mode:normal;transform-origin:center;will-change:transform,opacity;pointer-events:none;overflow:hidden}
@@ -81,6 +84,8 @@
 @keyframes cloud-drift{0%{transform:translate3d(-64px,-3px,0)}100%{transform:translate3d(72px,6px,0)}}
 @keyframes surface-wave-fill{0%{transform:translateY(-1px) scaleY(.92)}100%{transform:translateY(8px) scaleY(1.1)}}
 @keyframes surface-wave-sheen{0%{transform:translate3d(-8px,-2px,0) scaleY(.96)}100%{transform:translate3d(18px,6px,0) scaleY(1.08)}}
+@keyframes surface-diffuse-luminance-a{0%{transform:translate3d(-3%,-1%,0) scale(1)}34%{transform:translate3d(2%,3%,0) scale(1.035)}71%{transform:translate3d(5%,-2%,0) scale(.985)}100%{transform:translate3d(-1%,2%,0) scale(1.02)}}
+@keyframes surface-diffuse-luminance-b{0%{transform:translate3d(4%,2%,0) scale(1.02)}29%{transform:translate3d(-2%,-3%,0) scale(.98)}63%{transform:translate3d(-5%,1%,0) scale(1.04)}100%{transform:translate3d(1%,-2%,0) scale(1)}}
 @keyframes title-refract{0%{transform:translate(-1px,-20%) skewX(-3.6deg) scaleY(.94)}32%{transform:translate(2px,-19.4%) skewX(-1.2deg) scaleY(.98)}68%{transform:translate(-2px,-19.8%) skewX(-2.8deg) scaleY(.96)}100%{transform:translate(3px,-19%) skewX(-.8deg) scaleY(.99)}}
 @keyframes star-breathe{0%{opacity:.2;transform:scale(.72)}100%{opacity:1;transform:scale(1.2)}}
 @keyframes surface-particle-drift{0%{transform:translate3d(0,0,0);opacity:.08}100%{transform:translate3d(var(--particle-drift-x),var(--particle-drift-y),0);opacity:.16}}
@@ -96,6 +101,6 @@ body.is-transitioning .transition-wave:nth-of-type(3){animation-delay:.48s}
 body.is-transitioning .transition-emoji{opacity:1;animation:transition-emoji-in 1.5s cubic-bezier(.2,.8,.2,1) forwards}
 @keyframes transition-wave-in{0%{transform:translateY(100%) scaleY(1.05)}68%{transform:translateY(-3%) scaleY(1.14)}82%{transform:translateY(1%) scaleY(1.04)}100%{transform:translateY(0) scaleY(1)}}
 @keyframes transition-emoji-in{0%{transform:translate(-50%,-50%) scale(.25) rotate(-10deg)}28%{transform:translate(-50%,-50%) scale(.92) rotate(0)}62%{transform:translate(-50%,-62%) scale(1.02) rotate(3deg)}100%{transform:translate(-50%,-72%) scale(.22) rotate(10deg);opacity:0}}
-@media(prefers-reduced-motion:reduce){.surface-scene-layer,.sky-cloud,.sky-star,.surface-bubble,.surface-water-particle,.surface-wake-trace,.surface-wave-layer,.surface-wave-fill,.surface-wave-sheen,.title-underwater,.jelly-return,.jelly-float,.dive-rays,.transition-wave,.transition-emoji{animation:none!important;transition:none!important}.sky-details::after{transition:none!important}.surface-blue-hour-motes{transition:none!important}.dive-entry{transition:none!important}}
+@media(prefers-reduced-motion:reduce){.surface-scene-layer,.sky-cloud,.sky-star,.surface-bubble,.surface-water-particle,.surface-water-particles::before,.surface-water-particles::after,.surface-wake-trace,.surface-wave-layer,.surface-wave-fill,.surface-wave-sheen,.title-underwater,.jelly-return,.jelly-float,.dive-rays,.transition-wave,.transition-emoji{animation:none!important;transition:none!important}.sky-details::after{transition:none!important}.surface-blue-hour-motes{transition:none!important}.dive-entry{transition:none!important}}
 @media(max-width:980px){.surface-whale-layer{left:42%;top:12%;width:clamp(330px,42vw,500px)}}
 @media(max-width:700px){.surface-whale-layer{left:7%;top:11%;width:min(90vw,420px)}}
