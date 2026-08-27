@@ -392,7 +392,7 @@
       'M0,70 C150,10 276,112 438,34 C622,-12 770,112 940,26 C1118,-18 1262,106 1440,20 L1440,360 L0,360 Z'
     ];
     fills.forEach((fill, index) => {
-      const duration = index ? 4.8 : 3.8;
+      const duration = index ? 8.2 : 6.8;
       if (window.MorphSVGPlugin) {
         gs.to(fill, { morphSVG: { shape: morphTargets[index] }, duration, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: index * -.42 });
       } else {
@@ -927,23 +927,23 @@
       trace.style.top = `${Math.max(0, traceY - box.height * .5)}px`;
       // The path follows the Diver's history, while each water disturbance
       // stays vertically elongated (normal to a horizontal swim direction).
-      trace.style.width = `${12 + ageAmount * 22 + intensity * 3 + Math.random() * 4}px`;
-      trace.style.height = `${34 + ageAmount * 42 + intensity * 6 + Math.random() * 8}px`;
+      trace.style.width = `${18 + ageAmount * 26 + intensity * 4 + Math.random() * 5}px`;
+      trace.style.height = `${58 + ageAmount * 56 + intensity * 8 + Math.random() * 10}px`;
       trace.style.setProperty('--wake-angle', `${angle}deg`);
-      trace.style.setProperty('--wake-blur', `${.35 + ageAmount * 1.25}px`);
-      trace.style.setProperty('--wake-opacity', `${.24 + newestAmount * .26 + intensity * .08}`);
-      trace.style.setProperty('--wake-start-opacity', `${.12 + newestAmount * .16}`);
-      const duration = 2.8 + ageAmount * 1.05 + Math.random() * .35;
+      trace.style.setProperty('--wake-blur', `${.22 + ageAmount * .88}px`);
+      trace.style.setProperty('--wake-opacity', `${.42 + newestAmount * .34 + intensity * .1}`);
+      trace.style.setProperty('--wake-start-opacity', `${.18 + newestAmount * .18}`);
+      const duration = 3.2 + ageAmount * 1.2 + Math.random() * .35;
       field.appendChild(trace);
       if (gs) {
         gs.fromTo(trace, {
-          autoAlpha: .12 + newestAmount * .16,
+          autoAlpha: .18 + newestAmount * .18,
           scale: .78,
           xPercent: -50,
           yPercent: -50,
           rotation: angle
         }, {
-          autoAlpha: .24 + newestAmount * .26 + intensity * .08,
+          autoAlpha: .42 + newestAmount * .34 + intensity * .1,
           scale: 1,
           xPercent: -50,
           yPercent: -50,
