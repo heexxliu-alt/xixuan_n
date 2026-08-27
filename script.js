@@ -28,7 +28,9 @@
       this.layer = root.querySelector('.cursor-layer');
       this.light = this.layer?.querySelector('.cursor-light');
       this.glow = this.layer?.querySelector('.glow');
-      this.motes = [...(this.layer?.querySelectorAll('.trail i') || [])];
+      // Surface uses a world-space Diver Wake instead of an attached cursor
+      // trail. The Dive Map keeps its existing trail behavior unchanged.
+      this.motes = this.isSurface ? [] : [...(this.layer?.querySelectorAll('.trail i') || [])];
       this.box = root.getBoundingClientRect();
       this.bounds = { minX: 0, maxX: this.box.width, minY: 0, maxY: this.box.height, hardMinY: 0, hardMaxY: this.box.height };
       const start = swimmer ? swimmer.getBoundingClientRect() : { left: this.box.width * .5, top: this.box.height * .52, width: 0, height: 0 };
@@ -303,7 +305,7 @@
   }
 
   function initSurfaceEffects(surface) {
-    const bubbleField = surface.querySelector('.surface-bubbles');
+    const particleField = surface.querySelector('.surface-water-particles');
     const skyDetails = surface.querySelector('.sky-details');
     const waveLayer = surface.querySelector('.surface-wave-layer');
     if (skyDetails && !skyDetails.children.length) {
@@ -322,16 +324,18 @@
         skyDetails.appendChild(star);
       }
     }
-    if (bubbleField && !bubbleField.children.length) {
-      for (let i = 0; i < 17; i += 1) {
-        const bubble = document.createElement('i');
-        bubble.className = 'surface-bubble';
-        bubble.style.left = `${5 + Math.random() * 90}%`;
-        bubble.style.width = `${5 + Math.random() * 16}px`;
-        bubble.style.height = bubble.style.width;
-        bubble.style.setProperty('--bubble-drift', `${-18 + Math.random() * 36}px`);
-        bubble.style.setProperty('--bubble-index', i);
-        bubbleField.appendChild(bubble);
+    if (particleField && !particleField.children.length) {
+      for (let i = 0; i < 12; i += 1) {
+        const particle = document.createElement('i');
+        particle.className = 'surface-water-particle';
+        particle.style.left = `${8 + Math.random() * 84}%`;
+        particle.style.top = `${56 + Math.random() * 28}%`;
+        particle.style.width = `${1.2 + Math.random() * 2.2}px`;
+        particle.style.height = particle.style.width;
+        particle.style.opacity = `${.08 + Math.random() * .12}`;
+        particle.dataset.driftX = `${-18 + Math.random() * 36}`;
+        particle.dataset.driftY = `${-12 + Math.random() * 24}`;
+        particleField.appendChild(particle);
       }
     }
     const updateSkyHotspot = (event) => {
@@ -349,6 +353,16 @@
     surface.addEventListener('pointerleave', () => {
       surface.classList.remove('is-sky-hotspot', 'is-planet-hover');
     });
+    const particleNodes = particleField ? [...particleField.querySelectorAll('.surface-water-particle')] : [];
+    if (!gs && !reducedMotion) {
+      particleNodes.forEach((particle, index) => {
+        const driftX = Number(particle.dataset.driftX) || 0;
+        const driftY = Number(particle.dataset.driftY) || 0;
+        particle.style.setProperty('--particle-drift-x', `${driftX}px`);
+        particle.style.setProperty('--particle-drift-y', `${driftY}px`);
+        particle.style.animation = `surface-particle-drift ${8.5 + index * .6}s ease-in-out ${index * -.35}s infinite alternate`;
+      });
+    }
     if (!gs || reducedMotion) return;
     gs.utils.toArray('.sky-cloud', skyDetails).forEach((cloud, index) => {
       gs.to(cloud, { x: index % 2 ? 72 : -64, y: index % 2 ? 6 : -3, duration: (20 + index * 4) / 2, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: index * -.8 });
@@ -356,16 +370,21 @@
     gs.utils.toArray('.sky-star', skyDetails).forEach((star, index) => {
       gs.to(star, { opacity: .08 + Math.random() * .18, scale: .75 + Math.random() * .3, duration: 1.9 + Math.random() * 2.2, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: index * .13 });
     });
-    gs.utils.toArray('.surface-bubble', bubbleField).forEach((bubble, index) => {
-      const duration = 3 + Math.random() * 4;
-      const startScale = .3 + Math.random() * .9;
-      const endScale = .75 + Math.random() * .45;
-      const endOpacity = .35 + Math.random() * .65;
-      const delay = -Math.random() * duration;
-      const rise = gs.timeline({ repeat: -1, delay });
-      rise.fromTo(bubble, { y: '18vh', opacity: 0, scale: startScale }, { y: '-72vh', opacity: endOpacity, scale: endScale, duration, ease: 'sine.inOut' }, 0)
-        .to(bubble, { opacity: 0, duration: .42, ease: 'power1.in' }, Math.max(.2, duration - .42));
-      gs.fromTo(bubble, { x: -15 }, { x: 15, duration: duration * .5, repeat: -1, yoyo: true, delay, ease: 'sine.inOut' });
+    gs.utils.toArray('.surface-water-particle', particleField).forEach((particle, index) => {
+      const driftX = Number(particle.dataset.driftX) || 0;
+      const driftY = Number(particle.dataset.driftY) || 0;
+      const duration = 8.5 + index * .6;
+      const baseOpacity = Number(particle.style.opacity) || .12;
+      gs.to(particle, {
+        x: driftX,
+        y: driftY,
+        opacity: baseOpacity * 1.18,
+        duration,
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut',
+        delay: index * -.35
+      });
     });
     const fills = waveLayer ? [...waveLayer.querySelectorAll('.surface-wave-fill,.surface-wave-sheen')] : [];
     const morphTargets = [
@@ -518,10 +537,12 @@
     };
   }
 
-  // Round 4A is deliberately opt-in. The production homepage keeps its
-  // ecology-free baseline; adding ?round=4a-fish-prototype enables this
-  // temporary motion study without changing any locked surface systems.
-  function initSurfaceFishPrototype(surface, tracker) {
+  // Round 4A remains opt-in. The production homepage keeps its ecology-free
+  // baseline; adding ?round=4a-fish-prototype enables this ambient preview.
+  // This locomotion is restored from the pre-scatter prototype in b08ecb1:
+  // persistent velocity, slow wander and soft boundary steering. Diver input,
+  // awareness, avoidance, scatter and debug state are intentionally absent.
+  function initSurfaceFishPrototype(surface) {
     const params = new URLSearchParams(window.location.search);
     const enabled = params.get('round') === '4a-fish-prototype'
       || params.get('fishPrototype') === '1'
@@ -530,76 +551,37 @@
     const nodes = [...(field?.querySelectorAll('.surface-fish-prototype') || [])];
     if (!enabled || !field || nodes.length !== 3) return { destroy() {} };
 
-    // Debug is intentionally always on for this final behavior-only study.
-    // The production homepage remains ecology-free because this initializer is
-    // still gated behind the explicit prototype query parameter.
-    const debugSvg = field.querySelector('.fish-prototype-debug');
     surface.dataset.fishPrototype = 'true';
-    field.classList.add('is-debug');
-
-    const DIVER_AWARENESS_RADIUS = 220;
-    const DIVER_AVOIDANCE_RADIUS = 112;
     const HABITAT_TOP_RATIO = .59;
     const HABITAT_BOTTOM_RATIO = .86;
+    let box = surface.getBoundingClientRect();
+
     const configs = [
       {
         id: 'A', start: [.2, .66], heading: .06, cruiseSpeed: 17,
         preferredDepth: .64, wanderPhase: .4, wanderFrequency: .00019,
         wanderStrength: .18, turnResponsiveness: .86, maxTurnRate: .42,
-        awarenessRadius: 225, avoidanceRadius: 108, avoidanceStrength: .9,
-        personalSpace: 100, depth: 'upper'
+        depth: 'upper'
       },
       {
         id: 'B', start: [.52, .74], heading: Math.PI - .22, cruiseSpeed: 21,
         preferredDepth: .73, wanderPhase: 2.35, wanderFrequency: .00016,
         wanderStrength: .14, turnResponsiveness: 1.02, maxTurnRate: .36,
-        awarenessRadius: 210, avoidanceRadius: 100, avoidanceStrength: .82,
-        personalSpace: 110, depth: 'mid'
+        depth: 'mid'
       },
       {
         id: 'C', start: [.79, .81], heading: .22, cruiseSpeed: 15,
         preferredDepth: .81, wanderPhase: 4.8, wanderFrequency: .00022,
         wanderStrength: .2, turnResponsiveness: .74, maxTurnRate: .47,
-        awarenessRadius: 240, avoidanceRadius: 120, avoidanceStrength: .98,
-        personalSpace: 116, depth: 'lower'
+        depth: 'lower'
       }
     ];
+
     const angleDelta = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - from));
     const direction = (x, y, fallback = { x: 1, y: 0 }) => {
       const length = Math.hypot(x, y);
       return length > .0001 ? { x: x / length, y: y / length } : fallback;
     };
-    const smoothstep = (value) => value * value * (3 - 2 * value);
-    const lerp = (a, b, t) => a + (b - a) * t;
-    let box = surface.getBoundingClientRect();
-    const renderDebug = () => {
-      if (!debugSvg) return { fishGroups: [], diverAwareness: null, diverAvoidance: null, diverLabel: null, habitatTop: null, habitatBottom: null, depthLines: [] };
-      debugSvg.innerHTML = `
-        <g class="fish-debug-diver-field">
-          <circle class="fish-debug-diver-awareness" cx="0" cy="0" r="0"></circle>
-          <circle class="fish-debug-diver-avoidance" cx="0" cy="0" r="0"></circle>
-          <text class="fish-debug-diver-label" x="0" y="0">DIVER</text>
-        </g>
-        <line class="fish-debug-habitat-top" x1="0" y1="0" x2="100" y2="0"></line>
-        <line class="fish-debug-habitat-bottom" x1="0" y1="0" x2="100" y2="0"></line>
-        ${configs.map((config, index) => `<line class="fish-debug-depth-line fish-debug-depth-${index}" x1="0" y1="0" x2="100" y2="0"></line>`).join('')}
-        ${configs.map((config, index) => `<g data-fish-debug="${index}">
-          <line class="fish-debug-velocity" x1="0" y1="0" x2="0" y2="0"></line>
-          <line class="fish-debug-heading" x1="0" y1="0" x2="0" y2="0"></line>
-          <line class="fish-debug-steering" x1="0" y1="0" x2="0" y2="0"></line>
-          <text class="fish-debug-state" x="0" y="0">${config.id} / CRUISE</text>
-        </g>`).join('')}`;
-      return {
-        fishGroups: configs.map((_, index) => debugSvg.querySelector(`[data-fish-debug="${index}"]`)),
-        diverAwareness: debugSvg.querySelector('.fish-debug-diver-awareness'),
-        diverAvoidance: debugSvg.querySelector('.fish-debug-diver-avoidance'),
-        diverLabel: debugSvg.querySelector('.fish-debug-diver-label'),
-        habitatTop: debugSvg.querySelector('.fish-debug-habitat-top'),
-        habitatBottom: debugSvg.querySelector('.fish-debug-habitat-bottom'),
-        depthLines: configs.map((_, index) => debugSvg.querySelector(`.fish-debug-depth-${index}`))
-      };
-    };
-    const debugParts = renderDebug();
     const initialTime = performance.now();
     const fishes = nodes.map((element, index) => {
       const config = configs[index];
@@ -612,36 +594,22 @@
         heading,
         wanderState: 0,
         wanderPhase: config.wanderPhase,
-        proximity: 0,
-        nearProximity: 0,
-        avoidance: 0,
-        steering: { x: 0, y: 0 },
         poseAngle: 0,
         facing: Math.cos(heading) >= 0 ? 'right' : 'left',
         facingCandidate: Math.cos(heading) >= 0 ? 'right' : 'left',
         facingCandidateSince: initialTime,
-        state: 'CRUISE',
-        stateAt: initialTime,
         lastRendered: { x: 0, y: 0 }
       };
     });
 
     const renderFish = (fish) => {
       const facingScale = fish.facing === 'right' ? 1 : -1;
-      fish.element.style.transform = `translate3d(${fish.position.x}px,${fish.position.y}px,0) translate(-50%,-50%) rotate(${fish.poseAngle}deg) scaleX(${facingScale})`;
+      const visualPitch = fish.poseAngle * (fish.facing === 'right' ? 1 : -1);
+      fish.element.dataset.visualPitch = visualPitch.toFixed(2);
+      fish.element.style.transform = `translate3d(${fish.position.x}px,${fish.position.y}px,0) translate(-50%,-50%) rotate(${visualPitch}deg) scaleX(${facingScale})`;
       fish.lastRendered = { x: fish.position.x, y: fish.position.y };
     };
-    fishes.forEach((fish) => {
-      fish.element.dataset.state = fish.state;
-      renderFish(fish);
-    });
 
-    const setState = (fish, state, now) => {
-      if (fish.state === state) return;
-      fish.state = state;
-      fish.stateAt = now;
-      fish.element.dataset.state = state;
-    };
     const refreshBounds = () => {
       const previousBox = box;
       box = surface.getBoundingClientRect();
@@ -653,44 +621,17 @@
     const onResize = () => refreshBounds();
     window.addEventListener('resize', onResize, { passive: true });
 
+    fishes.forEach(renderFish);
+
+    let rafId = 0;
     const tick = (now = performance.now()) => {
       const deltaSeconds = clamp((now - (tick.lastTime || now)) / 1000, .008, .05);
       tick.lastTime = now;
-      const diver = tracker.getPosition();
-      const diverVelocity = tracker.getVelocity?.() || { x: 0, y: 0, speed: 0 };
       const habitatTop = box.height * HABITAT_TOP_RATIO;
       const habitatBottom = box.height * HABITAT_BOTTOM_RATIO;
       const boundaryBandX = box.width * .16;
       const boundaryBandY = box.height * .09;
-      const projectedDiver = {
-        x: diver.x + clamp(diverVelocity.x, -34, 34) * 16,
-        y: diver.y + clamp(diverVelocity.y, -34, 34) * 16
-      };
-      const diverSpeed = Number.isFinite(diverVelocity.speed) ? diverVelocity.speed : Math.hypot(diverVelocity.x || 0, diverVelocity.y || 0);
-      const predictionBlend = clamp(diverSpeed / 7, 0, .68);
-      const threatPoint = {
-        x: lerp(diver.x, projectedDiver.x, predictionBlend),
-        y: lerp(diver.y, projectedDiver.y, predictionBlend)
-      };
-      const separations = fishes.map((fish, index) => {
-        let x = 0;
-        let y = 0;
-        fishes.forEach((other, otherIndex) => {
-          if (index === otherIndex) return;
-          const dx = fish.position.x - other.position.x;
-          const dy = fish.position.y - other.position.y;
-          const distance = Math.hypot(dx, dy) || 1;
-          const personalSpace = Math.max(fish.config.personalSpace, other.config.personalSpace);
-          if (distance < personalSpace) {
-            const strength = smoothstep(1 - distance / personalSpace);
-            x += (dx / distance) * strength;
-            y += (dy / distance) * strength;
-          }
-        });
-        return { x, y };
-      });
-
-      fishes.forEach((fish, index) => {
+      fishes.forEach((fish) => {
         const forward = { x: Math.cos(fish.heading), y: Math.sin(fish.heading) };
         const lateral = { x: -forward.y, y: forward.x };
         const motionScale = reducedMotion ? .34 : 1;
@@ -701,7 +642,6 @@
           forward.y + lateral.y * fish.wanderState,
           forward
         );
-
         const boundary = {
           x: clamp((box.width * .08 + boundaryBandX - fish.position.x) / boundaryBandX, 0, 1)
             - clamp((fish.position.x - (box.width * .92 - boundaryBandX)) / boundaryBandX, 0, 1),
@@ -710,51 +650,25 @@
         };
         const preferredY = fish.config.preferredDepth * box.height;
         const depthTendency = clamp((preferredY - fish.position.y) / Math.max(1, box.height * .16), -.7, .7);
-
-        const threatDx = fish.position.x - threatPoint.x;
-        const threatDy = fish.position.y - threatPoint.y;
-        const threatDistance = Math.hypot(threatDx, threatDy) || 1;
-        const toFish = direction(fish.position.x - diver.x, fish.position.y - diver.y, { x: -forward.x, y: -forward.y });
-        const approachSpeed = (diverVelocity.x || 0) * toFish.x + (diverVelocity.y || 0) * toFish.y;
-        const approachFactor = clamp(.42 + approachSpeed / 8, .24, 1.12);
-        const awarenessPressure = smoothstep(clamp(1 - threatDistance / fish.config.awarenessRadius, 0, 1)) * approachFactor;
-        const avoidancePressure = smoothstep(clamp(1 - threatDistance / fish.config.avoidanceRadius, 0, 1)) * approachFactor;
-        fish.proximity += (awarenessPressure - fish.proximity) * clamp(deltaSeconds * 3.2, .01, .18);
-        fish.nearProximity += (avoidancePressure - fish.nearProximity) * clamp(deltaSeconds * 4.2, .01, .22);
-        if (fish.state === 'CRUISE' && fish.proximity > .1) setState(fish, 'AWARE', now);
-        if (fish.state === 'AWARE' && (fish.nearProximity > .2 || fish.proximity > .58)) setState(fish, 'AVOID', now);
-        if (fish.state === 'AWARE' && fish.proximity < .045 && now - fish.stateAt > 700) setState(fish, 'CRUISE', now);
-        if (fish.state === 'AVOID' && fish.nearProximity < .08 && fish.proximity < .22 && now - fish.stateAt > 520) setState(fish, 'RECOVER', now);
-        if (fish.state === 'RECOVER' && fish.proximity < .06 && now - fish.stateAt > 1050) setState(fish, 'CRUISE', now);
-        if (fish.state === 'RECOVER' && fish.proximity > .2) setState(fish, 'AVOID', now);
-        const stateWeight = fish.state === 'AVOID' ? 1 : fish.state === 'AWARE' ? .42 : fish.state === 'RECOVER' ? .2 : 0;
-        const avoidanceForce = clamp((fish.proximity * .48 + fish.nearProximity * .82) * stateWeight * fish.config.avoidanceStrength, 0, 1.12);
-        fish.avoidance = avoidanceForce;
-        const away = direction(threatDx, threatDy, { x: -forward.x, y: -forward.y });
-        const side = { x: -away.y, y: away.x };
-        const sideSign = Math.sign(forward.x * away.y - forward.y * away.x) || (fish.config.id === 'B' ? -1 : 1);
-        const escape = direction(away.x * .82 + side.x * sideSign * .34, away.y * .82 + side.y * sideSign * .34, away);
-        const separation = direction(separations[index].x, separations[index].y, { x: 0, y: 0 });
         const desiredDirection = direction(
-          wander.x + boundary.x * .82 + separation.x * .5 + escape.x * avoidanceForce,
-          wander.y + boundary.y * .82 + separation.y * .5 + depthTendency * .4 + escape.y * avoidanceForce,
+          wander.x + boundary.x * .82,
+          wander.y + boundary.y * .82 + depthTendency * .4,
           forward
         );
-        fish.steering = {
-          x: desiredDirection.x - forward.x,
-          y: desiredDirection.y - forward.y
-        };
         const desiredHeading = Math.atan2(desiredDirection.y, desiredDirection.x);
         const maxHeadingDelta = fish.config.maxTurnRate * fish.config.turnResponsiveness * deltaSeconds;
         fish.heading += clamp(angleDelta(fish.heading, desiredHeading), -maxHeadingDelta, maxHeadingDelta);
-        const targetSpeed = fish.config.cruiseSpeed * (reducedMotion ? .42 : 1) * (1 + fish.nearProximity * .045);
+        const targetSpeed = fish.config.cruiseSpeed * motionScale;
         const velocityEase = clamp(deltaSeconds * (2.2 + fish.config.turnResponsiveness), .018, .14);
         fish.velocity.x += (Math.cos(fish.heading) * targetSpeed - fish.velocity.x) * velocityEase;
         fish.velocity.y += (Math.sin(fish.heading) * targetSpeed - fish.velocity.y) * velocityEase;
         fish.position.x += fish.velocity.x * deltaSeconds;
         fish.position.y += fish.velocity.y * deltaSeconds;
-        fish.position.x = clamp(fish.position.x, box.width * .035, box.width * .965);
-        fish.position.y = clamp(fish.position.y, box.height * .52, box.height * .93);
+        // Allow authored velocity to carry a fish briefly beyond the frame;
+        // the soft boundary turns it back for a natural entry/exit rather than
+        // pinning it to a visible rectangle.
+        fish.position.x = clamp(fish.position.x, -box.width * .12, box.width * 1.12);
+        fish.position.y = clamp(fish.position.y, habitatTop, habitatBottom);
         const horizontalVelocity = fish.velocity.x;
         const velocitySign = horizontalVelocity > .55 ? 'right' : horizontalVelocity < -.55 ? 'left' : fish.facing;
         if (velocitySign !== fish.facingCandidate) {
@@ -764,97 +678,30 @@
           fish.facing = velocitySign;
         }
         const speed = Math.hypot(fish.velocity.x, fish.velocity.y) || 1;
-        const pitchLimit = fish.state === 'AVOID' ? 8 : 4.5;
-        const targetPitch = clamp((fish.velocity.y / speed) * pitchLimit, -pitchLimit, pitchLimit);
-        const pitchEase = clamp(deltaSeconds * (fish.state === 'AVOID' ? 2.1 : 1.35), .012, .1);
+        const verticalRatio = fish.velocity.y / speed;
+        const verticalDeadZone = .08;
+        const compressedVerticalRatio = Math.abs(verticalRatio) <= verticalDeadZone
+          ? 0
+          : Math.sign(verticalRatio) * clamp((Math.abs(verticalRatio) - verticalDeadZone) / (1 - verticalDeadZone), 0, 1);
+        const targetPitch = clamp(compressedVerticalRatio * 4.5, -4.5, 4.5);
+        const pitchEase = clamp(deltaSeconds * 1.35, .012, .1);
         fish.poseAngle += (targetPitch - fish.poseAngle) * pitchEase;
         renderFish(fish);
-
-        const group = debugParts.fishGroups[index];
-        if (group) {
-          const x = fish.position.x / Math.max(1, box.width) * 100;
-          const y = fish.position.y / Math.max(1, box.height) * 100;
-          const velocityScale = 1.7;
-          const headingScale = 7;
-          const steeringScale = 12;
-          const headingX = x + Math.cos(fish.heading) * headingScale;
-          const headingY = y + Math.sin(fish.heading) * headingScale;
-          const velocityX = x + fish.velocity.x / Math.max(1, box.width) * 100 * velocityScale;
-          const velocityY = y + fish.velocity.y / Math.max(1, box.height) * 100 * velocityScale;
-          const steeringX = x + fish.steering.x * steeringScale;
-          const steeringY = y + fish.steering.y * steeringScale;
-          const headingLine = group.querySelector('.fish-debug-heading');
-          const velocityLine = group.querySelector('.fish-debug-velocity');
-          const steeringLine = group.querySelector('.fish-debug-steering');
-          [headingLine, velocityLine, steeringLine].forEach((line) => {
-            line?.setAttribute('x1', String(x));
-            line?.setAttribute('y1', String(y));
-          });
-          headingLine?.setAttribute('x2', String(headingX));
-          headingLine?.setAttribute('y2', String(headingY));
-          velocityLine?.setAttribute('x2', String(velocityX));
-          velocityLine?.setAttribute('y2', String(velocityY));
-          steeringLine?.setAttribute('x2', String(steeringX));
-          steeringLine?.setAttribute('y2', String(steeringY));
-          const label = group.querySelector('.fish-debug-state');
-          label?.setAttribute('x', String(x + 1.2));
-          label?.setAttribute('y', String(y - 2.5));
-          if (label) label.textContent = `${fish.config.id} / ${fish.state}`;
-          group.dataset.state = fish.state;
-        }
-      });
-      const diverX = diver.x / Math.max(1, box.width) * 100;
-      const diverY = diver.y / Math.max(1, box.height) * 100;
-      const awarenessRadiusX = DIVER_AWARENESS_RADIUS / Math.max(1, box.width) * 100;
-      const awarenessRadiusY = DIVER_AWARENESS_RADIUS / Math.max(1, box.height) * 100;
-      const avoidanceRadiusX = DIVER_AVOIDANCE_RADIUS / Math.max(1, box.width) * 100;
-      const avoidanceRadiusY = DIVER_AVOIDANCE_RADIUS / Math.max(1, box.height) * 100;
-      debugParts.diverAwareness?.setAttribute('cx', String(diverX));
-      debugParts.diverAwareness?.setAttribute('cy', String(diverY));
-      debugParts.diverAwareness?.setAttribute('r', String((awarenessRadiusX + awarenessRadiusY) / 2));
-      debugParts.diverAvoidance?.setAttribute('cx', String(diverX));
-      debugParts.diverAvoidance?.setAttribute('cy', String(diverY));
-      debugParts.diverAvoidance?.setAttribute('r', String((avoidanceRadiusX + avoidanceRadiusY) / 2));
-      debugParts.diverLabel?.setAttribute('x', String(diverX + 1));
-      debugParts.diverLabel?.setAttribute('y', String(diverY - (awarenessRadiusY + awarenessRadiusX) / 2 - 1.8));
-      debugParts.habitatTop?.setAttribute('x1', '0');
-      debugParts.habitatTop?.setAttribute('x2', '100');
-      debugParts.habitatTop?.setAttribute('y1', String(HABITAT_TOP_RATIO * 100));
-      debugParts.habitatTop?.setAttribute('y2', String(HABITAT_TOP_RATIO * 100));
-      debugParts.habitatBottom?.setAttribute('x1', '0');
-      debugParts.habitatBottom?.setAttribute('x2', '100');
-      debugParts.habitatBottom?.setAttribute('y1', String(HABITAT_BOTTOM_RATIO * 100));
-      debugParts.habitatBottom?.setAttribute('y2', String(HABITAT_BOTTOM_RATIO * 100));
-      debugParts.depthLines.forEach((line, index) => {
-        const y = configs[index].preferredDepth * 100;
-        line?.setAttribute('y1', String(y));
-        line?.setAttribute('y2', String(y));
       });
     };
-    let rafId = 0;
     const loop = (now) => { tick(now); rafId = window.requestAnimationFrame(loop); };
     rafId = window.requestAnimationFrame(loop);
-    window.__surfaceFishPrototypeDebug = {
-      enabled: true,
-      count: fishes.length,
-      motionPath: false,
-      controller: 'velocity-steering',
-      debug: true,
-      diverAwarenessRadius: DIVER_AWARENESS_RADIUS,
-      diverAvoidanceRadius: DIVER_AVOIDANCE_RADIUS,
-      habitatTop: HABITAT_TOP_RATIO,
-      habitatBottom: HABITAT_BOTTOM_RATIO,
-      get states() { return fishes.map((fish) => fish.state); },
-      get fish() { return fishes.map((fish) => ({ id: fish.config.id, state: fish.state, x: fish.position.x, y: fish.position.y, heading: fish.heading, poseAngle: fish.poseAngle, facing: fish.facing, proximity: fish.proximity, nearProximity: fish.nearProximity, velocity: { ...fish.velocity } })); }
-    };
+
     return {
       destroy() {
         if (rafId) window.cancelAnimationFrame(rafId);
         window.removeEventListener('resize', onResize);
-        delete window.__surfaceFishPrototypeDebug;
         delete surface.dataset.fishPrototype;
-        field.classList.remove('is-debug');
-        nodes.forEach((node) => { node.hidden = false; node.style.transform = ''; delete node.dataset.state; });
+        nodes.forEach((node) => {
+          node.hidden = false;
+          node.style.transform = '';
+          delete node.dataset.visualPitch;
+        });
       }
     };
   }
@@ -1031,33 +878,163 @@
     };
   }
 
-  function spawnSurfaceSpeedBubble(surface, tracker) {
-    if (reducedMotion || !gs) return;
+  function spawnSurfaceWake(surface, tracker) {
+    if (reducedMotion) return;
+    const field = surface.querySelector('.surface-wake-field');
+    if (!field) return;
+    const box = surface.getBoundingClientRect();
+    const position = tracker.getPosition();
+    const velocity = tracker.getVelocity();
+    const speed = Number.isFinite(velocity.speed) ? velocity.speed : Math.hypot(velocity.x || 0, velocity.y || 0);
+    if (speed < .1) return;
+    const history = Array.isArray(tracker.history) && tracker.history.length
+      ? tracker.history
+      : [{ ...position }];
+    // history[0] is the Diver's current position. Sample older points and
+    // render them oldest -> newest so the wake follows curves instead of
+    // leaving isolated rings at unrelated positions.
+    const points = [];
+    for (let index = Math.min(history.length - 1, 32); index >= 3; index -= 3) {
+      const point = history[index];
+      const previous = points[points.length - 1];
+      if (!previous || Math.hypot(point.x - previous.x, point.y - previous.y) > 1.5) points.push({ ...point, historyIndex: index });
+    }
+    if (!points.length) return;
+    const intensity = clamp((speed - .1) / 4.8, 0, 1);
+    points.forEach((point, pointIndex) => {
+      const newer = history[Math.max(0, point.historyIndex - 2)] || point;
+      const older = history[Math.min(history.length - 1, point.historyIndex + 2)] || point;
+      const tangentX = newer.x - older.x;
+      const tangentY = newer.y - older.y;
+      const motionX = tangentX || velocity.x;
+      const motionY = tangentY || velocity.y;
+      const tangentLength = Math.hypot(motionX, motionY) || speed;
+      const normalX = -(motionY / tangentLength);
+      const normalY = motionX / tangentLength;
+      const newestAmount = points.length > 1 ? pointIndex / (points.length - 1) : 1;
+      const ageAmount = 1 - newestAmount;
+      const trace = document.createElement('i');
+      trace.className = 'surface-wake-trace';
+      // Spread older samples farther across the normal of the path. This
+      // creates a loose disturbance field instead of a single tail nozzle.
+      const crossOffset = (Math.random() - .5) * (3 + ageAmount * 14);
+      const traceX = point.x + normalX * crossOffset;
+      const traceY = point.y + normalY * crossOffset;
+      const angle = Math.atan2(motionY, motionX) * 180 / Math.PI + 90;
+      trace.style.left = `${clamp(traceX, 12, box.width - 12)}px`;
+      // The wake field starts at the waterline, so convert scene-space Y once
+      // at spawn. The trace then remains detached in world space.
+      trace.style.top = `${Math.max(0, traceY - box.height * .5)}px`;
+      // The path follows the Diver's history, while each water disturbance
+      // stays vertically elongated (normal to a horizontal swim direction).
+      trace.style.width = `${12 + ageAmount * 22 + intensity * 3 + Math.random() * 4}px`;
+      trace.style.height = `${34 + ageAmount * 42 + intensity * 6 + Math.random() * 8}px`;
+      trace.style.setProperty('--wake-angle', `${angle}deg`);
+      trace.style.setProperty('--wake-blur', `${.35 + ageAmount * 1.25}px`);
+      trace.style.setProperty('--wake-opacity', `${.24 + newestAmount * .26 + intensity * .08}`);
+      trace.style.setProperty('--wake-start-opacity', `${.12 + newestAmount * .16}`);
+      const duration = 2.8 + ageAmount * 1.05 + Math.random() * .35;
+      field.appendChild(trace);
+      if (gs) {
+        gs.fromTo(trace, {
+          autoAlpha: .12 + newestAmount * .16,
+          scale: .78,
+          xPercent: -50,
+          yPercent: -50,
+          rotation: angle
+        }, {
+          autoAlpha: .24 + newestAmount * .26 + intensity * .08,
+          scale: 1,
+          xPercent: -50,
+          yPercent: -50,
+          duration: .12,
+          ease: 'sine.out'
+        });
+        gs.to(trace, {
+          autoAlpha: 0,
+          scale: 1.14,
+          xPercent: -50,
+          yPercent: -50,
+          duration,
+          delay: .12,
+          ease: 'sine.out',
+          onComplete: () => trace.remove()
+        });
+      } else {
+        trace.style.setProperty('--wake-duration', `${duration}s`);
+        trace.style.animationDuration = `${duration}s`;
+        trace.classList.add('is-active');
+        window.setTimeout(() => trace.remove(), duration * 1000 + 80);
+      }
+    });
+    const traces = field.querySelectorAll('.surface-wake-trace');
+    if (traces.length > 64) [...traces].slice(0, traces.length - 64).forEach((trace) => trace.remove());
+  }
+
+  function spawnSurfaceDiverBubble(surface, tracker) {
+    if (reducedMotion) return;
     const field = surface.querySelector('.surface-bubbles');
     if (!field) return;
     const box = surface.getBoundingClientRect();
     const position = tracker.getPosition();
     const velocity = tracker.getVelocity();
+    const speed = Number.isFinite(velocity.speed) ? velocity.speed : Math.hypot(velocity.x || 0, velocity.y || 0);
+    if (speed < .14) return;
+    const length = Math.max(.001, speed);
+    const dirX = (velocity.x || 0) / length;
+    const dirY = (velocity.y || 0) / length;
+    const spawnX = clamp(position.x - dirX * (16 + Math.random() * 8), 16, box.width - 16);
+    const spawnY = clamp(position.y - dirY * (12 + Math.random() * 8), box.height * .55, box.height * .82);
+    const localTop = Math.max(18, spawnY - box.height * .5);
+    const riseDistance = Math.min(112, Math.max(8, localTop - 14));
+    const intensity = clamp((speed - .32) / 4.5, 0, 1);
+    // Keep the bubbles sparse, but large/solid enough to read against the
+    // pale water at normal desktop preview scale.
+    const size = 14 + Math.random() * (8 + intensity * 8);
     const bubble = document.createElement('i');
-    const size = 4 + Math.random() * 7;
-    bubble.className = 'surface-bubble surface-speed-bubble';
-    bubble.style.left = `${position.x}px`;
-    bubble.style.top = `${Math.max(0, position.y - box.height * .5)}px`;
+    bubble.className = 'surface-bubble surface-diver-bubble';
+    bubble.style.left = `${spawnX}px`;
+    bubble.style.top = `${localTop}px`;
     bubble.style.width = `${size}px`;
     bubble.style.height = `${size}px`;
     field.appendChild(bubble);
-    const oppositeX = clamp(-velocity.x * 8 + (Math.random() - .5) * 16, -42, 42);
-    const oppositeY = clamp(-velocity.y * 4 - 18 - Math.random() * 24, -80, -12);
-    gs.fromTo(bubble, { autoAlpha: .65, scale: .45, x: 0, y: 0 }, {
-      autoAlpha: 0, scale: .92 + Math.random() * .45, x: oppositeX, y: oppositeY,
-      duration: .9 + Math.random() * .55, ease: 'sine.out', onComplete: () => bubble.remove()
-    });
+    const sideDrift = (Math.random() - .5) * (18 + intensity * 20);
+    const driftX = sideDrift - dirX * 8;
+    const driftY = -riseDistance;
+    const duration = 2.6 + Math.random() * .7 + intensity * .35;
+    const endScale = .88 + Math.random() * .3;
+    if (gs) {
+      gs.fromTo(bubble, {
+        autoAlpha: .42,
+        scale: .64,
+        xPercent: -50,
+        yPercent: -50
+      }, {
+        autoAlpha: .9 + intensity * .08,
+        scale: endScale,
+        xPercent: -50,
+        yPercent: -50,
+        x: driftX,
+        y: driftY,
+        duration,
+        ease: 'sine.out',
+        onComplete: () => bubble.remove()
+      });
+    } else {
+      bubble.style.setProperty('--bubble-dx', `${driftX}px`);
+      bubble.style.setProperty('--bubble-dy', `${driftY}px`);
+      bubble.style.setProperty('--bubble-end-scale', endScale.toFixed(2));
+      bubble.style.animationDuration = `${duration}s`;
+      bubble.classList.add('is-active');
+      window.setTimeout(() => bubble.remove(), duration * 1000 + 80);
+    }
   }
 
   function initSurfaceIdleSystem(surface, tracker, timeSystem) {
     let stillFor = 0;
     let calm = false;
-    let lastBubble = 0;
+    let nextWakeAt = 0;
+    let nextBubbleAt = 0;
     let hiddenEventShown = false;
     const motes = [...(surface.querySelectorAll('.surface-blue-hour-motes i') || [])];
     const moteField = surface.querySelector('.surface-blue-hour-motes');
@@ -1086,9 +1063,19 @@
         surface.classList.toggle('is-calm', calm);
         tracker.setCalm(calm);
       }
-      if (velocity.speed > 1.9 && performance.now() - lastBubble > 220) {
-        lastBubble = performance.now();
-        spawnSurfaceSpeedBubble(surface, tracker);
+      const now = performance.now();
+      if (velocity.speed > .1) {
+        if (now >= nextWakeAt) {
+          spawnSurfaceWake(surface, tracker);
+          nextWakeAt = now + clamp(170 - velocity.speed * 12, 110, 190);
+        }
+        if (velocity.speed > .14 && now >= nextBubbleAt) {
+          spawnSurfaceDiverBubble(surface, tracker);
+          nextBubbleAt = now + clamp(180 - velocity.speed * 10, 120, 210);
+        }
+      } else {
+        nextWakeAt = now + 260;
+        nextBubbleAt = now + 420;
       }
       const blueHourCalm = timeSystem.getState() === 'blue-hour' && calm && stillFor >= 4.6;
       if (blueHourCalm && !hiddenEventShown) {
@@ -1348,7 +1335,7 @@
     const surfaceTracker = new DiverPointerTracker(surface, surface.querySelector('.home-diver'));
     const surfaceTime = initSurfaceTimeSystem(surface);
     initSurfacePlanetSequence(surface);
-    initSurfaceFishPrototype(surface, surfaceTracker, surfaceTime);
+    initSurfaceFishPrototype(surface);
     initSurfaceIdleSystem(surface, surfaceTracker, surfaceTime);
     const entry = surface.querySelector('.dive-entry');
     entry?.addEventListener('click', (event) => { event.preventDefault(); playJellyClick(entry, () => playDiveTransition(entry)); });
