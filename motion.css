@@ -4,6 +4,7 @@
 .surface-scene-layer{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:center;pointer-events:none;transition:filter 1.9s ease,opacity 1.9s ease}
 .surface-planet-layer{inset:auto;left:13.3%;top:1.6%;width:16.7%;height:auto;aspect-ratio:1 / 1;object-fit:contain;z-index:0}
 .surface-planet-frame{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.surface-jellyfish-layer{z-index:0}
 .surface-whale-layer{display:none!important;inset:auto;left:56%;top:12%;width:clamp(390px,36vw,600px);height:auto;aspect-ratio:1575 / 685;object-fit:contain;z-index:0;pointer-events:none;opacity:.88;animation:none!important}
 .surface-time-lighting{position:absolute;inset:0;z-index:1;overflow:hidden;pointer-events:none}
 .surface-time-lighting>i{position:absolute;inset:0;display:block;pointer-events:none;opacity:0;transition:opacity 2s cubic-bezier(.2,.75,.2,1);will-change:opacity}
@@ -30,13 +31,17 @@
 .dive-world{background:#aab9dc}
 .hero-diver-art{width:clamp(150px,18vw,250px);height:auto;left:31%;top:44%;filter:drop-shadow(0 8px 7px rgba(65,77,130,.2))}
 .swimmer-art{width:clamp(92px,10vw,152px);height:auto;object-fit:contain;filter:drop-shadow(0 8px 6px rgba(91,75,140,.18))}
-.surface-static-line-mask{position:absolute;left:0;right:0;top:49%;height:13.5%;z-index:1;pointer-events:none;background:repeating-linear-gradient(173deg,transparent 0 24px,rgba(211,248,244,.08) 25px 26px,transparent 27px 42px),linear-gradient(180deg,rgba(181,231,236,0) 0%,rgba(181,231,236,.2) 22%,rgba(158,220,230,.3) 46%,rgba(137,207,221,.14) 76%,rgba(137,207,221,0) 100%);-webkit-mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.56) 5%,#000 12%,#000 88%,rgba(0,0,0,.56) 95%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.56) 5%,#000 12%,#000 88%,rgba(0,0,0,.56) 95%,transparent 100%);filter:blur(1.15px);opacity:.54}
-.surface-static-line-mask::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(108deg,transparent 0 13%,rgba(229,252,244,.14) 13.2% 13.8%,transparent 14% 31%,rgba(200,246,242,.1) 31.2% 31.8%,transparent 32% 51%,rgba(255,239,210,.12) 51.2% 51.8%,transparent 52% 73%,rgba(204,246,242,.11) 73.2% 73.8%,transparent 74% 100%);opacity:.5;filter:blur(.5px);-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 10%,#000 90%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0%,#000 10%,#000 90%,transparent 100%)}
-.surface-static-line-mask::after{content:"";position:absolute;left:0;right:0;top:25%;bottom:-8%;pointer-events:none;background:repeating-linear-gradient(103deg,rgba(122,203,215,.06) 0 1px,transparent 1px 34px),repeating-linear-gradient(77deg,transparent 0 28px,rgba(185,235,235,.06) 29px 30px,transparent 31px 56px);opacity:.24;filter:blur(.75px);mix-blend-mode:screen}
-.surface-wave-layer{position:absolute;left:-2%;right:-2%;top:48%;width:104%;height:12.5%;z-index:2;pointer-events:none;overflow:visible;filter:url(#surface-wave-distort);mix-blend-mode:normal;opacity:.62}
-.surface-wave-fill{fill:url(#surface-wave-water);opacity:.52;transform-origin:50% 0%}
-.surface-wave-sheen{fill:rgba(247,255,255,.18);opacity:.28;transform-origin:50% 0%}
+.surface-static-line-mask{position:absolute;left:0;right:0;top:48.5%;height:16%;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(181,231,236,0) 0%,rgba(181,231,236,.5) 22%,rgba(158,220,230,.74) 48%,rgba(137,207,221,.38) 78%,rgba(137,207,221,0) 100%);-webkit-mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.56) 5%,#000 12%,#000 88%,rgba(0,0,0,.56) 95%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.56) 5%,#000 12%,#000 88%,rgba(0,0,0,.56) 95%,transparent 100%);filter:blur(1.6px);opacity:.9}
+.surface-wave-layer{position:absolute;left:-2%;right:-2%;top:47.5%;width:104%;height:17%;z-index:2;pointer-events:none;overflow:visible;filter:url(#surface-wave-distort);mix-blend-mode:normal;opacity:.96}
+.surface-wave-fill{fill:url(#surface-wave-water);transform-origin:50% 0%}
+.surface-wave-sheen{fill:rgba(247,255,255,.38);opacity:.72;transform-origin:50% 0%}
+.surface-hero[data-time="day"] .surface-sea-layer{opacity:.86;-webkit-mask-image:linear-gradient(180deg,transparent 0 47%,rgba(0,0,0,.54) 49%,#000 56%,#000 100%);mask-image:linear-gradient(180deg,transparent 0 47%,rgba(0,0,0,.54) 49%,#000 56%,#000 100%);animation:surface-sea-drift 14s ease-in-out infinite alternate}
+.surface-hero[data-time="day"] .surface-wave-fill{animation:surface-wave-fill 6.8s ease-in-out infinite alternate}
+.surface-hero[data-time="day"] .surface-wave-sheen{animation:surface-wave-sheen 8.2s ease-in-out infinite alternate}
 .title-underwater{animation:title-refract 4.8s ease-in-out infinite alternate}
+.surface-hero .home-copy{z-index:4}
+.surface-hero .title-surface{clip-path:none}
+.surface-hero .title-underwater{clip-path:inset(63% 0 12% 0);-webkit-mask:linear-gradient(180deg,transparent 0 60%,rgba(0,0,0,.62) 64%,rgba(0,0,0,.42) 72%,rgba(0,0,0,.1) 82%,transparent 90%);mask:linear-gradient(180deg,transparent 0 60%,rgba(0,0,0,.62) 64%,rgba(0,0,0,.42) 72%,rgba(0,0,0,.1) 82%,transparent 90%)}
 .sky-details{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:visible}
 .sky-details::after{content:"";position:absolute;left:var(--sky-hover-x,50%);top:var(--sky-hover-y,18%);width:clamp(100px,14vw,220px);height:clamp(100px,14vw,220px);border-radius:50%;background:radial-gradient(circle,rgba(255,248,211,.3),rgba(201,236,255,.14) 34%,transparent 72%);filter:blur(8px);opacity:0;transform:translate(-50%,-50%) scale(.72);transition:opacity .6s ease,transform .8s ease;mix-blend-mode:screen}
 .surface-hero.is-sky-hotspot .sky-details::after{opacity:.72;transform:translate(-50%,-50%) scale(1)}
@@ -51,7 +56,7 @@
 .surface-hero[data-time="blue-hour"] .surface-blue-hour-motes.is-revealing{opacity:1}
 .surface-water-particles{position:absolute;left:0;right:0;top:50%;bottom:0;z-index:1;overflow:hidden;pointer-events:none}
 .surface-water-particle{position:absolute;display:block;border-radius:50%;background:rgba(216,247,245,.28);opacity:.12;will-change:transform,opacity;pointer-events:none}
-.surface-wake-field{position:absolute;left:0;right:0;top:50%;bottom:0;z-index:4;overflow:hidden;pointer-events:none}
+.surface-wake-field{display:none!important;position:absolute;left:0;right:0;top:50%;bottom:0;z-index:4;overflow:hidden;pointer-events:none}
 .surface-wake-trace{position:absolute;display:block;border-radius:55% 45% 52% 48%;background:repeating-linear-gradient(176deg,transparent 0 6px,rgba(110,220,222,.56) 7px 9px,transparent 10px 15px),linear-gradient(90deg,transparent 0 15%,rgba(61,167,187,.2) 28%,rgba(103,215,217,.38) 45%,rgba(67,177,193,.24) 60%,transparent 86%);filter:blur(var(--wake-blur,.38px));mix-blend-mode:normal;transform-origin:center;will-change:transform,opacity;pointer-events:none;overflow:hidden}
 .surface-wake-trace.is-active{animation:surface-wake-trace-fade var(--wake-duration,1.35s) ease-out forwards}
 .surface-wake-trace::before{content:"";position:absolute;inset:5% 34% 5% 28%;border-radius:48%;background:repeating-linear-gradient(174deg,rgba(144,236,231,.7) 0 1.5px,transparent 2.5px 9px,rgba(86,201,208,.3) 10px 11.5px,transparent 12.5px 19px);filter:blur(.35px);opacity:.82;transform:skewX(-7deg)}

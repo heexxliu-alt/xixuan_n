@@ -1065,10 +1065,7 @@
       }
       const now = performance.now();
       if (velocity.speed > .1) {
-        if (now >= nextWakeAt) {
-          spawnSurfaceWake(surface, tracker);
-          nextWakeAt = now + clamp(170 - velocity.speed * 12, 110, 190);
-        }
+        nextWakeAt = now + 260;
         if (velocity.speed > .14 && now >= nextBubbleAt) {
           spawnSurfaceDiverBubble(surface, tracker);
           nextBubbleAt = now + clamp(180 - velocity.speed * 10, 120, 210);
@@ -1099,7 +1096,7 @@
     layer.dataset.playing = 'true';
     const waves = [...layer.querySelectorAll('.transition-wave')];
     const emoji = layer.querySelector('.transition-emoji');
-    const ui = surface.querySelectorAll('.site-nav,.home-copy,.caption,.dive-entry');
+    const ui = surface.querySelectorAll('.site-nav,.home-copy,.caption,.dive-entry,.dive-trigger');
     if (!gs) {
       document.body.classList.add('is-transitioning');
       layer.style.display = 'block';
@@ -1337,8 +1334,59 @@
     initSurfacePlanetSequence(surface);
     initSurfaceFishPrototype(surface);
     initSurfaceIdleSystem(surface, surfaceTracker, surfaceTime);
-    const entry = surface.querySelector('.dive-entry');
-    entry?.addEventListener('click', (event) => { event.preventDefault(); playJellyClick(entry, () => playDiveTransition(entry)); });
+    const ctaRegion = surface.querySelector('.dive-cta-region');
+    const entry = ctaRegion?.querySelector('.dive-trigger');
+    if (ctaRegion && entry) {
+      const setDiveCtaHover = (active) => surface.classList.toggle('is-dive-cta-hover', active);
+      const resetDiveCtaParallax = () => {
+        entry.style.setProperty('--cta-parallax-x', '0px');
+        entry.style.setProperty('--cta-parallax-y', '0px');
+      };
+      const spawnDiveClickRipple = (event) => {
+        const rect = ctaRegion.getBoundingClientRect();
+        const x = Number.isFinite(event?.clientX) && event.clientX ? event.clientX - rect.left : rect.width / 2;
+        const y = Number.isFinite(event?.clientY) && event.clientY ? event.clientY - rect.top : rect.height / 2;
+        const ripple = document.createElement('span');
+        ripple.className = 'dive-click-ripple';
+        ripple.setAttribute('aria-hidden', 'true');
+        ripple.style.setProperty('--ripple-x', `${clamp(x, 8, rect.width - 8)}px`);
+        ripple.style.setProperty('--ripple-y', `${clamp(y, 8, rect.height - 8)}px`);
+        ripple.innerHTML = '<i></i><i></i>';
+        ctaRegion.appendChild(ripple);
+        window.setTimeout(() => ripple.remove(), 1200);
+      };
+      ctaRegion.addEventListener('pointerenter', () => setDiveCtaHover(true));
+      ctaRegion.addEventListener('pointerleave', () => setDiveCtaHover(false));
+      ctaRegion.addEventListener('mouseenter', () => setDiveCtaHover(true));
+      ctaRegion.addEventListener('mouseleave', () => { setDiveCtaHover(false); resetDiveCtaParallax(); });
+      ctaRegion.addEventListener('pointermove', (event) => {
+        const rect = ctaRegion.getBoundingClientRect();
+        const nx = clamp((event.clientX - (rect.left + rect.width / 2)) / (rect.width / 2), -1, 1);
+        const ny = clamp((event.clientY - (rect.top + rect.height / 2)) / (rect.height / 2), -1, 1);
+        entry.style.setProperty('--cta-parallax-x', `${(-nx * 3.5).toFixed(2)}px`);
+        entry.style.setProperty('--cta-parallax-y', `${(-ny * 3.5).toFixed(2)}px`);
+      }, { passive: true });
+      ctaRegion.addEventListener('mousemove', (event) => {
+        const rect = ctaRegion.getBoundingClientRect();
+        const nx = clamp((event.clientX - (rect.left + rect.width / 2)) / (rect.width / 2), -1, 1);
+        const ny = clamp((event.clientY - (rect.top + rect.height / 2)) / (rect.height / 2), -1, 1);
+        entry.style.setProperty('--cta-parallax-x', `${(-nx * 3.5).toFixed(2)}px`);
+        entry.style.setProperty('--cta-parallax-y', `${(-ny * 3.5).toFixed(2)}px`);
+      }, { passive: true });
+      ctaRegion.addEventListener('focusin', () => setDiveCtaHover(true));
+      ctaRegion.addEventListener('focusout', () => { setDiveCtaHover(false); resetDiveCtaParallax(); });
+      entry.addEventListener('click', (event) => {
+        event.preventDefault();
+        spawnDiveClickRipple(event);
+        window.setTimeout(() => playDiveTransition(entry), 300);
+      });
+      ctaRegion.addEventListener('click', (event) => {
+        if (event.target.closest?.('.dive-trigger')) return;
+        event.preventDefault();
+        spawnDiveClickRipple(event);
+        window.setTimeout(() => playDiveTransition(entry), 300);
+      });
+    }
   }
   const world = document.querySelector('.dive-world');
   if (world) {
