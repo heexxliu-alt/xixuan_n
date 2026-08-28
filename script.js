@@ -18,6 +18,7 @@
   const DIVER_VERTICAL_INPUT_EASE = .06;
   const DIVER_VERTICAL_DEAD_ZONE = 28;
   const DIVER_MAX_POSE_DELTA = 1.1;
+  const DIVER_WAIT_POSTURE = 72;
   if (gs && window.MorphSVGPlugin) gs.registerPlugin(window.MorphSVGPlugin);
 
   class DiverPointerTracker {
@@ -37,9 +38,16 @@
       this.pointerPosition = { x: start.left - this.box.left + start.width / 2, y: start.top - this.box.top + start.height / 2 };
       this.refreshMetrics();
       this.behaviorState = this.isSurface ? 'UNDERWATER' : 'FREE';
+      this.surfaceMode = this.isSurface ? 'FOLLOW' : 'FREE';
       this.surfaceProximity = 0;
       this.diverTarget = this.getDiverTarget(this.pointerPosition.x, this.pointerPosition.y);
       this.position = { ...this.diverTarget };
+      if (this.isSurface && this.pointerPosition.y < this.surfaceFollowLeaveY) {
+        this.surfaceMode = 'WAIT';
+        this.behaviorState = 'SURFACE_WAIT';
+        this.surfaceProximity = 1;
+        this.diverTarget = { ...this.position };
+      }
       this.previous = { ...this.position };
       this.velocity = { x: 0, y: 0, speed: 0 };
       this.heading = this.isSurface ? DIVER_BASE_HEADING : -180;
@@ -95,6 +103,36 @@
       const halfW = width / 2;
       const halfH = height / 2;
       const sideInset = Math.max(22, halfW * .34);
+      if (this.isSurface) {
+        const bandRects = ['.surface-static-line-mask', '.surface-wave-layer']
+          .map((selector) => this.root.querySelector(selector)?.getBoundingClientRect())
+          .filter(Boolean);
+        const bandBottom = bandRects.length
+          ? Math.max(...bandRects.map((rect) => rect.bottom - this.box.top))
+          : this.box.height * .6;
+        // Keep the original broad horizontal/lower-water range. Only the
+        // upper edge is replaced by the measured Surface Band boundary. The
+        // clearance is intentionally torso-based rather than the full rotated
+        // sprite bounds, so the head/upper body may approach the band while
+        // the main body remains in deep water.
+        const safety = Math.max(10, Math.min(18, halfH * .16));
+        const minY = Math.max(this.box.height * .55 + halfH * .78, bandBottom + halfH * .58 + safety);
+        const maxY = this.box.height - halfH - safety;
+        const hardMinY = Math.max(this.box.height * .505 + halfH * .72, bandBottom + halfH * .5 + safety * .5);
+        const hardMaxY = this.box.height - halfH - safety * .5;
+        this.surfaceBandBottom = bandBottom;
+        this.surfaceFollowEnterY = bandBottom + Math.max(8, this.box.height * .018);
+        this.surfaceFollowLeaveY = bandBottom - Math.max(8, this.box.height * .018);
+        this.bounds = {
+          minX: halfW + sideInset,
+          maxX: Math.max(halfW + sideInset, this.box.width - halfW - sideInset),
+          minY,
+          maxY: Math.max(minY, maxY),
+          hardMinY,
+          hardMaxY: Math.max(hardMinY, hardMaxY)
+        };
+        return;
+      }
       this.bounds = {
         minX: halfW + sideInset,
         maxX: Math.max(halfW + sideInset, this.box.width - halfW - sideInset),
@@ -108,7 +146,9 @@
     refreshBox() {
       this.box = this.root.getBoundingClientRect();
       this.refreshMetrics();
-      this.diverTarget = this.getDiverTarget(this.pointerPosition.x, this.pointerPosition.y);
+      if (!this.isSurface || this.surfaceMode !== 'WAIT') {
+        this.diverTarget = this.getDiverTarget(this.pointerPosition.x, this.pointerPosition.y);
+      }
     }
 
     onResize() { this.refreshBox(); }
@@ -124,29 +164,36 @@
         x: clamp(pointerX, this.bounds.minX, this.bounds.maxX),
         y: clamp(pointerY, this.bounds.minY, this.bounds.maxY)
       };
-      const waterline = this.box.height * .5;
-      const approachStart = this.box.height * .62;
-      const followY = this.box.height * .61;
-      this.surfaceProximity = clamp((approachStart - pointerY) / Math.max(1, approachStart - waterline), 0, 1);
+      this.surfaceProximity = 0;
       const safeX = this.softLimit(pointerX, this.bounds.minX, this.bounds.maxX, .08);
       // Keep the visible boundary springy: the hard margin is only a final
       // safety net so the diver never disappears beyond the scene edge.
       const compressedX = clamp(safeX, this.bounds.minX - this.box.width * .045, this.bounds.maxX + this.box.width * .045);
-      let state = 'UNDERWATER';
-      let y;
-      if (pointerY < waterline) {
-        state = 'SURFACE_FOLLOW';
-        const skyAmount = clamp((waterline - pointerY) / Math.max(1, waterline), 0, 1);
-        y = followY + (1 - skyAmount) * this.box.height * .004;
-      } else if (pointerY < approachStart) {
-        state = 'SURFACE_APPROACH';
-        const approach = clamp((approachStart - pointerY) / Math.max(1, approachStart - waterline), 0, 1);
-        y = followY + approach * this.box.height * .035;
-      } else {
-        y = this.softLimit(pointerY, this.bounds.minY, this.bounds.maxY, .1);
-      }
-      this.behaviorState = state;
+      this.behaviorState = 'UNDERWATER';
+      const y = this.softLimit(pointerY, this.bounds.minY, this.bounds.maxY, .1);
       return { x: compressedX, y: clamp(y, this.bounds.hardMinY, this.bounds.hardMaxY) };
+    }
+
+    updateSurfaceMode(pointerY) {
+      if (!this.isSurface) return false;
+      const wasWaiting = this.surfaceMode === 'WAIT';
+      if (wasWaiting) {
+        if (pointerY >= this.surfaceFollowEnterY) this.surfaceMode = 'FOLLOW';
+      } else if (pointerY < this.surfaceFollowLeaveY) {
+        this.surfaceMode = 'WAIT';
+      }
+      const changed = wasWaiting !== (this.surfaceMode === 'WAIT');
+      if (changed && this.surfaceMode === 'WAIT') {
+        // Freeze the positional target at the current point; the existing
+        // inertia then eases out naturally instead of chasing the sky.
+        this.diverTarget = { ...this.position };
+        this.behaviorState = 'SURFACE_WAIT';
+        this.surfaceProximity = 1;
+      } else if (changed && this.surfaceMode === 'FOLLOW') {
+        this.behaviorState = 'UNDERWATER';
+        this.surfaceProximity = 0;
+      }
+      return changed;
     }
 
     onPointerMove(event) {
@@ -155,7 +202,12 @@
       const rawY = clamp(event.clientY - this.box.top, 0, this.box.height);
       this.pointerPosition.x = rawX;
       this.pointerPosition.y = rawY;
-      this.diverTarget = this.getDiverTarget(rawX, rawY);
+      const modeChanged = this.updateSurfaceMode(rawY);
+      if (!this.isSurface || this.surfaceMode === 'FOLLOW') {
+        this.diverTarget = this.getDiverTarget(rawX, rawY);
+      } else if (modeChanged && this.surfaceMode === 'WAIT') {
+        this.diverTarget = { ...this.position };
+      }
       this.root.style.setProperty('--focus-x', `${(rawX / Math.max(1, this.box.width)) * 100}%`);
       this.root.style.setProperty('--focus-y', `${(rawY / Math.max(1, this.box.height)) * 100}%`);
       this.renderPosition(this.pointerPosition.x, this.pointerPosition.y);
@@ -197,6 +249,7 @@
     updateSurfacePose() {
       const speed = this.velocity.speed;
       const horizontalSpeed = this.velocity.x;
+      const waiting = this.isSurface && this.surfaceMode === 'WAIT';
       if (Math.abs(horizontalSpeed) > DIVER_FACING_THRESHOLD) {
         const nextFacing = horizontalSpeed > 0 ? 'right' : 'left';
         if (nextFacing !== this.facingTarget) {
@@ -216,7 +269,7 @@
       // Pose follows a filtered target-position intent rather than the current
       // frame's velocity. This prevents a quick pointer reversal from flipping
       // the diver's pitch in a single update.
-      const rawVerticalIntent = this.diverTarget.y - this.position.y;
+      const rawVerticalIntent = waiting ? 0 : this.diverTarget.y - this.position.y;
       this.smoothedVerticalIntent += (rawVerticalIntent - this.smoothedVerticalIntent) * DIVER_VERTICAL_INPUT_EASE;
       const intentMagnitude = Math.abs(this.smoothedVerticalIntent);
       const intentSign = Math.sign(this.smoothedVerticalIntent);
@@ -235,8 +288,19 @@
       this.followBlend += (followTarget - this.followBlend) * .08;
       const maxPitch = approachPitch + (DIVER_MAX_FOLLOW_PITCH - approachPitch) * this.followBlend;
       this.targetPoseAngle = clamp(verticalRatio * horizontalBias * maxPitch, -maxPitch, maxPitch);
-      if (this.turning || speed < .08 || intentMagnitude <= DIVER_VERTICAL_DEAD_ZONE) this.targetPoseAngle = 0;
-      const poseEase = this.behaviorState === 'SURFACE_FOLLOW' ? .12 : this.behaviorState === 'SURFACE_APPROACH' ? .14 : .18;
+      if (waiting) {
+        // In WAIT/WATCH the diver holds position and first eases into a
+        // near-vertical treading posture. The small 2D attention offset then
+        // lets upper-left and upper-right feel distinct without flipping
+        // facing or asking the body to point directly at the cursor.
+        const lookDx = this.pointerPosition.x - this.position.x;
+        const lookDy = this.pointerPosition.y - this.position.y;
+        const lookAngle = Math.atan2(-lookDy, Math.max(18, Math.abs(lookDx))) * 180 / Math.PI;
+        const verticalAttention = clamp(lookAngle / 90, -1, 1) * 3.6;
+        const lateralAttention = clamp(lookDx / Math.max(1, this.box.width * .34), -1, 1) * 4.4;
+        this.targetPoseAngle = DIVER_WAIT_POSTURE + clamp(verticalAttention + lateralAttention, -8, 8);
+      } else if (this.turning || speed < .08 || intentMagnitude <= DIVER_VERTICAL_DEAD_ZONE) this.targetPoseAngle = 0;
+      const poseEase = waiting ? .08 : this.behaviorState === 'SURFACE_FOLLOW' ? .12 : this.behaviorState === 'SURFACE_APPROACH' ? .14 : .18;
       const desiredPose = this.poseAngle + (this.targetPoseAngle - this.poseAngle) * poseEase;
       const poseDelta = clamp(desiredPose - this.poseAngle, -DIVER_MAX_POSE_DELTA, DIVER_MAX_POSE_DELTA);
       this.poseAngle += poseDelta;
@@ -537,43 +601,27 @@
     };
   }
 
-  // Round 4A remains opt-in. The production homepage keeps its ecology-free
-  // baseline; adding ?round=4a-fish-prototype enables this ambient preview.
+  // Round 4A ecology preview is temporarily enabled by default on the Surface
+  // homepage so the existing prototype locomotion can be visually reviewed.
   // This locomotion is restored from the pre-scatter prototype in b08ecb1:
   // persistent velocity, slow wander and soft boundary steering. Diver input,
   // awareness, avoidance, scatter and debug state are intentionally absent.
   function initSurfaceFishPrototype(surface) {
-    const params = new URLSearchParams(window.location.search);
-    const enabled = params.get('round') === '4a-fish-prototype'
-      || params.get('fishPrototype') === '1'
-      || params.has('fishPrototype');
+    const enabled = true;
     const field = surface.querySelector('.surface-fish-prototype-field');
     const nodes = [...(field?.querySelectorAll('.surface-fish-prototype') || [])];
-    if (!enabled || !field || nodes.length !== 3) return { destroy() {} };
+    if (!enabled || !field || nodes.length !== 1) return { destroy() {} };
 
     surface.dataset.fishPrototype = 'true';
-    const HABITAT_TOP_RATIO = .59;
-    const HABITAT_BOTTOM_RATIO = .86;
     let box = surface.getBoundingClientRect();
 
     const configs = [
       {
-        id: 'A', start: [.2, .66], heading: .06, cruiseSpeed: 17,
-        preferredDepth: .64, wanderPhase: .4, wanderFrequency: .00019,
-        wanderStrength: .18, turnResponsiveness: .86, maxTurnRate: .42,
-        depth: 'upper'
-      },
-      {
-        id: 'B', start: [.52, .74], heading: Math.PI - .22, cruiseSpeed: 21,
-        preferredDepth: .73, wanderPhase: 2.35, wanderFrequency: .00016,
-        wanderStrength: .14, turnResponsiveness: 1.02, maxTurnRate: .36,
-        depth: 'mid'
-      },
-      {
-        id: 'C', start: [.79, .81], heading: .22, cruiseSpeed: 15,
-        preferredDepth: .81, wanderPhase: 4.8, wanderFrequency: .00022,
-        wanderStrength: .2, turnResponsiveness: .74, maxTurnRate: .47,
-        depth: 'lower'
+        id: 'B', start: [.32, .82], heading: .18, cruiseSpeed: 10,
+        preferredDepth: .82, habitatTopRatio: .79, habitatBottomRatio: .87,
+        wanderPhase: 1.1, wanderFrequency: .00013,
+        wanderStrength: .08, turnResponsiveness: .35, maxTurnRate: .12,
+        depth: 'mid-lower', motionKind: 'jelly'
       }
     ];
 
@@ -596,15 +644,25 @@
         wanderPhase: config.wanderPhase,
         poseAngle: 0,
         facing: Math.cos(heading) >= 0 ? 'right' : 'left',
-        facingCandidate: Math.cos(heading) >= 0 ? 'right' : 'left',
-        facingCandidateSince: initialTime,
         lastRendered: { x: 0, y: 0 }
       };
     });
 
-    const renderFish = (fish) => {
-      const facingScale = fish.facing === 'right' ? 1 : -1;
-      const visualPitch = fish.poseAngle * (fish.facing === 'right' ? 1 : -1);
+    const renderFish = (fish, now = performance.now()) => {
+      if (fish.config.motionKind === 'jelly') {
+        const floatAngle = Math.sin(now * .00105 + fish.config.wanderPhase) * 2.2;
+        fish.element.dataset.facing = 'left';
+        fish.element.dataset.visualPitch = '0.00';
+        fish.element.style.transform = `translate3d(${fish.position.x}px,${fish.position.y}px,0) translate(-50%,-50%) rotate(${floatAngle.toFixed(2)}deg)`;
+        fish.lastRendered = { x: fish.position.x, y: fish.position.y };
+        return;
+      }
+      // Candidate fish artwork is authored facing LEFT. Keep the artwork's
+      // native orientation for leftward travel and mirror only for rightward
+      // travel, so the head always leads the actual horizontal velocity.
+      const facingScale = fish.facing === 'left' ? 1 : -1;
+      const visualPitch = fish.poseAngle * (fish.facing === 'left' ? 1 : -1);
+      fish.element.dataset.facing = fish.facing;
       fish.element.dataset.visualPitch = visualPitch.toFixed(2);
       fish.element.style.transform = `translate3d(${fish.position.x}px,${fish.position.y}px,0) translate(-50%,-50%) rotate(${visualPitch}deg) scaleX(${facingScale})`;
       fish.lastRendered = { x: fish.position.x, y: fish.position.y };
@@ -621,20 +679,38 @@
     const onResize = () => refreshBounds();
     window.addEventListener('resize', onResize, { passive: true });
 
-    fishes.forEach(renderFish);
+    fishes.forEach((fish) => renderFish(fish, initialTime));
 
     let rafId = 0;
     const tick = (now = performance.now()) => {
       const deltaSeconds = clamp((now - (tick.lastTime || now)) / 1000, .008, .05);
       tick.lastTime = now;
-      const habitatTop = box.height * HABITAT_TOP_RATIO;
-      const habitatBottom = box.height * HABITAT_BOTTOM_RATIO;
       const boundaryBandX = box.width * .16;
       const boundaryBandY = box.height * .09;
       fishes.forEach((fish) => {
+        const habitatTop = box.height * fish.config.habitatTopRatio;
+        const habitatBottom = box.height * fish.config.habitatBottomRatio;
+        const motionKind = fish.config.motionKind || 'fish';
+        const motionScale = reducedMotion ? .34 : 1;
+
+        if (motionKind === 'jelly') {
+          const preferredY = fish.config.preferredDepth * box.height;
+          const floatOffset = Math.sin(now * .00105 + fish.config.wanderPhase) * box.height * .012 * motionScale;
+          // Keep the jelly just left of the Dive CTA. It retains the authored
+          // vertical float, but its horizontal movement is intentionally local
+          // so it never sweeps across the long-fin fish or the CTA copy.
+          const jellyAnchorX = box.width * .32;
+          const jellyOffset = Math.sin(now * .00017 + fish.config.wanderPhase * 1.7) * box.width * .028 * motionScale;
+          const jellyTargetX = jellyAnchorX + jellyOffset;
+          fish.position.x += (jellyTargetX - fish.position.x) * clamp(deltaSeconds * 1.2, .012, .08);
+          fish.position.y += (preferredY + floatOffset - fish.position.y) * clamp(deltaSeconds * 1.4, .012, .08);
+          fish.position.x = clamp(fish.position.x, box.width * .25, box.width * .39);
+          fish.position.y = clamp(fish.position.y, habitatTop, habitatBottom);
+          renderFish(fish, now);
+          return;
+        }
         const forward = { x: Math.cos(fish.heading), y: Math.sin(fish.heading) };
         const lateral = { x: -forward.y, y: forward.x };
-        const motionScale = reducedMotion ? .34 : 1;
         const wanderTarget = Math.sin(now * fish.config.wanderFrequency + fish.wanderPhase) * fish.config.wanderStrength * motionScale;
         fish.wanderState += (wanderTarget - fish.wanderState) * clamp(deltaSeconds * .55, .004, .04);
         const wander = direction(
@@ -670,13 +746,11 @@
         fish.position.x = clamp(fish.position.x, -box.width * .12, box.width * 1.12);
         fish.position.y = clamp(fish.position.y, habitatTop, habitatBottom);
         const horizontalVelocity = fish.velocity.x;
-        const velocitySign = horizontalVelocity > .55 ? 'right' : horizontalVelocity < -.55 ? 'left' : fish.facing;
-        if (velocitySign !== fish.facingCandidate) {
-          fish.facingCandidate = velocitySign;
-          fish.facingCandidateSince = now;
-        } else if (velocitySign !== fish.facing && now - fish.facingCandidateSince > 360) {
-          fish.facing = velocitySign;
-        }
+        // Flip as soon as sustained horizontal velocity crosses the threshold;
+        // this keeps the head aligned with the actual travel direction without
+        // introducing a visible facing lag or changing the locomotion itself.
+        if (horizontalVelocity > .55) fish.facing = 'right';
+        else if (horizontalVelocity < -.55) fish.facing = 'left';
         const speed = Math.hypot(fish.velocity.x, fish.velocity.y) || 1;
         const verticalRatio = fish.velocity.y / speed;
         const verticalDeadZone = .08;
@@ -700,6 +774,7 @@
         nodes.forEach((node) => {
           node.hidden = false;
           node.style.transform = '';
+          delete node.dataset.facing;
           delete node.dataset.visualPitch;
         });
       }
