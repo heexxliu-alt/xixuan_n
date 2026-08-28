@@ -401,14 +401,16 @@
     const hoverClass = 'is-drift-bottle-hover';
     const openClass = 'is-drift-bottle-open';
 
-    // Independent, slow axes keep the bottle buoyant without a conspicuous
-    // repeating CSS sway. The motion remains local to the right-side shell.
+    // Independent, slow waypoints let the bottle drift through its small
+    // right-side patch of sea instead of rocking in place like a UI icon.
     if (gs && !reducedMotion) {
-      driftLoop = gs.timeline({ repeat: -1, yoyo: true });
+      driftLoop = gs.timeline({ repeat: -1 });
       driftLoop
-        .to(float, { x: -8, y: 3, rotation: -1.2, duration: 7.8, ease: 'sine.inOut' })
-        .to(float, { x: 7, y: -4, rotation: 1.1, duration: 9.6, ease: 'sine.inOut' })
-        .to(float, { x: -3, y: 1, rotation: -.55, duration: 6.7, ease: 'sine.inOut' });
+        .to(float, { x: -22, y: 3, rotation: -1.1, duration: 8.4, ease: 'sine.inOut' })
+        .to(float, { x: 18, y: -3, rotation: .9, duration: 10.8, ease: 'sine.inOut' })
+        .to(float, { x: 30, y: 2, rotation: .35, duration: 7.6, ease: 'sine.inOut' })
+        .to(float, { x: -12, y: -4, rotation: -1.25, duration: 11.2, ease: 'sine.inOut' })
+        .to(float, { x: 0, y: 0, rotation: 0, duration: 8.9, ease: 'sine.inOut' });
     }
 
     const setHover = (active) => surface.classList.toggle(hoverClass, Boolean(active) && !opened);

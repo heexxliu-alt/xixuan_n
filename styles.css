@@ -61,7 +61,7 @@ a{color:inherit;text-decoration:none}
 }
 
 /* Drift Bottle / Contact: a small piece of the surface world, never a UI card. */
-.drift-bottle-contact{position:absolute;z-index:3;right:7.5%;top:52%;width:clamp(170px,13vw,210px);height:clamp(126px,11vw,170px);pointer-events:none;overflow:visible}
+.drift-bottle-contact{position:absolute;z-index:3;right:7%;top:52%;width:clamp(240px,18vw,320px);height:clamp(126px,11vw,170px);pointer-events:none;overflow:visible}
 .drift-bottle-trigger{position:absolute;right:0;top:0;width:clamp(96px,8vw,138px);height:clamp(74px,6.6vw,106px);margin:0;padding:0;border:0;background:transparent;pointer-events:auto;cursor:pointer!important;outline:0;overflow:visible}
 .drift-bottle-float{position:absolute;inset:0;display:block;transform-origin:57% 53%;will-change:transform;pointer-events:none}
 .drift-bottle-art{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;opacity:.76;filter:saturate(.82) contrast(.9) drop-shadow(0 6px 8px rgba(71,78,144,.12));transition:filter .65s ease,opacity .65s ease}
@@ -71,19 +71,19 @@ a{color:inherit;text-decoration:none}
 .surface-hero.is-drift-bottle-hover .cursor-light{transform:translate(-50%,-50%) scale(.82)}
 .surface-hero.is-drift-bottle-hover .cursor-light::after{opacity:.72;transform:scale(1);border-color:rgba(255,224,177,.38)}
 .surface-hero.is-drift-bottle-open .drift-bottle-contact{z-index:7}
-.drift-contact-note{position:fixed;left:50%;top:50%;right:auto;width:clamp(360px,40vw,660px);height:clamp(370px,41vw,680px);z-index:2;pointer-events:auto;opacity:0;visibility:hidden;transform:translate3d(-50%,-50%,0) rotate(-1deg) scale(.94);transform-origin:center center;transition:opacity .45s ease,visibility .45s ease,transform .55s cubic-bezier(.2,.75,.25,1)}
-.drift-contact-note:not([hidden]){opacity:1;visibility:visible;transform:translate3d(-50%,-50%,0) rotate(-1deg) scale(1)}
-.drift-note-paper{position:relative;width:100%;height:100%;padding:88px 88px 56px 88px;color:#4a342d;background:transparent;clip-path:none;box-shadow:none;filter:none;opacity:1;font-family:ui-rounded,"SF Pro Rounded","PingFang SC","Noto Sans SC",sans-serif}
+.drift-contact-note{position:absolute;right:clamp(56px,6vw,136px);top:clamp(-110px,-8vw,-46px);width:clamp(300px,30vw,520px);height:clamp(330px,34vw,580px);z-index:2;pointer-events:auto;opacity:0;visibility:hidden;transform:translate3d(34px,18px,0) rotate(-3deg) scale(.76);transform-origin:100% 62%;transition:opacity .4s ease,visibility .4s ease,transform .6s cubic-bezier(.2,.75,.25,1)}
+.drift-contact-note:not([hidden]){opacity:1;visibility:visible;transform:translate3d(0,0,0) rotate(-1deg) scale(1)}
+.drift-note-paper{position:relative;width:100%;height:100%;padding:18% 19% 13% 19%;color:#4a342d;background:transparent;clip-path:none;box-shadow:none;filter:none;opacity:1;font-family:ui-rounded,"SF Pro Rounded","PingFang SC","Noto Sans SC",sans-serif}
 .drift-note-paper-art{position:absolute;inset:0;z-index:0;display:block;width:100%;height:100%;object-fit:fill;pointer-events:none}
 .drift-note-paper::after{display:none}
 .drift-note-close{position:absolute;z-index:2;right:12%;top:9%;border:0;padding:0;background:transparent;color:rgba(85,69,111,.7);font:24px/1 ui-rounded,"SF Pro Rounded",sans-serif;cursor:pointer!important;pointer-events:auto;outline:0}
 .drift-note-close:focus-visible{outline:0;text-shadow:0 0 8px rgba(103,83,128,.48)}
-.drift-note-label{position:relative;z-index:1;margin:0 0 27px;font:11px/1.2 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.17em;color:rgba(74,52,45,.86)}
-.drift-note-fields{display:grid;gap:24px;position:relative;z-index:1}
-.drift-note-fields p{display:grid;gap:6px;margin:0;font:13px/1.35 "SF Mono","Roboto Mono",ui-monospace,monospace;color:rgba(74,52,45,.92);letter-spacing:.06em}
-.drift-note-fields p>span:first-child{font-size:10px;letter-spacing:.18em;color:rgba(74,52,45,.76)}
-.drift-note-fields b{font:600 15px/1.35 "SF Mono","Roboto Mono",ui-monospace,monospace;color:#4a342d;letter-spacing:.04em}
-.drift-note-qr{display:block;width:142px;height:142px;border:1px solid rgba(89,58,47,.46);object-fit:contain;background:rgba(239,220,182,.5)}
+.drift-note-opening{position:relative;z-index:1;margin:0 0 15%;font:500 clamp(15px,1.35vw,21px)/1.2 ui-rounded,"SF Pro Rounded","PingFang SC",sans-serif;letter-spacing:.14em;color:#5b3c30}
+.drift-note-fields{display:flex;flex-direction:column;align-items:flex-start;gap:10%;position:relative;z-index:1}
+.drift-note-fields p{margin:0;color:#4a342d}
+.drift-note-phone b{font:600 clamp(14px,1.15vw,18px)/1.35 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.05em;color:#4a342d}
+.drift-note-wechat{display:block}
+.drift-note-qr{display:block;width:clamp(108px,9.5vw,166px);height:auto;aspect-ratio:1;border:1px solid rgba(89,58,47,.46);object-fit:contain;background:rgba(239,220,182,.5)}
 .surface-hero.is-drift-bottle-open .drift-bottle-art{opacity:.94;filter:saturate(.86) contrast(.94) drop-shadow(0 0 14px rgba(255,222,174,.3))}
 .surface-hero.is-drift-bottle-open .drift-bottle-hint{opacity:0}
 .drift-bottle-trigger:focus-visible{outline:1px solid rgba(255,240,205,.35);outline-offset:5px;border-radius:50%}
