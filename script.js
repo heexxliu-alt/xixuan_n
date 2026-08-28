@@ -406,11 +406,11 @@
     if (gs && !reducedMotion) {
       driftLoop = gs.timeline({ repeat: -1 });
       driftLoop
-        .to(float, { x: -22, y: 3, rotation: -1.1, duration: 8.4, ease: 'sine.inOut' })
-        .to(float, { x: 18, y: -3, rotation: .9, duration: 10.8, ease: 'sine.inOut' })
-        .to(float, { x: 30, y: 2, rotation: .35, duration: 7.6, ease: 'sine.inOut' })
-        .to(float, { x: -12, y: -4, rotation: -1.25, duration: 11.2, ease: 'sine.inOut' })
-        .to(float, { x: 0, y: 0, rotation: 0, duration: 8.9, ease: 'sine.inOut' });
+        .to(float, { x: -13, y: 2, rotation: -.7, duration: 8.8, ease: 'sine.inOut' })
+        .to(float, { x: 11, y: -2.5, rotation: .6, duration: 11.4, ease: 'sine.inOut' })
+        .to(float, { x: 16, y: 1.5, rotation: .3, duration: 8.2, ease: 'sine.inOut' })
+        .to(float, { x: -8, y: -3, rotation: -.75, duration: 12.1, ease: 'sine.inOut' })
+        .to(float, { x: 0, y: 0, rotation: 0, duration: 9.6, ease: 'sine.inOut' });
     }
 
     const setHover = (active) => surface.classList.toggle(hoverClass, Boolean(active) && !opened);
@@ -422,7 +422,6 @@
       note.hidden = false;
       surface.classList.add(openClass);
       surface.classList.remove(hoverClass);
-      if (gs && !reducedMotion) gs.to(float, { scale: 1.08, duration: .42, ease: 'power2.out', overwrite: 'auto' });
       window.setTimeout(() => close.focus({ preventScroll: true }), 80);
     };
     const closeContact = () => {
@@ -430,7 +429,6 @@
       opened = false;
       trigger.setAttribute('aria-expanded', 'false');
       surface.classList.remove(openClass, hoverClass);
-      if (gs && !reducedMotion) gs.to(float, { scale: 1, duration: .48, ease: 'power2.inOut', overwrite: 'auto' });
       hideTimer = window.setTimeout(() => { note.hidden = true; }, reducedMotion ? 0 : 520);
       trigger.focus({ preventScroll: true });
     };
@@ -1635,6 +1633,7 @@
       const beginDive = (event) => {
         if (diveStarted) return;
         diveStarted = true;
+        surface.classList.add('is-dive-cta-clicking');
         surfaceIdleSystem?.destroy?.();
         surfaceTracker.exitForDive(.2);
         spawnDiveClickRipple(event);
