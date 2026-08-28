@@ -360,12 +360,110 @@
 
     setCalm(isCalm) { this.calm = Boolean(isCalm); }
 
+    exitForDive(fadeDuration = .2) {
+      if (!this.isSurface || this._exitedForDive) return;
+      this._exitedForDive = true;
+      // The click hands the story to the viewer immediately: freeze the
+      // current position and detach every Surface follow / WAIT-WATCH update
+      // before the water morph begins.
+      this.diverTarget = { ...this.position };
+      this.destroy();
+      if (!this.swimmer) return;
+      const duration = clamp(fadeDuration, .15, .25);
+      if (gs) {
+        gs.killTweensOf(this.swimmer);
+        gs.to(this.swimmer, { autoAlpha: 0, duration, ease: 'power1.inOut', overwrite: true });
+      } else {
+        this.swimmer.style.transition = `opacity ${duration}s ease-in-out`;
+        this.swimmer.style.opacity = '0';
+      }
+    }
+
     destroy() {
       window.removeEventListener('pointermove', this.onPointerMove);
       window.removeEventListener('mousemove', this.onPointerMove);
       window.removeEventListener('resize', this.onResize);
       if (gs) gs.ticker.remove(this.tick); else cancelAnimationFrame(this.raf);
     }
+  }
+
+  function initDriftBottleContact(surface) {
+    const shell = surface?.querySelector('.drift-bottle-contact');
+    const trigger = shell?.querySelector('.drift-bottle-trigger');
+    const float = shell?.querySelector('.drift-bottle-float');
+    const note = shell?.querySelector('.drift-contact-note');
+    const close = shell?.querySelector('.drift-note-close');
+    if (!shell || !trigger || !float || !note || !close) return { destroy() {} };
+
+    let opened = false;
+    let hideTimer = 0;
+    let driftLoop = null;
+    const hoverClass = 'is-drift-bottle-hover';
+    const openClass = 'is-drift-bottle-open';
+
+    // Independent, slow axes keep the bottle buoyant without a conspicuous
+    // repeating CSS sway. The motion remains local to the right-side shell.
+    if (gs && !reducedMotion) {
+      driftLoop = gs.timeline({ repeat: -1, yoyo: true });
+      driftLoop
+        .to(float, { x: -8, y: 3, rotation: -1.2, duration: 7.8, ease: 'sine.inOut' })
+        .to(float, { x: 7, y: -4, rotation: 1.1, duration: 9.6, ease: 'sine.inOut' })
+        .to(float, { x: -3, y: 1, rotation: -.55, duration: 6.7, ease: 'sine.inOut' });
+    }
+
+    const setHover = (active) => surface.classList.toggle(hoverClass, Boolean(active) && !opened);
+    const openContact = () => {
+      if (opened) return;
+      opened = true;
+      window.clearTimeout(hideTimer);
+      trigger.setAttribute('aria-expanded', 'true');
+      note.hidden = false;
+      surface.classList.add(openClass);
+      surface.classList.remove(hoverClass);
+      if (gs && !reducedMotion) gs.to(float, { scale: 1.08, duration: .42, ease: 'power2.out', overwrite: 'auto' });
+      window.setTimeout(() => close.focus({ preventScroll: true }), 80);
+    };
+    const closeContact = () => {
+      if (!opened) return;
+      opened = false;
+      trigger.setAttribute('aria-expanded', 'false');
+      surface.classList.remove(openClass, hoverClass);
+      if (gs && !reducedMotion) gs.to(float, { scale: 1, duration: .48, ease: 'power2.inOut', overwrite: 'auto' });
+      hideTimer = window.setTimeout(() => { note.hidden = true; }, reducedMotion ? 0 : 520);
+      trigger.focus({ preventScroll: true });
+    };
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape' && opened) {
+        event.preventDefault();
+        closeContact();
+      }
+    };
+
+    const onPointerEnter = () => setHover(true);
+    const onPointerLeave = () => setHover(false);
+    const onFocus = () => setHover(true);
+    const onBlur = () => setHover(false);
+    trigger.addEventListener('pointerenter', onPointerEnter);
+    trigger.addEventListener('pointerleave', onPointerLeave);
+    trigger.addEventListener('focus', onFocus);
+    trigger.addEventListener('blur', onBlur);
+    trigger.addEventListener('click', openContact);
+    close.addEventListener('click', closeContact);
+    window.addEventListener('keydown', onKeyDown);
+
+    return {
+      destroy() {
+        trigger.removeEventListener('pointerenter', onPointerEnter);
+        trigger.removeEventListener('pointerleave', onPointerLeave);
+        trigger.removeEventListener('focus', onFocus);
+        trigger.removeEventListener('blur', onBlur);
+        trigger.removeEventListener('click', openContact);
+        close.removeEventListener('click', closeContact);
+        window.removeEventListener('keydown', onKeyDown);
+        window.clearTimeout(hideTimer);
+        driftLoop?.kill();
+      }
+    };
   }
 
   function initSurfaceEffects(surface) {
@@ -380,13 +478,56 @@
         cloud.style.setProperty('--cloud-y', `${9 + (i % 2) * 8}%`);
         skyDetails.appendChild(cloud);
       }
-      for (let i = 0; i < 16; i += 1) {
+      // Keep the stars authored and sparse rather than regenerating an even
+      // random field on every load. Each entry is [x%, y%, size, strength,
+      // twinkle duration, phase] so the sky keeps deliberate negative space
+      // while retaining gentle individual variation.
+      const starLayout = [
+        [8, 10, 1.45, .72, 7.8, -1.4],
+        [17, 31, 1.2, .62, 6.9, -3.1],
+        [25, 13, 2.15, 1.08, 8.6, -4.8],
+        [32, 38, 1.1, .58, 7.2, -2.2],
+        [40, 8, 1.25, .68, 9.4, -5.9],
+        [47, 27, 1.55, .82, 7.6, -1.8],
+        [55, 14, 2.35, 1.22, 10.2, -6.4],
+        [63, 35, 1.15, .56, 8.1, -3.7],
+        [70, 19, 1.7, .86, 9.1, -7.2],
+        [78, 7, 1.05, .5, 6.7, -2.7],
+        [85, 29, 1.9, .94, 8.8, -5.1],
+        [92, 14, 1.25, .64, 7.4, -4.2],
+        [13, 21, .95, .44, 9.8, -8.3],
+        [58, 41, 1.05, .46, 10.8, -6.8]
+      ];
+      starLayout.forEach(([x, y, size, strength, duration, phase]) => {
         const star = document.createElement('i');
         star.className = 'sky-star';
-        star.style.left = `${7 + Math.random() * 86}%`;
-        star.style.top = `${5 + Math.random() * 36}%`;
+        star.style.left = `${x}%`;
+        star.style.top = `${y}%`;
+        star.style.setProperty('--star-size', `${size}px`);
+        star.style.setProperty('--star-strength', strength);
+        star.style.setProperty('--star-twinkle-duration', `${duration}s`);
+        star.style.setProperty('--star-twinkle-phase', `${phase}s`);
         skyDetails.appendChild(star);
-      }
+      });
+      // Meteors stay inside the existing sky-details star field. They are
+      // intentionally sparse and only animate during BLUE HOUR (the current
+      // night-like time state), so they never compete with the daytime sky.
+      const meteorLayout = [
+        [48, 13, 56, 18, 15.5, -3.2],
+        [79, 19, 42, 24, 22, -12.4]
+      ];
+      meteorLayout.forEach(([x, y, length, angle, duration, delay]) => {
+        const meteor = document.createElement('i');
+        meteor.className = 'sky-meteor';
+        meteor.setAttribute('aria-hidden', 'true');
+        meteor.style.setProperty('--meteor-x', `${x}%`);
+        meteor.style.setProperty('--meteor-y', `${y}%`);
+        meteor.style.setProperty('--meteor-length', `${length}px`);
+        meteor.style.setProperty('--meteor-angle', `${angle}deg`);
+        meteor.style.setProperty('--meteor-duration', `${duration}s`);
+        meteor.style.setProperty('--meteor-delay', `${delay}s`);
+        skyDetails.appendChild(meteor);
+      });
     }
     if (particleField && !particleField.children.length) {
       for (let i = 0; i < 12; i += 1) {
@@ -431,9 +572,10 @@
     gs.utils.toArray('.sky-cloud', skyDetails).forEach((cloud, index) => {
       gs.to(cloud, { x: index % 2 ? 72 : -64, y: index % 2 ? 6 : -3, duration: (20 + index * 4) / 2, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: index * -.8 });
     });
-    gs.utils.toArray('.sky-star', skyDetails).forEach((star, index) => {
-      gs.to(star, { opacity: .08 + Math.random() * .18, scale: .75 + Math.random() * .3, duration: 1.9 + Math.random() * 2.2, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: index * .13 });
-    });
+    // Star brightness is owned by the data-time CSS states so DAY → SUNSET
+    // → BLUE HOUR can interpolate cleanly. The per-star CSS animation below
+    // supplies only a slow, tiny scale variation; no GSAP opacity tween should
+    // write an inline value over the time-of-day state.
     gs.utils.toArray('.surface-water-particle', particleField).forEach((particle, index) => {
       const driftX = Number(particle.dataset.driftX) || 0;
       const driftY = Number(particle.dataset.driftY) || 0;
@@ -1169,34 +1311,76 @@
     const layer = surface?.querySelector('.transition-layer');
     if (!surface || !layer || layer.dataset.playing === 'true') return;
     layer.dataset.playing = 'true';
-    const waves = [...layer.querySelectorAll('.transition-wave')];
+    const allWaves = [...layer.querySelectorAll('.transition-wave')];
+    const waves = allWaves.slice(0, 2);
+    allWaves.slice(2).forEach((wave) => { wave.style.display = 'none'; });
     const emoji = layer.querySelector('.transition-emoji');
     const ui = surface.querySelectorAll('.site-nav,.home-copy,.caption,.dive-entry,.dive-trigger');
-    if (!gs) {
-      document.body.classList.add('is-transitioning');
+    const pointCount = 11;
+    const initialY = 101;
+    const targetY = [
+      [-14, 3, -9, -18, 1, -12, -5, -20, 0, -15, -7],
+      [-19, -6, -14, -3, -17, -8, -21, -5, -16, -2, -12]
+    ];
+    const pointDelays = [
+      [.08, .34, .16, .48, .27, .62, .4, .76, .56, .88, .68],
+      [.18, .04, .3, .12, .46, .24, .58, .36, .7, .5, .82]
+    ];
+    const buildWashPath = (points) => {
+      const step = 100 / (points.length - 1);
+      let d = `M 0 ${points[0]} C`;
+      for (let i = 0; i < points.length - 1; i += 1) {
+        const x = step * (i + 1);
+        const cp = x - step / 2;
+        d += ` ${cp} ${points[i]} ${cp} ${points[i + 1]} ${x} ${points[i + 1]}`;
+      }
+      return `${d} L 100 100 L 0 100 Z`;
+    };
+    const pointSets = waves.map(() => Array.from({ length: pointCount }, () => initialY));
+    const renderWash = () => pointSets.forEach((points, index) => waves[index].setAttribute('d', buildWashPath(points)));
+    renderWash();
+
+    if (!gs || reducedMotion) {
       layer.style.display = 'block';
-      window.setTimeout(() => { window.location.assign(entry.href); }, 3200);
+      layer.style.opacity = '1';
+      ui.forEach((item) => { item.style.opacity = '0'; item.style.filter = 'blur(4px)'; });
+      pointSets.forEach((points, index) => {
+        points.splice(0, points.length, ...targetY[index]);
+        waves[index].style.opacity = '.96';
+        waves[index].setAttribute('d', buildWashPath(points));
+      });
+      if (emoji) {
+        emoji.style.display = 'block';
+        emoji.style.opacity = '1';
+        emoji.style.transform = 'translate(-50%,-50%) scale(.78)';
+      }
+      window.setTimeout(() => { window.location.assign(entry.href); }, reducedMotion ? 500 : 1200);
       return;
     }
+
     gs.set(layer, { display: 'block', autoAlpha: 1 });
-    gs.set(waves, { yPercent: 100, transformOrigin: '50% 100%', opacity: 0 });
-    gs.set(emoji, { autoAlpha: 0, xPercent: -50, yPercent: -50, scale: .38, rotation: -10 });
-    const tl = gs.timeline({ defaults: { ease: 'power2.out' }, onComplete: () => window.location.assign(entry.href) });
-    const morphTargets = [
-      'M0 0 C16 8 29 2 44 7 C61 12 76 0 100 5 L100 100 L0 100 Z',
-      'M0 0 C14 11 31 3 49 10 C68 17 79 6 100 15 L100 100 L0 100 Z',
-      'M0 0 C20 5 39 14 56 6 C74 -2 84 18 100 10 L100 100 L0 100 Z'
-    ];
+    gs.set(waves, { opacity: 0 });
+    gs.set(emoji, { display: 'block', autoAlpha: 0, xPercent: -50, yPercent: -50, scale: .72, rotation: 0 });
+    const tl = gs.timeline({
+      defaults: { ease: 'power2.out' },
+      onUpdate: renderWash,
+      onComplete: () => window.location.assign(entry.href)
+    });
     tl.to(ui, { autoAlpha: 0, filter: 'blur(4px)', duration: .3, stagger: .02 }, 0)
-      .to(waves, { opacity: .96, duration: .3, stagger: .24, ease: 'sine.out' }, 0)
-      .to(waves, { yPercent: 0, duration: 1.45, stagger: .24, ease: 'power2.out' }, .08)
-      .to(emoji, { autoAlpha: 1, scale: .86, duration: .45, ease: 'elastic.out(1, .48)' }, .3)
-      .to(emoji, { yPercent: -58, scale: 1.02, rotation: 3, duration: .7, ease: 'sine.inOut', yoyo: true, repeat: 1 }, .55)
-      .to(waves, { yPercent: -4, duration: .38, stagger: .24, ease: 'sine.inOut' }, 1.35)
-      .to(waves, { yPercent: 0, duration: .7, stagger: .24, ease: 'power1.inOut' }, 1.95)
-      .to(emoji, { autoAlpha: 0, scale: .18, duration: .35, ease: 'power2.in' }, 2.12);
-    if (window.MorphSVGPlugin) waves.forEach((wave, index) => {
-      tl.to(wave, { morphSVG: { shape: morphTargets[index] }, duration: 1.25, ease: 'sine.inOut' }, .12 + index * .24);
+      .to(waves, { opacity: .93, duration: .28, stagger: .16, ease: 'sine.out' }, .05);
+    if (emoji) {
+      tl.to(emoji, { autoAlpha: 1, scale: .9, duration: .32, ease: 'power2.out' }, .22)
+        .to(emoji, { yPercent: -60, scale: 1, rotation: 2, duration: .48, ease: 'sine.inOut' }, .54)
+        .to(emoji, { autoAlpha: 0, scale: .32, duration: .3, ease: 'power2.in' }, 1.16);
+    }
+    pointSets.forEach((points, layerIndex) => {
+      points.forEach((_, pointIndex) => {
+        tl.to(points, {
+          [pointIndex]: targetY[layerIndex][pointIndex],
+          duration: 1.52 + layerIndex * .18,
+          ease: 'power2.inOut'
+        }, .16 + pointDelays[layerIndex][pointIndex] + layerIndex * .22);
+      });
     });
   }
 
@@ -1283,11 +1467,14 @@
     let hideTimer = 0;
     const maxDistance = 220;
     const maxScale = 1.28;
+    const diverRevealDistance = 88;
+    const diverDismissDistance = 142;
     const jelly = world.querySelector('.jelly-return');
     const jellyFloat = jelly?.querySelector('.jelly-float');
     const rays = world.querySelector('.dive-rays');
     if (gs && jellyFloat && !reducedMotion) gs.to(jellyFloat, { y: -15, duration: 3, repeat: -1, yoyo: true, ease: 'sine.inOut' });
     if (gs && rays && !reducedMotion) gs.to(rays, { opacity: .8, skewX: 1.5, duration: 5.5, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+    stations.forEach((station) => station.dataset.pending = 'true');
 
     const updateStationScale = (event) => {
       const box = world.getBoundingClientRect();
@@ -1360,7 +1547,13 @@
         gs.to(info, { autoAlpha: 0, y: 8, scale: .95, duration: .18, overwrite: 'auto', ease: 'power2.in', onComplete: () => info.classList.remove('is-active') });
       } else info.classList.remove('is-active');
     };
-    const scheduleHide = () => { window.clearTimeout(hideTimer); hideTimer = window.setTimeout(() => hideInfo(), 140); };
+    const scheduleHide = () => {
+      if (hideTimer) return;
+      hideTimer = window.setTimeout(() => {
+        hideTimer = 0;
+        hideInfo();
+      }, 140);
+    };
     infoTabs?.addEventListener('click', (event) => {
       const tab = event.target.closest('.site-info-tab');
       if (!tab || !activeStation) return;
@@ -1389,11 +1582,16 @@
     const revealTicker = () => {
       const current = tracker.getPosition();
       const box = world.getBoundingClientRect();
+      if (activeStation && !stationHovered && !cardHovered) {
+        const rect = activeStation.getBoundingClientRect();
+        const distance = Math.hypot(current.x - (rect.left - box.left + rect.width / 2), current.y - (rect.top - box.top + rect.height / 2));
+        if (distance > diverDismissDistance) scheduleHide();
+      }
       stations.forEach((station) => {
         if (station.dataset.pending !== 'true') return;
         const rect = station.getBoundingClientRect();
         const distance = Math.hypot(current.x - (rect.left - box.left + rect.width / 2), current.y - (rect.top - box.top + rect.height / 2));
-        if (distance < 82) { reveal(station); station.dataset.pending = 'false'; }
+        if (distance < diverRevealDistance) { reveal(station); station.dataset.pending = 'false'; }
       });
     };
     if (gs) gs.ticker.add(revealTicker); else window.setInterval(revealTicker, 80);
@@ -1404,14 +1602,16 @@
   const surface = document.querySelector('.surface-hero');
   if (surface) {
     initSurfaceEffects(surface);
+    initDriftBottleContact(surface);
     const surfaceTracker = new DiverPointerTracker(surface, surface.querySelector('.home-diver'));
     const surfaceTime = initSurfaceTimeSystem(surface);
     initSurfacePlanetSequence(surface);
     initSurfaceFishPrototype(surface);
-    initSurfaceIdleSystem(surface, surfaceTracker, surfaceTime);
+    const surfaceIdleSystem = initSurfaceIdleSystem(surface, surfaceTracker, surfaceTime);
     const ctaRegion = surface.querySelector('.dive-cta-region');
     const entry = ctaRegion?.querySelector('.dive-trigger');
     if (ctaRegion && entry) {
+      let diveStarted = false;
       const setDiveCtaHover = (active) => surface.classList.toggle('is-dive-cta-hover', active);
       const resetDiveCtaParallax = () => {
         entry.style.setProperty('--cta-parallax-x', '0px');
@@ -1429,6 +1629,14 @@
         ripple.innerHTML = '<i></i><i></i>';
         ctaRegion.appendChild(ripple);
         window.setTimeout(() => ripple.remove(), 1200);
+      };
+      const beginDive = (event) => {
+        if (diveStarted) return;
+        diveStarted = true;
+        surfaceIdleSystem?.destroy?.();
+        surfaceTracker.exitForDive(.2);
+        spawnDiveClickRipple(event);
+        window.setTimeout(() => playDiveTransition(entry), 300);
       };
       ctaRegion.addEventListener('pointerenter', () => setDiveCtaHover(true));
       ctaRegion.addEventListener('pointerleave', () => setDiveCtaHover(false));
@@ -1452,14 +1660,12 @@
       ctaRegion.addEventListener('focusout', () => { setDiveCtaHover(false); resetDiveCtaParallax(); });
       entry.addEventListener('click', (event) => {
         event.preventDefault();
-        spawnDiveClickRipple(event);
-        window.setTimeout(() => playDiveTransition(entry), 300);
+        beginDive(event);
       });
       ctaRegion.addEventListener('click', (event) => {
         if (event.target.closest?.('.dive-trigger')) return;
         event.preventDefault();
-        spawnDiveClickRipple(event);
-        window.setTimeout(() => playDiveTransition(entry), 300);
+        beginDive(event);
       });
     }
   }

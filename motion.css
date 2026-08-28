@@ -52,9 +52,11 @@
 .sky-cloud{position:absolute;left:var(--cloud-x);top:var(--cloud-y);width:clamp(70px,10vw,170px);height:clamp(18px,2.8vw,44px);border-radius:50%;background:rgba(255,248,239,.2);filter:blur(11px);opacity:.46;animation:cloud-drift 12s ease-in-out infinite alternate}
 .sky-cloud::before,.sky-cloud::after{content:"";position:absolute;border-radius:50%;background:inherit}
 .sky-cloud::before{width:48%;height:160%;left:18%;top:-55%}.sky-cloud::after{width:38%;height:130%;right:15%;top:-35%}
-.sky-star{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff7d3;box-shadow:0 0 10px 2px rgba(255,244,206,.72);opacity:.46;animation:star-breathe 3.4s ease-in-out infinite alternate}
-.surface-hero[data-time="sunset"] .sky-star{opacity:.72!important;box-shadow:0 0 11px 2px rgba(255,220,213,.64)}
-.surface-hero[data-time="blue-hour"] .sky-star{opacity:.84!important;box-shadow:0 0 12px 2px rgba(226,235,255,.78)}
+.sky-star{position:absolute;width:var(--star-size,1.5px);height:var(--star-size,1.5px);border-radius:50%;background:rgba(255,247,218,.92);box-shadow:0 0 5px .8px rgba(255,244,206,.46);opacity:calc(.28 * var(--star-strength,1));transition:opacity 1.7s ease,background-color 1.45s ease,box-shadow 1.45s ease;animation:star-breathe var(--star-twinkle-duration,8s) ease-in-out var(--star-twinkle-phase,0s) infinite alternate;will-change:opacity,transform}
+.surface-hero[data-time="sunset"] .sky-star{opacity:calc(.72 * var(--star-strength,1));background:rgba(255,231,220,.96);box-shadow:0 0 6px .9px rgba(255,220,213,.54)}
+.surface-hero[data-time="blue-hour"] .sky-star{opacity:calc(.96 * var(--star-strength,1));background:rgba(232,238,255,1);box-shadow:0 0 7px 1.3px rgba(226,235,255,.66)}
+.sky-meteor{position:absolute;left:var(--meteor-x);top:var(--meteor-y);width:var(--meteor-length,40px);height:1.2px;border-radius:999px;pointer-events:none;opacity:0;background:linear-gradient(90deg,transparent 0%,rgba(228,237,255,.12) 18%,rgba(239,243,255,.9) 72%,rgba(255,255,255,.14) 100%);filter:blur(.2px);box-shadow:0 0 7px rgba(211,228,255,.38);transform-origin:100% 50%;transform:rotate(var(--meteor-angle,22deg)) translate3d(0,0,0) scaleX(.16);will-change:opacity,transform}
+.surface-hero[data-time="blue-hour"] .sky-meteor{animation:sky-meteor-pass var(--meteor-duration,20s) ease-in-out var(--meteor-delay,0s) infinite}
 .surface-blue-hour-motes{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden;opacity:0;transition:opacity 1.2s ease}
 .surface-blue-hour-motes i{position:absolute;display:block;width:5px;height:5px;border-radius:50%;background:#e8f1ff;box-shadow:0 0 11px 3px rgba(174,220,255,.62);opacity:0;transform:translate3d(0,0,0);will-change:transform,opacity}
 .surface-hero[data-time="blue-hour"] .surface-blue-hour-motes.is-revealing{opacity:1}
@@ -71,6 +73,8 @@
 .surface-bubbles{position:absolute;left:0;right:0;top:50%;bottom:0;z-index:4;pointer-events:none;overflow:hidden}
 .surface-bubble{position:absolute;left:0;top:0;border:2px solid rgba(185,244,239,.88);border-radius:50%;background:radial-gradient(circle at 30% 26%,rgba(236,255,248,.86),rgba(151,224,226,.5) 42%,rgba(87,174,199,.22) 68%,transparent 78%);box-shadow:inset -3px -3px 5px rgba(72,142,183,.26),0 0 14px rgba(132,224,225,.58);will-change:transform,opacity}
 .surface-diver-bubble.is-active{animation:surface-diver-bubble-rise 2s ease-out forwards}
+.drift-bottle-float{will-change:transform}
+.surface-hero.is-drift-bottle-open .drift-bottle-float{will-change:transform}
 .surface-fish-prototype-field{display:none;position:absolute;inset:0;z-index:3;overflow:hidden;pointer-events:none}
 .surface-hero[data-fish-prototype="true"] .surface-fish-prototype-field{display:block}
 .surface-fish-prototype{position:absolute;left:0;top:0;display:block;width:clamp(64px,5.8vw,94px);height:auto;object-fit:contain;transform-origin:center;pointer-events:none;will-change:transform;filter:saturate(.82) contrast(.88)}
@@ -99,7 +103,7 @@
 .dive-entry::after{content:"";position:absolute;z-index:-1;left:16px;top:16px;width:104px;height:96px;border-radius:50%;background:radial-gradient(ellipse,rgba(193,245,242,.38) 0,rgba(167,220,240,.14) 42%,transparent 72%);filter:blur(10px);opacity:.48;animation:jelly-glow 2.8s ease-in-out infinite}
 .transition-layer{display:none;position:absolute;inset:0;z-index:9999;pointer-events:none;overflow:hidden;background:rgba(36,43,103,.08)}
 .transition-morph{position:absolute;inset:-30%;width:160%;height:160%;overflow:visible}
-.transition-wave{transform-box:fill-box;transform-origin:50% 100%;opacity:0;will-change:transform,opacity}
+.transition-wave{transform-box:fill-box;transform-origin:50% 100%;opacity:0;will-change:d,opacity}
 .transition-emoji{position:absolute;left:50%;top:52%;z-index:2;width:clamp(120px,17vw,245px);height:auto;object-fit:contain;opacity:0;will-change:transform,opacity;filter:drop-shadow(0 18px 22px rgba(41,42,97,.24))}
 .jelly-return{will-change:transform}
 @keyframes cloud-drift{0%{transform:translate3d(-64px,-3px,0)}100%{transform:translate3d(72px,6px,0)}}
@@ -112,7 +116,8 @@
 @keyframes surface-shark-drift{0%{opacity:0;transform:translate3d(72vw,-50%,0)}12%{opacity:.1;transform:translate3d(55vw,-50%,0)}42%{opacity:.18;transform:translate3d(24vw,-50%,0)}68%{opacity:.12;transform:translate3d(-26vw,-50%,0)}86%{opacity:.04;transform:translate3d(-84vw,-50%,0)}100%{opacity:0;transform:translate3d(-125vw,-50%,0)}}
 @keyframes surface-shark-tail-wag{0%{transform:rotate(-5deg)}50%{transform:rotate(0deg)}100%{transform:rotate(5deg)}}
 @keyframes title-refract{0%{transform:translate(-1px,-20%) skewX(-3.6deg) scaleY(.94)}32%{transform:translate(2px,-19.4%) skewX(-1.2deg) scaleY(.98)}68%{transform:translate(-2px,-19.8%) skewX(-2.8deg) scaleY(.96)}100%{transform:translate(3px,-19%) skewX(-.8deg) scaleY(.99)}}
-@keyframes star-breathe{0%{opacity:.2;transform:scale(.72)}100%{opacity:1;transform:scale(1.2)}}
+@keyframes star-breathe{0%{transform:scale(.9)}100%{transform:scale(1.07)}}
+@keyframes sky-meteor-pass{0%,78%{opacity:0;transform:rotate(var(--meteor-angle,22deg)) translate3d(-5px,3px,0) scaleX(.16)}80.5%{opacity:.82;transform:rotate(var(--meteor-angle,22deg)) translate3d(0,0,0) scaleX(1)}82.5%{opacity:.2;transform:rotate(var(--meteor-angle,22deg)) translate3d(24px,18px,0) scaleX(.68)}84%,100%{opacity:0;transform:rotate(var(--meteor-angle,22deg)) translate3d(38px,28px,0) scaleX(.3)}}
 @keyframes surface-particle-drift{0%{transform:translate3d(0,0,0);opacity:.08}100%{transform:translate3d(var(--particle-drift-x),var(--particle-drift-y),0);opacity:.16}}
 @keyframes surface-wake-trace-fade{0%{opacity:var(--wake-start-opacity,.2);transform:translate(-50%,-50%) rotate(var(--wake-angle)) scale(.78)}12%{opacity:var(--wake-opacity,.5)}100%{opacity:0;transform:translate(-50%,-50%) rotate(var(--wake-angle)) scale(1.14)}}
 @keyframes surface-diver-bubble-rise{0%{opacity:.42;transform:translate(-50%,-50%) scale(.64)}18%{opacity:.95}100%{opacity:0;transform:translate(calc(-50% + var(--bubble-dx)),calc(-50% + var(--bubble-dy))) scale(var(--bubble-end-scale))}}
@@ -126,6 +131,6 @@ body.is-transitioning .transition-wave:nth-of-type(3){animation-delay:.48s}
 body.is-transitioning .transition-emoji{opacity:1;animation:transition-emoji-in 1.5s cubic-bezier(.2,.8,.2,1) forwards}
 @keyframes transition-wave-in{0%{transform:translateY(100%) scaleY(1.05)}68%{transform:translateY(-3%) scaleY(1.14)}82%{transform:translateY(1%) scaleY(1.04)}100%{transform:translateY(0) scaleY(1)}}
 @keyframes transition-emoji-in{0%{transform:translate(-50%,-50%) scale(.25) rotate(-10deg)}28%{transform:translate(-50%,-50%) scale(.92) rotate(0)}62%{transform:translate(-50%,-62%) scale(1.02) rotate(3deg)}100%{transform:translate(-50%,-72%) scale(.22) rotate(10deg);opacity:0}}
-@media(prefers-reduced-motion:reduce){.surface-scene-layer,.sky-cloud,.sky-star,.surface-bubble,.surface-water-particle,.surface-water-particles::before,.surface-water-particles::after,.surface-wake-trace,.surface-wave-layer,.surface-wave-fill,.surface-wave-sheen,.surface-fish-distant,.surface-shark-shadow,.surface-shark-tail,.title-underwater,.jelly-return,.jelly-float,.dive-rays,.transition-wave,.transition-emoji{animation:none!important;transition:none!important}.sky-details::after{transition:none!important}.surface-blue-hour-motes{transition:none!important}.dive-entry{transition:none!important}}
+@media(prefers-reduced-motion:reduce){.surface-scene-layer,.sky-cloud,.sky-star,.sky-meteor,.surface-bubble,.surface-water-particle,.surface-water-particles::before,.surface-water-particles::after,.surface-wake-trace,.surface-wave-layer,.surface-wave-fill,.surface-wave-sheen,.surface-fish-distant,.surface-shark-shadow,.surface-shark-tail,.title-underwater,.jelly-return,.jelly-float,.drift-bottle-float,.dive-rays,.transition-wave,.transition-emoji{animation:none!important;transition:none!important}.sky-details::after{transition:none!important}.surface-blue-hour-motes{transition:none!important}.dive-entry{transition:none!important}.drift-contact-note{transition:none!important}}
 @media(max-width:980px){.surface-whale-layer{left:42%;top:12%;width:clamp(330px,42vw,500px)}}
 @media(max-width:700px){.surface-whale-layer{left:7%;top:11%;width:min(90vw,420px)}}
