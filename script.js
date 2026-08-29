@@ -1519,6 +1519,7 @@
     let pullPointerId = null;
     let pullStartY = 0;
     let pullDistance = 0;
+    let clickPullActive = false;
     const lifeline = world.querySelector('.descent-lifeline');
     const ascentBubbles = world.querySelector('.ascent-bubbles');
     const PULL_THRESHOLD = 118;
@@ -1558,6 +1559,31 @@
         });
       } else {
         setPullVisual(0);
+      }
+    };
+
+    const autoPullLifeline = () => {
+      if (ascentActive || clickPullActive || !lifeline) return;
+      clickPullActive = true;
+      lifeline.classList.add('is-near', 'is-pulling', 'has-been-touched');
+      tracker.setPointerFollowEnabled(false);
+      if (gs && !reducedMotion) {
+        gs.timeline({
+          onComplete: () => {
+            clickPullActive = false;
+            beginAscent();
+          }
+        })
+          .to(lifeline, { '--rope-pull': '126px', '--rope-stretch': .78, duration: .34, ease: 'power2.in' })
+          .to(lifeline, { '--rope-pull': '104px', '--rope-stretch': .48, duration: .2, ease: 'power1.out' })
+          .to(lifeline, { '--rope-pull': '0px', '--rope-stretch': 0, duration: .48, ease: 'elastic.out(1,.42)' });
+      } else {
+        setPullVisual(126);
+        window.setTimeout(() => {
+          setPullVisual(0);
+          clickPullActive = false;
+          beginAscent();
+        }, 480);
       }
     };
 
@@ -1636,6 +1662,12 @@
       if (ascentActive || !lifeline) return;
       ascentActive = true;
       const diverOrigin = tracker.getPosition();
+      const diverOffsetX = diverOrigin.x - tracker.box.width / 2;
+      const diverOffsetY = diverOrigin.y - tracker.box.height / 2;
+      const setFallbackDiverPose = (offsetY = diverOffsetY) => {
+        swimmer.style.transition = reducedMotion ? 'none' : 'transform .58s cubic-bezier(.2,.72,.24,1)';
+        swimmer.style.transform = `translate(-50%,-50%) translate3d(${diverOffsetX}px,${offsetY}px,0) rotate(56deg) scaleX(1)`;
+      };
       lifeline.classList.remove('is-pulling');
       lifeline.classList.add('is-ascent');
       document.body.classList.add('is-ascent-active');
@@ -1644,10 +1676,34 @@
       tracker.setPointerFollowEnabled(false);
       tracker.destroy();
       if (!gs || reducedMotion) {
+        setFallbackDiverPose();
         world.style.setProperty('--ascent-light', '1');
-        world.style.setProperty('--ascent-bubbles-opacity', '0');
-        resetDepthBehindBubbles();
-        window.setTimeout(finishAscent, 520);
+        world.style.setProperty('--ascent-bubbles-opacity', reducedMotion ? '0' : '.72');
+        if (reducedMotion) {
+          resetDepthBehindBubbles();
+          window.setTimeout(finishAscent, 520);
+        } else {
+          world.classList.add('is-fallback-ascent');
+          world.style.setProperty('--ascent-distant-shift', '30vh');
+          world.style.setProperty('--ascent-middle-shift', '58vh');
+          world.style.setProperty('--ascent-foreground-shift', '76vh');
+          world.style.setProperty('--ascent-content-shift', '92vh');
+          startBubbleStream(diverOrigin);
+          window.setTimeout(() => setFallbackDiverPose(diverOffsetY - 230), 180);
+          window.setTimeout(() => {
+            world.style.setProperty('--ascent-distant-shift', '62vh');
+            world.style.setProperty('--ascent-middle-shift', '106vh');
+            world.style.setProperty('--ascent-foreground-shift', '138vh');
+            world.style.setProperty('--ascent-content-shift', '164vh');
+            world.style.setProperty('--ascent-light', '.94');
+            world.style.setProperty('--ascent-bubbles-opacity', '1');
+          }, 430);
+          window.setTimeout(() => {
+            resetDepthBehindBubbles();
+            world.style.setProperty('--ascent-light', '1');
+          }, 620);
+          window.setTimeout(finishAscent, 1160);
+        }
         return;
       }
       gs.killTweensOf(swimmer);
@@ -1665,7 +1721,7 @@
       });
       ascentTimeline
         .to(lifeline, { '--rope-pull': '0px', '--rope-stretch': 0, duration: .56, ease: 'elastic.out(1,.42)' }, 0)
-        .to(swimmer, { rotation: -78, duration: .62, ease: 'power2.inOut' }, 0)
+        .to(swimmer, { rotation: 56, duration: .72, ease: 'power2.inOut' }, 0)
         .to(world, {
           '--ascent-distant-shift': '20vh',
           '--ascent-middle-shift': '42vh',
@@ -1688,7 +1744,7 @@
           duration: 1.1,
           ease: 'power1.in'
         }, .8)
-        .to(swimmer, { y: -560, rotation: -62, duration: 2.2, ease: 'power2.in' }, .92)
+        .to(swimmer, { y: -560, rotation: 52, duration: 2.2, ease: 'power2.in' }, .92)
         .to(world, {
           '--ascent-distant-shift': '66vh',
           '--ascent-middle-shift': '120vh',
@@ -1709,9 +1765,7 @@
       lifeline.addEventListener('pointerenter', () => { if (!ascentActive) lifeline.classList.add('is-near'); });
       lifeline.addEventListener('pointerleave', () => { if (!pullActive) lifeline.classList.remove('is-near'); });
       lifeline.addEventListener('pointerdown', (event) => {
-        if (ascentActive || event.button !== 0) return;
-        const rect = lifeline.getBoundingClientRect();
-        if (event.clientY < rect.top + 54) return;
+        if (ascentActive || clickPullActive || event.button !== 0) return;
         pullActive = true;
         pullPointerId = event.pointerId;
         pullStartY = event.clientY;
@@ -1734,10 +1788,12 @@
       const releasePull = (event) => {
         if (!pullActive || (event.pointerId != null && event.pointerId !== pullPointerId)) return;
         const reached = pullDistance >= PULL_THRESHOLD;
+        const wasClick = pullDistance < 10;
         pullActive = false;
         pullPointerId = null;
         lifeline.releasePointerCapture?.(event.pointerId);
         if (reached) beginAscent();
+        else if (wasClick) autoPullLifeline();
         else {
           tracker.setPointerFollowEnabled(true);
           springLifelineBack();

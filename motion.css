@@ -106,6 +106,17 @@
 .transition-wave{transform-box:fill-box;transform-origin:50% 100%;opacity:0;will-change:d,opacity}
 .transition-emoji{position:absolute;left:50%;top:52%;z-index:2;width:clamp(120px,17vw,245px);height:auto;object-fit:contain;opacity:0;will-change:transform,opacity;filter:drop-shadow(0 18px 22px rgba(41,42,97,.24))}
 .jelly-return{will-change:transform}
+@keyframes lifeline-ring-drift{0%,100%{transform:rotate(-8deg) scaleY(.78) translate3d(0,0,0)}50%{transform:rotate(-5.5deg) scaleY(.74) translate3d(1px,2px,0)}78%{transform:rotate(-9.5deg) scaleY(.8) translate3d(-1px,1px,0)}}
+@keyframes lifeline-rope-drift{0%,100%{transform:rotate(-1.2deg) translateX(-.5px)}50%{transform:rotate(1.4deg) translateX(1.3px)}78%{transform:rotate(-.4deg) translateX(-.8px)}}
+@keyframes lifeline-art-ring-drift{0%,100%{transform:rotate(-4deg) scaleY(.9)}50%{transform:rotate(-1.8deg) scaleY(.86) translate3d(1px,2px,0)}78%{transform:rotate(-5deg) scaleY(.93) translate3d(-1px,1px,0)}}
+@keyframes lifeline-art-rope-drift{0%,100%{transform:rotate(-1deg) scaleY(calc(1 + var(--rope-stretch) * .16))}50%{transform:rotate(1.15deg) scaleY(calc(1 + var(--rope-stretch) * .16))}78%{transform:rotate(-.35deg) scaleY(calc(1 + var(--rope-stretch) * .16))}}
+@keyframes surface-look-up-shimmer{0%,100%{transform:translate3d(-2%,0,0) skewX(-8deg)}50%{transform:translate3d(3%,3px,0) skewX(-5deg)}}
+@keyframes ascent-bubble-rise{0%{opacity:0;transform:translate3d(0,0,0) scale(.52)}18%{opacity:.64}100%{opacity:0;transform:translate3d(var(--bubble-drift-x,12px),-92vh,0) scale(1.12)}}
+.descent-lifeline .lifeline-ring{animation:lifeline-ring-drift 8.6s ease-in-out infinite}
+.descent-lifeline .lifeline-rope-sway{animation:lifeline-rope-drift 6.8s ease-in-out infinite}
+.descent-lifeline .lifeline-ring-art{animation:lifeline-art-ring-drift 8.6s ease-in-out infinite}
+.descent-lifeline .lifeline-rope-art{animation:lifeline-art-rope-drift 6.8s ease-in-out infinite}
+.descent-lifeline.is-near .lifeline-rope-sway,.descent-lifeline.is-pulling .lifeline-rope-sway{animation-duration:3.6s}
 @keyframes cloud-drift{0%{transform:translate3d(-64px,-3px,0)}100%{transform:translate3d(72px,6px,0)}}
 @keyframes surface-wave-fill{0%{transform:translateY(-1px) scaleY(.92)}100%{transform:translateY(8px) scaleY(1.1)}}
 @keyframes surface-wave-sheen{0%{transform:translate3d(-8px,-2px,0) scaleY(.96)}100%{transform:translate3d(18px,6px,0) scaleY(1.08)}}
@@ -131,6 +142,6 @@ body.is-transitioning .transition-wave:nth-of-type(3){animation-delay:.48s}
 body.is-transitioning .transition-emoji{opacity:1;animation:transition-emoji-in 1.5s cubic-bezier(.2,.8,.2,1) forwards}
 @keyframes transition-wave-in{0%{transform:translateY(100%) scaleY(1.05)}68%{transform:translateY(-3%) scaleY(1.14)}82%{transform:translateY(1%) scaleY(1.04)}100%{transform:translateY(0) scaleY(1)}}
 @keyframes transition-emoji-in{0%{transform:translate(-50%,-50%) scale(.25) rotate(-10deg)}28%{transform:translate(-50%,-50%) scale(.92) rotate(0)}62%{transform:translate(-50%,-62%) scale(1.02) rotate(3deg)}100%{transform:translate(-50%,-72%) scale(.22) rotate(10deg);opacity:0}}
-@media(prefers-reduced-motion:reduce){.surface-scene-layer,.sky-cloud,.sky-star,.sky-meteor,.surface-bubble,.surface-water-particle,.surface-water-particles::before,.surface-water-particles::after,.surface-wake-trace,.surface-wave-layer,.surface-wave-fill,.surface-wave-sheen,.surface-fish-distant,.surface-shark-shadow,.surface-shark-tail,.title-underwater,.jelly-return,.jelly-float,.drift-bottle-float,.dive-rays,.transition-wave,.transition-emoji,.dive-vortex,.dive-vortex-ring,.dive-vortex-core{animation:none!important;transition:none!important}.sky-details::after{transition:none!important}.surface-blue-hour-motes{transition:none!important}.dive-entry{transition:none!important}.drift-contact-note{transition:none!important}}
+@media(prefers-reduced-motion:reduce){.surface-scene-layer,.sky-cloud,.sky-star,.sky-meteor,.surface-bubble,.surface-water-particle,.surface-water-particles::before,.surface-water-particles::after,.surface-wake-trace,.surface-wave-layer,.surface-wave-fill,.surface-wave-sheen,.surface-fish-distant,.surface-shark-shadow,.surface-shark-tail,.title-underwater,.jelly-return,.jelly-float,.drift-bottle-float,.dive-rays,.transition-wave,.transition-emoji,.dive-vortex,.dive-vortex-ring,.dive-vortex-core,.descent-lifeline .lifeline-ring,.descent-lifeline .lifeline-rope-sway,.descent-lifeline .lifeline-ring-art,.descent-lifeline .lifeline-rope-art{animation:none!important;transition:none!important}.sky-details::after{transition:none!important}.surface-blue-hour-motes{transition:none!important}.dive-entry{transition:none!important}.drift-contact-note{transition:none!important}}
 @media(max-width:980px){.surface-whale-layer{left:42%;top:12%;width:clamp(330px,42vw,500px)}}
 @media(max-width:700px){.surface-whale-layer{left:7%;top:11%;width:min(90vw,420px)}}
