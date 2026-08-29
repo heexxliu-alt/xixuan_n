@@ -1,15 +1,47 @@
 <!doctype html>
 <html lang="zh-CN">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Underwater exploration"><title>Explore Below the Surface</title><link rel="stylesheet" href="styles.css?v=20260828-deep-sea"><link rel="stylesheet" href="motion.css?v=20260828-deep-sea"></head>
-<body><main class="dive-world" data-page="dive">
-  <img class="dive-art" src="assets/dive-world-final-v2-tech.png?v=20260826-bg2" alt="含珊瑚平台的科技感海底场景"><div class="dive-rays" aria-hidden="true"></div>
-  <header class="dive-nav"><span>DIVE MAP / 01</span><span>/ MOVE TO GUIDE THE DIVER /</span></header><a class="jelly-return" href="index.html" aria-label="返回海面"><span class="jelly-float"><img src="assets/return-jellyfish-v1.png" alt=""></span><span class="jelly-ripple" aria-hidden="true"></span><span>返回海面</span></a>
-  <aside class="site-info" aria-live="polite" role="dialog" aria-label="栏目档案卡"><img class="site-info-art" src="assets/detail-panel-hud-transparent-v1.png?v=20260826-detail1" alt=""><div class="site-info-shell"><button class="site-info-close" type="button" aria-label="关闭档案卡">×</button><header class="site-info-head"><div class="site-info-icon-wrap"><img class="site-info-icon" src="assets/station-content-camera-transparent-v1.png?v=20260826-icons3" alt=""></div><div><small class="site-info-index">/ 01 /</small><span class="site-info-kicker">UNDERWATER PROFILE</span><b class="site-info-title">内容与公关</b></div></header><div class="site-info-tabs" role="tablist" aria-label="档案分类"></div><div class="site-info-works" aria-live="polite"></div><p class="site-info-summary"></p><small class="site-info-hint">靠近后展开 · 点击标签查看作品</small></div></aside>
-  <button class="station logbook" data-title="个人介绍" data-summary="经历、方向与正在靠近的下一片海。" aria-label="个人介绍"><img class="station-original" src="assets/station-logbook-book-transparent-v1.png?v=20260826-icons3" alt=""><img class="station-zoom" src="assets/station-logbook-book-transparent-v1.png?v=20260826-icons3" alt=""></button>
-  <button class="station content" data-title="内容与公关" data-summary="新闻稿、热点内容、媒体沟通与内容表达。" aria-label="内容与公关"><img class="station-original" src="assets/station-content-camera-transparent-v1.png?v=20260826-icons3" alt=""><img class="station-zoom" src="assets/station-content-camera-transparent-v1.png?v=20260826-icons3" alt=""></button>
-  <button class="station communications" data-title="整合传播" data-summary="从每一次出发，绘出更大的海图。" aria-label="整合传播"><img class="station-original" src="assets/station-communications-laptop-transparent-v1.png?v=20260826-icons3" alt=""><img class="station-zoom" src="assets/station-communications-laptop-transparent-v1.png?v=20260826-icons3" alt=""></button>
-  <button class="station tools" data-title="技能与工具" data-summary="让想法抵岸的每一件工具，都在这里慢慢发亮。" aria-label="技能与工具"><img class="station-original" src="assets/station-tools-monitor-transparent-v1.png?v=20260826-icons3" alt=""><img class="station-zoom" src="assets/station-tools-monitor-transparent-v1.png?v=20260826-icons3" alt=""></button>
-  <button class="station insight" data-title="洞察与运营" data-summary="在潮汐的起落里，寻找下一次抵达的方向。" aria-label="洞察与运营"><img class="station-original" src="assets/station-insight-compass-transparent-v1.png?v=20260826-icons3" alt=""><img class="station-zoom" src="assets/station-insight-compass-transparent-v1.png?v=20260826-icons3" alt=""></button>
-  <div class="cursor-layer" aria-hidden="true"><div class="trail"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="glow" style="left:50%;top:52%"></div><div class="cursor-light"></div></div><img class="diver swimmer swimmer-art" style="left:50%;top:52%" src="assets/freediver-final-transparent-v1.png" alt="自由潜水员">
-</main><script src="vendor/gsap.min.js"></script><script src="script.js?v=20260828-deep-sea-v2"></script></body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Dreaming of the Sea — Continuous Descent prototype">
+  <title>Deep Sea — Continuous Descent</title>
+  <link rel="stylesheet" href="styles.css?v=20260829-continuous-descent-v3">
+  <link rel="stylesheet" href="motion.css?v=20260829-continuous-descent-v3">
+</head>
+<body class="descent-body">
+  <main class="dive-world dive-descent" data-page="dive" data-prototype="continuous-descent">
+    <div class="descent-stage" aria-label="Continuous Descent cave prototype">
+      <div class="descent-layer descent-layer-distant" aria-hidden="true">
+        <div class="cave-echo cave-echo-entry"></div><div class="cave-echo cave-echo-chamber"></div><div class="cave-echo cave-echo-writing"></div><div class="cave-echo cave-echo-deep"></div><div class="cave-void cave-void-a"></div><div class="cave-void cave-void-b"></div>
+      </div>
+      <div class="descent-layer descent-layer-middle" aria-hidden="true">
+        <section class="cave-shell cave-shell-entry"><i class="cave-roof"></i><i class="cave-wall cave-wall-left"></i><i class="cave-wall cave-wall-right"></i></section>
+        <section class="cave-shell cave-shell-chamber"><i class="cave-roof"></i><i class="cave-wall cave-wall-left"></i><i class="cave-wall cave-wall-right"></i></section>
+        <section class="cave-shell cave-shell-writing"><i class="cave-roof"></i><i class="cave-wall cave-wall-left"></i><i class="cave-wall cave-wall-right"></i></section>
+        <section class="cave-shell cave-shell-side"><i class="cave-roof"></i><i class="cave-wall cave-wall-left"></i><i class="cave-wall cave-wall-right"></i></section>
+        <section class="cave-shell cave-shell-quiet"><i class="cave-roof"></i><i class="cave-wall cave-wall-left"></i><i class="cave-wall cave-wall-right"></i></section>
+        <section class="cave-shell cave-shell-deep"><i class="cave-roof"></i><i class="cave-wall cave-wall-left"></i><i class="cave-wall cave-wall-right"></i></section>
+      </div>
+      <div class="descent-layer descent-layer-foreground" aria-hidden="true">
+        <i class="foreground-rock rock-entry-left"></i><i class="foreground-rock rock-entry-right"></i><i class="foreground-rock rock-writing-left"></i><i class="foreground-rock rock-writing-right"></i><i class="foreground-rock rock-side-right"></i><i class="foreground-rock rock-deep-left"></i><div class="descent-motes"></div>
+      </div>
+      <div class="descent-layer descent-layer-content">
+        <p class="prototype-marker marker-entry"><span>PROFESSIONAL INTRO</span><b>placeholder</b></p>
+        <div class="prototype-node node-work node-ltpo"><small>SELECTED WORK</small><b>LTPO</b></div><div class="prototype-node node-work node-hundred"><small>SELECTED WORK</small><b>100-inch</b></div><div class="prototype-node node-work node-lab"><small>SELECTED WORK</small><b>Media Lab</b></div><div class="prototype-node node-work node-beijing"><small>SELECTED WORK</small><b>Beijing 2022</b></div>
+        <div class="prototype-node node-writing writing-one"><small>WRITING ARCHIVE</small><b>01 / field notes</b></div><div class="prototype-node node-writing writing-two"><small>WRITING ARCHIVE</small><b>02 / small tides</b></div><div class="prototype-node node-writing writing-three"><small>WRITING ARCHIVE</small><b>03 / moving light</b></div><div class="prototype-node node-writing writing-four"><small>WRITING ARCHIVE</small><b>04 / after the rain</b></div>
+        <div class="prototype-node node-side side-edits"><small>SIDE EXPANSION</small><b>PERSONAL EDITS</b></div><div class="prototype-node node-side side-travel"><small>SIDE EXPANSION</small><b>TRAVEL PLANS</b></div>
+        <div class="prototype-node node-signal signal-deeper" data-signal-start=".67" data-signal-end=".86"><small>FAR BELOW</small><b>A LITTLE DEEPER</b></div><div class="prototype-node node-signal signal-sea" data-signal-start=".71" data-signal-end=".9"><small>FAR BELOW</small><b>BEHIND THE SEA</b></div>
+        <div class="prototype-node node-deepest deepest-a"><small>DEEPEST POINT</small><b>A LITTLE DEEPER</b></div><div class="prototype-node node-deepest deepest-b"><small>DEEPEST POINT</small><b>BEHIND THE SEA</b></div><i class="easter-anchor" aria-hidden="true"></i>
+      </div>
+    </div>
+    <header class="dive-nav"><span>DIVE MAP / CONTINUOUS DESCENT</span><span class="descent-instruction">/ SCROLL TO DESCEND · MOVE TO SWIM /</span></header>
+    <a class="jelly-return descent-return" href="index.html" aria-label="返回海面"><span class="jelly-float"><img src="assets/return-jellyfish-v1.png" alt=""></span><span class="jelly-ripple" aria-hidden="true"></span><span>返回海面</span></a>
+    <p class="descent-depth" aria-live="polite"><span>DEPTH</span><b>000m</b></p>
+    <div class="cursor-layer" aria-hidden="true"><div class="trail"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="glow" style="left:50%;top:52%"></div><div class="cursor-light"></div></div>
+    <img class="diver swimmer swimmer-art descent-diver" style="left:50%;top:52%" src="assets/freediver-final-transparent-v1.png" alt="自由潜水员">
+  </main>
+  <div class="descent-scroll-spacer" aria-hidden="true"></div>
+  <script src="vendor/gsap.min.js"></script>
+  <script src="script.js?v=20260829-continuous-descent-v3"></script>
+</body>
 </html>

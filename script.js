@@ -26,6 +26,7 @@
       this.root = root;
       this.swimmer = swimmer;
       this.isSurface = root.classList.contains('surface-hero');
+      this.diveBounds = null;
       this.layer = root.querySelector('.cursor-layer');
       this.light = this.layer?.querySelector('.cursor-light');
       this.glow = this.layer?.querySelector('.glow');
@@ -98,6 +99,10 @@
     }
 
     refreshMetrics() {
+      if (!this.isSurface && this.diveBounds) {
+        this.bounds = { ...this.diveBounds };
+        return;
+      }
       const width = this.swimmer?.offsetWidth || 125;
       const height = this.swimmer?.offsetHeight || 94;
       const halfW = width / 2;
@@ -313,6 +318,10 @@
       const turnBrake = this.isSurface && this.turning ? .68 : 1;
       this.position.x += (this.diverTarget.x - this.position.x) * horizontalEase * turnBrake;
       this.position.y += (this.diverTarget.y - this.position.y) * verticalEase;
+      if (!this.isSurface && this.diveBounds) {
+        this.position.x = clamp(this.position.x, this.bounds.minX, this.bounds.maxX);
+        this.position.y = clamp(this.position.y, this.bounds.minY, this.bounds.maxY);
+      }
       if (this.swimmer) {
         const dx = this.position.x - this.previous.x;
         const dy = this.position.y - this.previous.y;
@@ -345,6 +354,15 @@
     }
 
     getPosition() { return { ...this.position }; }
+
+    setDiveBounds(bounds) {
+      if (this.isSurface || !bounds) return;
+      this.diveBounds = { ...bounds };
+      this.bounds = { ...bounds };
+      this.diverTarget = this.getDiverTarget(this.pointerPosition.x, this.pointerPosition.y);
+      this.position.x = clamp(this.position.x, this.bounds.minX, this.bounds.maxX);
+      this.position.y = clamp(this.position.y, this.bounds.minY, this.bounds.maxY);
+    }
 
     getPointerPosition() { return { ...this.pointerPosition }; }
 
@@ -424,18 +442,20 @@
       surface.classList.remove(hoverClass);
       window.setTimeout(() => close.focus({ preventScroll: true }), 80);
     };
-    const closeContact = () => {
+    const closeContact = ({ restoreFocus = false } = {}) => {
       if (!opened) return;
       opened = false;
       trigger.setAttribute('aria-expanded', 'false');
       surface.classList.remove(openClass, hoverClass);
-      hideTimer = window.setTimeout(() => { note.hidden = true; }, reducedMotion ? 0 : 520);
-      trigger.focus({ preventScroll: true });
+      window.clearTimeout(hideTimer);
+      hideTimer = 0;
+      note.hidden = true;
+      if (restoreFocus) trigger.focus({ preventScroll: true });
     };
     const onKeyDown = (event) => {
       if (event.key === 'Escape' && opened) {
         event.preventDefault();
-        closeContact();
+        closeContact({ restoreFocus: true });
       }
     };
 
@@ -443,12 +463,13 @@
     const onPointerLeave = () => setHover(false);
     const onFocus = () => setHover(true);
     const onBlur = () => setHover(false);
+    const onCloseClick = () => closeContact({ restoreFocus: false });
     trigger.addEventListener('pointerenter', onPointerEnter);
     trigger.addEventListener('pointerleave', onPointerLeave);
     trigger.addEventListener('focus', onFocus);
     trigger.addEventListener('blur', onBlur);
     trigger.addEventListener('click', openContact);
-    close.addEventListener('click', closeContact);
+    close.addEventListener('click', onCloseClick);
     window.addEventListener('keydown', onKeyDown);
 
     return {
@@ -458,7 +479,7 @@
         trigger.removeEventListener('focus', onFocus);
         trigger.removeEventListener('blur', onBlur);
         trigger.removeEventListener('click', openContact);
-        close.removeEventListener('click', closeContact);
+        close.removeEventListener('click', onCloseClick);
         window.removeEventListener('keydown', onKeyDown);
         window.clearTimeout(hideTimer);
         driftLoop?.kill();
@@ -1448,6 +1469,115 @@
     }
   };
 
+  function initContinuousDescent(world) {
+    const swimmer = world.querySelector('.swimmer');
+    const tracker = new DiverPointerTracker(world, swimmer);
+    const depthReadout = world.querySelector('.descent-depth b');
+    const instruction = world.querySelector('.descent-instruction');
+    const signals = [...world.querySelectorAll('[data-signal-start]')];
+    const scrollSpacer = document.querySelector('.descent-scroll-spacer');
+    const boundaryStops = [
+      { at: 0, left: .31, right: .69, zone: 'entry' },
+      { at: .14, left: .12, right: .88, zone: 'opening' },
+      { at: .34, left: .08, right: .92, zone: 'great-chamber' },
+      { at: .51, left: .31, right: .69, zone: 'writing-passage' },
+      { at: .65, left: .27, right: .86, zone: 'side-expansion' },
+      { at: .78, left: .14, right: .88, zone: 'quiet-descent' },
+      { at: .92, left: .08, right: .92, zone: 'deepest-point' },
+      { at: 1, left: .1, right: .9, zone: 'deepest-point' }
+    ];
+    let viewport = { width: 0, height: 0, halfW: 66, halfH: 47, maxDepth: 1 };
+    let targetDepth = 0;
+    let currentDepth = 0;
+    let dirty = true;
+
+    const interpolateBounds = (progress) => {
+      if (progress <= boundaryStops[0].at) return boundaryStops[0];
+      const nextIndex = boundaryStops.findIndex((stop) => progress <= stop.at);
+      const end = boundaryStops[Math.max(1, nextIndex)];
+      const start = boundaryStops[Math.max(0, boundaryStops.indexOf(end) - 1)];
+      const span = Math.max(.0001, end.at - start.at);
+      const t = clamp((progress - start.at) / span, 0, 1);
+      const eased = t * t * (3 - 2 * t);
+      return {
+        left: start.left + (end.left - start.left) * eased,
+        right: start.right + (end.right - start.right) * eased,
+        zone: end.zone
+      };
+    };
+
+    const refreshGeometry = () => {
+      const rect = world.getBoundingClientRect();
+      const swimmerRect = swimmer?.getBoundingClientRect();
+      viewport.width = rect.width;
+      viewport.height = rect.height;
+      viewport.halfW = (swimmerRect?.width || 132) / 2;
+      viewport.halfH = (swimmerRect?.height || 94) / 2;
+      viewport.maxDepth = Math.max(1, (scrollSpacer?.offsetHeight || document.documentElement.scrollHeight) - viewport.height);
+      targetDepth = clamp(window.scrollY, 0, viewport.maxDepth);
+      currentDepth = clamp(currentDepth, 0, viewport.maxDepth);
+      tracker.refreshBox();
+      dirty = true;
+    };
+
+    const applyBounds = (progress) => {
+      const boundary = interpolateBounds(progress);
+      const edge = Math.max(18, viewport.halfW * .34);
+      const minX = clamp(boundary.left * viewport.width + viewport.halfW * .3, viewport.halfW + edge, viewport.width - viewport.halfW - edge);
+      const maxX = clamp(boundary.right * viewport.width - viewport.halfW * .3, viewport.halfW + edge, viewport.width - viewport.halfW - edge);
+      tracker.setDiveBounds({
+        minX,
+        maxX: Math.max(minX, maxX),
+        minY: viewport.halfH + 18,
+        maxY: Math.max(viewport.halfH + 18, viewport.height - viewport.halfH - 22),
+        hardMinY: viewport.halfH + 18,
+        hardMaxY: Math.max(viewport.halfH + 18, viewport.height - viewport.halfH - 22)
+      });
+      world.dataset.depthZone = boundary.zone;
+      world.dataset.safeLeft = minX.toFixed(1);
+      world.dataset.safeRight = Math.max(minX, maxX).toFixed(1);
+    };
+
+    const render = () => {
+      const delta = targetDepth - currentDepth;
+      if (!dirty && Math.abs(delta) < .08) return;
+      currentDepth += reducedMotion ? delta : delta * .105;
+      if (Math.abs(targetDepth - currentDepth) < .08) currentDepth = targetDepth;
+      const progress = clamp(currentDepth / viewport.maxDepth, 0, 1);
+      world.style.setProperty('--descent-depth', `${-currentDepth}px`);
+      world.style.setProperty('--depth-distant', `${-currentDepth * .42}px`);
+      world.style.setProperty('--depth-middle', `${-currentDepth * .9}px`);
+      world.style.setProperty('--depth-foreground', `${-currentDepth * 1.08}px`);
+      world.style.setProperty('--depth-content', `${-currentDepth}px`);
+      applyBounds(progress);
+      if (depthReadout) depthReadout.textContent = `${String(Math.round(progress * 420)).padStart(3, '0')}m`;
+      if (instruction) instruction.style.opacity = String(.92 - progress * .58);
+      signals.forEach((signal) => {
+        const start = Number(signal.dataset.signalStart || 0);
+        const end = Number(signal.dataset.signalEnd || 1);
+        const reveal = clamp((progress - start) / Math.max(.01, end - start), 0, 1);
+        signal.style.setProperty('--signal-opacity', (.11 + reveal * .73).toFixed(3));
+        signal.style.setProperty('--signal-scale', (.78 + reveal * .22).toFixed(3));
+        signal.style.setProperty('--signal-blur', `${(2.8 - reveal * 2.8).toFixed(2)}px`);
+      });
+      dirty = Math.abs(targetDepth - currentDepth) >= .08;
+    };
+
+    const onScroll = () => {
+      targetDepth = clamp(window.scrollY, 0, viewport.maxDepth);
+      dirty = true;
+    };
+
+    refreshGeometry();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', refreshGeometry, { passive: true });
+    render();
+    if (gs) gs.ticker.add(render); else {
+      const frame = () => { render(); requestAnimationFrame(frame); };
+      requestAnimationFrame(frame);
+    }
+  }
+
   function initDivePage(world) {
     const swimmer = world.querySelector('.swimmer');
     const tracker = new DiverPointerTracker(world, swimmer);
@@ -1672,7 +1802,8 @@
   }
   const world = document.querySelector('.dive-world');
   if (world) {
-    initDivePage(world);
+    if (world.classList.contains('dive-descent')) initContinuousDescent(world);
+    else initDivePage(world);
     const returnJelly = world.querySelector('.jelly-return');
     returnJelly?.addEventListener('click', (event) => {
       event.preventDefault();
