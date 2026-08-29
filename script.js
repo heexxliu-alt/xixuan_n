@@ -19,6 +19,7 @@
   const DIVER_VERTICAL_DEAD_ZONE = 28;
   const DIVER_MAX_POSE_DELTA = 1.1;
   const DIVER_WAIT_POSTURE = 72;
+  const DEBUG_HIDDEN_CAVE = true;
   if (gs && window.MorphSVGPlugin) gs.registerPlugin(window.MorphSVGPlugin);
 
   class DiverPointerTracker {
@@ -65,6 +66,7 @@
       this.trailIndexes = [3, 8, 14, 19, 25, 31];
       this.calm = false;
       this.calmFloat = 0;
+      this.pointerFollowEnabled = true;
       // Normalize percentage-based initial positions to pixel coordinates before
       // the pointer setters start writing left/top; otherwise GSAP can interpret
       // the initial percentage values as layout offsets.
@@ -202,6 +204,7 @@
     }
 
     onPointerMove(event) {
+      if (!this.pointerFollowEnabled) return;
       this.refreshBox();
       const rawX = clamp(event.clientX - this.box.left, 0, this.box.width);
       const rawY = clamp(event.clientY - this.box.top, 0, this.box.height);
@@ -372,6 +375,11 @@
 
     setDiverTarget(x, y) {
       this.diverTarget = this.getDiverTarget(x, y);
+    }
+
+    setPointerFollowEnabled(enabled) {
+      this.pointerFollowEnabled = Boolean(enabled);
+      if (!this.pointerFollowEnabled) this.diverTarget = { ...this.position };
     }
 
     getVelocity() { return { ...this.velocity }; }
@@ -1474,9 +1482,17 @@
     const tracker = new DiverPointerTracker(world, swimmer);
     const depthReadout = world.querySelector('.descent-depth b');
     const instruction = world.querySelector('.descent-instruction');
+    const onboarding = world.querySelector('.descent-onboarding');
     const signals = [...world.querySelectorAll('[data-signal-start]')];
+    const sideNodes = [...world.querySelectorAll('[data-side-start]')];
+    const writingNodes = [...world.querySelectorAll('[data-writing-start]')];
+    const deepNodes = [...world.querySelectorAll('[data-deep-start]')];
+    const approachNodes = [...world.querySelectorAll('[data-approach]')];
     const scrollSpacer = document.querySelector('.descent-scroll-spacer');
-    const boundaryStops = [
+    const debugHiddenCave = DEBUG_HIDDEN_CAVE || new URLSearchParams(window.location.search).has('debug-hidden-cave');
+    document.body.classList.toggle('debug-hidden-cave', debugHiddenCave);
+    if (debugHiddenCave && scrollSpacer) scrollSpacer.style.height = '520vh';
+    const baseBoundaryStops = [
       { at: 0, left: .31, right: .69, zone: 'entry' },
       { at: .14, left: .12, right: .88, zone: 'opening' },
       { at: .34, left: .08, right: .92, zone: 'great-chamber' },
@@ -1486,10 +1502,253 @@
       { at: .92, left: .08, right: .92, zone: 'deepest-point' },
       { at: 1, left: .1, right: .9, zone: 'deepest-point' }
     ];
+    const boundaryStops = debugHiddenCave ? [
+      ...baseBoundaryStops.slice(0, 7),
+      { at: .965, left: .23, right: .77, zone: 'hidden-cave' },
+      { at: 1, left: .25, right: .75, zone: 'hidden-cave' }
+    ] : baseBoundaryStops;
     let viewport = { width: 0, height: 0, halfW: 66, halfH: 47, maxDepth: 1 };
     let targetDepth = 0;
     let currentDepth = 0;
     let dirty = true;
+    let onboardingDismissed = false;
+    let ascentActive = false;
+    let bubbleTimer = 0;
+    let ascentTimeline = null;
+    let pullActive = false;
+    let pullPointerId = null;
+    let pullStartY = 0;
+    let pullDistance = 0;
+    const lifeline = world.querySelector('.descent-lifeline');
+    const ascentBubbles = world.querySelector('.ascent-bubbles');
+    const PULL_THRESHOLD = 118;
+    const PULL_MAX = 174;
+
+    const dismissOnboarding = () => {
+      if (onboardingDismissed || !onboarding) return;
+      onboardingDismissed = true;
+      onboarding.classList.add('is-dismissed');
+      window.removeEventListener('wheel', dismissOnboarding);
+      window.removeEventListener('touchmove', dismissOnboarding);
+      window.removeEventListener('keydown', onOnboardingKey);
+    };
+
+    const onOnboardingKey = (event) => {
+      if (['ArrowDown', 'PageDown', ' ', 'Spacebar'].includes(event.key)) dismissOnboarding();
+    };
+
+    const setPullVisual = (distance) => {
+      if (!lifeline) return;
+      pullDistance = clamp(distance, 0, PULL_MAX);
+      const ratio = pullDistance / PULL_MAX;
+      lifeline.style.setProperty('--rope-pull', `${pullDistance.toFixed(1)}px`);
+      lifeline.style.setProperty('--rope-stretch', ratio.toFixed(3));
+    };
+
+    const springLifelineBack = () => {
+      if (!lifeline) return;
+      lifeline.classList.remove('is-pulling');
+      if (gs && !reducedMotion) {
+        gs.to(lifeline, {
+          '--rope-pull': '0px',
+          '--rope-stretch': 0,
+          duration: .72,
+          ease: 'elastic.out(1,.42)',
+          overwrite: 'auto'
+        });
+      } else {
+        setPullVisual(0);
+      }
+    };
+
+    const spawnAscentBubble = (origin, intensity) => {
+      if (!ascentBubbles) return;
+      const nearDiver = Math.random() < .62;
+      const size = nearDiver
+        ? 10 + Math.random() * (18 + intensity * 14)
+        : 24 + Math.random() * (20 + intensity * 34);
+      const startX = nearDiver
+        ? clamp(origin.x + (Math.random() - .5) * (44 + intensity * 86), 14, viewport.width - 14)
+        : 18 + Math.random() * Math.max(20, viewport.width - 36);
+      const startY = nearDiver
+        ? clamp(origin.y + 18 + Math.random() * (28 + intensity * 44), viewport.height * .38, viewport.height + 18)
+        : viewport.height - size * .28 + Math.random() * 70;
+      const bubble = document.createElement('i');
+      bubble.className = 'ascent-bubble';
+      bubble.style.setProperty('--bubble-x', `${startX.toFixed(1)}px`);
+      bubble.style.setProperty('--bubble-y', `${startY.toFixed(1)}px`);
+      bubble.style.setProperty('--bubble-size', `${size.toFixed(1)}px`);
+      if (size > 42) bubble.style.filter = 'blur(2.2px)';
+      ascentBubbles.appendChild(bubble);
+      if (gs) {
+        gs.fromTo(bubble, {
+          autoAlpha: 0,
+          scale: nearDiver ? .48 : .62,
+          x: 0,
+          y: 0
+        }, {
+          autoAlpha: nearDiver ? .72 : .42,
+          scale: .92 + intensity * .24,
+          x: (Math.random() - .5) * (18 + intensity * 38),
+          y: -(viewport.height * (.82 + Math.random() * .42)),
+          duration: 1.35 + Math.random() * .75 - intensity * .16,
+          ease: 'power1.out',
+          onComplete: () => bubble.remove()
+        });
+      } else {
+        bubble.style.opacity = nearDiver ? '.62' : '.36';
+        bubble.style.animation = `ascent-bubble-rise ${1.8 - intensity * .3}s ease-out forwards`;
+        window.setTimeout(() => bubble.remove(), 2100);
+      }
+    };
+
+    const startBubbleStream = (origin) => {
+      if (bubbleTimer || !ascentBubbles) return;
+      let intensity = .12;
+      bubbleTimer = window.setInterval(() => {
+        intensity = clamp(intensity + .055, .12, 1);
+        const count = intensity > .62 ? 2 : 1;
+        for (let i = 0; i < count; i += 1) spawnAscentBubble(origin, intensity);
+      }, 104);
+    };
+
+    const stopBubbleStream = () => {
+      if (bubbleTimer) window.clearInterval(bubbleTimer);
+      bubbleTimer = 0;
+    };
+
+    const resetDepthBehindBubbles = () => {
+      targetDepth = 0;
+      currentDepth = 0;
+      dirty = true;
+      window.scrollTo(0, 0);
+    };
+
+    const lockAscentScroll = (event) => event.preventDefault();
+
+    const finishAscent = () => {
+      stopBubbleStream();
+      window.removeEventListener('wheel', lockAscentScroll);
+      window.location.assign('index.html');
+    };
+
+    const beginAscent = () => {
+      if (ascentActive || !lifeline) return;
+      ascentActive = true;
+      const diverOrigin = tracker.getPosition();
+      lifeline.classList.remove('is-pulling');
+      lifeline.classList.add('is-ascent');
+      document.body.classList.add('is-ascent-active');
+      world.classList.add('is-ascent-active');
+      window.addEventListener('wheel', lockAscentScroll, { passive: false });
+      tracker.setPointerFollowEnabled(false);
+      tracker.destroy();
+      if (!gs || reducedMotion) {
+        world.style.setProperty('--ascent-light', '1');
+        world.style.setProperty('--ascent-bubbles-opacity', '0');
+        resetDepthBehindBubbles();
+        window.setTimeout(finishAscent, 520);
+        return;
+      }
+      gs.killTweensOf(swimmer);
+      gs.set(world, {
+        '--ascent-light': 0,
+        '--ascent-bubbles-opacity': 0,
+        '--ascent-distant-shift': '0px',
+        '--ascent-middle-shift': '0px',
+        '--ascent-foreground-shift': '0px',
+        '--ascent-content-shift': '0px'
+      });
+      ascentTimeline = gs.timeline({
+        defaults: { ease: 'power2.out' },
+        onComplete: finishAscent
+      });
+      ascentTimeline
+        .to(lifeline, { '--rope-pull': '0px', '--rope-stretch': 0, duration: .56, ease: 'elastic.out(1,.42)' }, 0)
+        .to(swimmer, { rotation: -78, duration: .62, ease: 'power2.inOut' }, 0)
+        .to(world, {
+          '--ascent-distant-shift': '20vh',
+          '--ascent-middle-shift': '42vh',
+          '--ascent-foreground-shift': '56vh',
+          '--ascent-content-shift': '72vh',
+          '--ascent-light': .16,
+          '--ascent-bubbles-opacity': .5,
+          duration: 1.05,
+          ease: 'power1.in'
+        }, .18)
+        .call(() => startBubbleStream(diverOrigin), [], .3)
+        .to(swimmer, { y: -106, duration: .92, ease: 'power1.in' }, .35)
+        .to(world, {
+          '--ascent-distant-shift': '42vh',
+          '--ascent-middle-shift': '78vh',
+          '--ascent-foreground-shift': '98vh',
+          '--ascent-content-shift': '118vh',
+          '--ascent-light': .46,
+          '--ascent-bubbles-opacity': .82,
+          duration: 1.1,
+          ease: 'power1.in'
+        }, .8)
+        .to(swimmer, { y: -560, rotation: -62, duration: 2.2, ease: 'power2.in' }, .92)
+        .to(world, {
+          '--ascent-distant-shift': '66vh',
+          '--ascent-middle-shift': '120vh',
+          '--ascent-foreground-shift': '150vh',
+          '--ascent-content-shift': '178vh',
+          '--ascent-light': .94,
+          '--ascent-bubbles-opacity': 1,
+          duration: 1.1,
+          ease: 'power2.in'
+        }, 1.48)
+        .call(resetDepthBehindBubbles, [], 2.34)
+        .to(world, { '--ascent-light': 1, duration: .72, ease: 'sine.inOut' }, 2.2)
+        .to(world, { '--ascent-bubbles-opacity': 0, duration: .48, ease: 'power1.out' }, 3.02)
+        .to(lifeline, { autoAlpha: 0, duration: .2, ease: 'power1.out' }, 3.12);
+    };
+
+    if (lifeline) {
+      lifeline.addEventListener('pointerenter', () => { if (!ascentActive) lifeline.classList.add('is-near'); });
+      lifeline.addEventListener('pointerleave', () => { if (!pullActive) lifeline.classList.remove('is-near'); });
+      lifeline.addEventListener('pointerdown', (event) => {
+        if (ascentActive || event.button !== 0) return;
+        const rect = lifeline.getBoundingClientRect();
+        if (event.clientY < rect.top + 54) return;
+        pullActive = true;
+        pullPointerId = event.pointerId;
+        pullStartY = event.clientY;
+        setPullVisual(0);
+        lifeline.classList.add('is-near', 'is-pulling', 'has-been-touched');
+        lifeline.setPointerCapture?.(event.pointerId);
+        tracker.setPointerFollowEnabled(false);
+        event.preventDefault();
+      });
+      lifeline.addEventListener('pointermove', (event) => {
+        if (!pullActive || event.pointerId !== pullPointerId) return;
+        setPullVisual(event.clientY - pullStartY);
+        event.preventDefault();
+      });
+      window.addEventListener('pointermove', (event) => {
+        if (!pullActive || event.pointerId !== pullPointerId) return;
+        setPullVisual(event.clientY - pullStartY);
+        event.preventDefault();
+      }, { passive: false });
+      const releasePull = (event) => {
+        if (!pullActive || (event.pointerId != null && event.pointerId !== pullPointerId)) return;
+        const reached = pullDistance >= PULL_THRESHOLD;
+        pullActive = false;
+        pullPointerId = null;
+        lifeline.releasePointerCapture?.(event.pointerId);
+        if (reached) beginAscent();
+        else {
+          tracker.setPointerFollowEnabled(true);
+          springLifelineBack();
+        }
+        event.preventDefault();
+      };
+      lifeline.addEventListener('pointerup', releasePull);
+      lifeline.addEventListener('pointercancel', releasePull);
+      window.addEventListener('pointerup', releasePull);
+      window.addEventListener('pointercancel', releasePull);
+    }
 
     const interpolateBounds = (progress) => {
       if (progress <= boundaryStops[0].at) return boundaryStops[0];
@@ -1550,26 +1809,71 @@
       world.style.setProperty('--depth-foreground', `${-currentDepth * 1.08}px`);
       world.style.setProperty('--depth-content', `${-currentDepth}px`);
       applyBounds(progress);
-      if (depthReadout) depthReadout.textContent = `${String(Math.round(progress * 420)).padStart(3, '0')}m`;
+      if (depthReadout) depthReadout.textContent = `${String(Math.round(progress * (debugHiddenCave ? 520 : 420))).padStart(3, '0')}m`;
       if (instruction) instruction.style.opacity = String(.92 - progress * .58);
       signals.forEach((signal) => {
         const start = Number(signal.dataset.signalStart || 0);
         const end = Number(signal.dataset.signalEnd || 1);
         const reveal = clamp((progress - start) / Math.max(.01, end - start), 0, 1);
-        signal.style.setProperty('--signal-opacity', (.11 + reveal * .73).toFixed(3));
-        signal.style.setProperty('--signal-scale', (.78 + reveal * .22).toFixed(3));
-        signal.style.setProperty('--signal-blur', `${(2.8 - reveal * 2.8).toFixed(2)}px`);
+        const isDistantSignal = signal.classList.contains('distant-signal');
+        signal.style.setProperty('--signal-opacity', (isDistantSignal ? .035 + reveal * .245 : .11 + reveal * .73).toFixed(3));
+        signal.style.setProperty('--signal-scale', (isDistantSignal ? .55 + reveal * .4 : .78 + reveal * .22).toFixed(3));
+        signal.style.setProperty('--signal-blur', `${(isDistantSignal ? 8 - reveal * 4.5 : 2.8 - reveal * 2.8).toFixed(2)}px`);
+      });
+      sideNodes.forEach((node) => {
+        const start = Number(node.dataset.sideStart || 0);
+        const end = Number(node.dataset.sideEnd || 1);
+        const reveal = clamp((progress - start) / Math.max(.01, end - start), 0, 1);
+        node.style.setProperty('--side-opacity', (.08 + reveal * .92).toFixed(3));
+        node.style.setProperty('--side-scale', (.94 + reveal * .06).toFixed(3));
+        node.style.setProperty('--side-shift', `${((1 - reveal) * 12).toFixed(2)}px`);
+        node.style.setProperty('--side-blur', `${((1 - reveal) * 3).toFixed(2)}px`);
+      });
+      writingNodes.forEach((node) => {
+        const start = Number(node.dataset.writingStart || 0);
+        const end = Number(node.dataset.writingEnd || 1);
+        const reveal = clamp((progress - start) / Math.max(.01, end - start), 0, 1);
+        node.style.setProperty('--writing-opacity', (.08 + reveal * .92).toFixed(3));
+        node.style.setProperty('--writing-scale', (.96 + reveal * .04).toFixed(3));
+        node.style.setProperty('--writing-shift', `${((1 - reveal) * 8).toFixed(2)}px`);
+        node.style.setProperty('--writing-blur', `${((1 - reveal) * 3).toFixed(2)}px`);
+      });
+      approachNodes.forEach((node) => {
+        const nodeRect = node.getBoundingClientRect();
+        const diverRect = swimmer?.getBoundingClientRect();
+        if (!diverRect) return;
+        const dx = (diverRect.left + diverRect.width / 2) - (nodeRect.left + nodeRect.width / 2);
+        const dy = (diverRect.top + diverRect.height / 2) - (nodeRect.top + nodeRect.height / 2);
+        const radius = Math.max(220, Math.min(viewport.width, viewport.height) * .46);
+        const proximity = clamp(1 - Math.hypot(dx, dy) / radius, 0, 1);
+        node.style.setProperty('--approach-boost', (proximity * .2).toFixed(3));
+        node.style.setProperty('--approach-glow', `${(proximity * 22).toFixed(1)}px`);
+        if (node.classList.contains('travel-note')) node.style.setProperty('--travel-affordance', (.24 + proximity * .76).toFixed(3));
+      });
+      deepNodes.forEach((node) => {
+        const start = Number(node.dataset.deepStart || 0);
+        const end = Number(node.dataset.deepEnd || 1);
+        const reveal = clamp((progress - start) / Math.max(.01, end - start), 0, 1);
+        node.style.setProperty('--deep-opacity', (.08 + reveal * .92).toFixed(3));
+        node.style.setProperty('--deep-scale', (.96 + reveal * .04).toFixed(3));
+        node.style.setProperty('--deep-shift', `${((1 - reveal) * 8).toFixed(2)}px`);
+        node.style.setProperty('--deep-blur', `${((1 - reveal) * 3).toFixed(2)}px`);
       });
       dirty = Math.abs(targetDepth - currentDepth) >= .08;
     };
 
     const onScroll = () => {
+      if (ascentActive) return;
       targetDepth = clamp(window.scrollY, 0, viewport.maxDepth);
+      if (targetDepth > 2) dismissOnboarding();
       dirty = true;
     };
 
     refreshGeometry();
     window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('wheel', dismissOnboarding, { passive: true });
+    window.addEventListener('touchmove', dismissOnboarding, { passive: true });
+    window.addEventListener('keydown', onOnboardingKey);
     window.addEventListener('resize', refreshGeometry, { passive: true });
     render();
     if (gs) gs.ticker.add(render); else {
