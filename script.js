@@ -1487,6 +1487,8 @@
     const sideNodes = [...world.querySelectorAll('[data-side-start]')];
     const writingNodes = [...world.querySelectorAll('[data-writing-start]')];
     const deepNodes = [...world.querySelectorAll('[data-deep-start]')];
+    const revealNodes = [...world.querySelectorAll('[data-reveal-start]')];
+    const caseNodes = [...world.querySelectorAll('[data-case]')];
     const approachNodes = [...world.querySelectorAll('[data-approach]')];
     const scrollSpacer = document.querySelector('.descent-scroll-spacer');
     const debugHiddenCave = DEBUG_HIDDEN_CAVE || new URLSearchParams(window.location.search).has('debug-hidden-cave');
@@ -1511,6 +1513,7 @@
     let targetDepth = 0;
     let currentDepth = 0;
     let dirty = true;
+    let lastProximityPosition = { x: Number.NaN, y: Number.NaN };
     let onboardingDismissed = false;
     let ascentActive = false;
     let bubbleTimer = 0;
@@ -1855,7 +1858,12 @@
 
     const render = () => {
       const delta = targetDepth - currentDepth;
-      if (!dirty && Math.abs(delta) < .08) return;
+      const diverPosition = tracker.getPosition();
+      const diverMoved = Math.hypot(
+        diverPosition.x - lastProximityPosition.x,
+        diverPosition.y - lastProximityPosition.y
+      ) > .35;
+      if (!dirty && Math.abs(delta) < .08 && !diverMoved) return;
       currentDepth += reducedMotion ? delta : delta * .105;
       if (Math.abs(targetDepth - currentDepth) < .08) currentDepth = targetDepth;
       const progress = clamp(currentDepth / viewport.maxDepth, 0, 1);
@@ -1867,6 +1875,21 @@
       applyBounds(progress);
       if (depthReadout) depthReadout.textContent = `${String(Math.round(progress * (debugHiddenCave ? 520 : 420))).padStart(3, '0')}m`;
       if (instruction) instruction.style.opacity = String(.92 - progress * .58);
+      revealNodes.forEach((node) => {
+        const start = Number(node.dataset.revealStart || 0);
+        const end = Number(node.dataset.revealEnd || 1);
+        const exit = Number(node.dataset.revealExit || 2);
+        const reveal = clamp((progress - start) / Math.max(.01, end - start), 0, 1);
+        const departure = progress <= exit
+          ? 1
+          : clamp(1 - (progress - exit) / .11, 0, 1);
+        const easedReveal = reveal * reveal * (3 - 2 * reveal);
+        const shift = (1 - easedReveal) * Number(node.dataset.revealY || 14);
+        node.style.setProperty('--entry-opacity', (easedReveal * departure).toFixed(3));
+        node.style.setProperty('--entry-shift', `${shift.toFixed(2)}px`);
+        node.style.setProperty('--entry-scale', (0.985 + easedReveal * .015).toFixed(3));
+        node.style.setProperty('--entry-blur', `${((1 - easedReveal) * 3 + (1 - departure) * 2).toFixed(2)}px`);
+      });
       signals.forEach((signal) => {
         const start = Number(signal.dataset.signalStart || 0);
         const end = Number(signal.dataset.signalEnd || 1);
@@ -1906,6 +1929,17 @@
         node.style.setProperty('--approach-glow', `${(proximity * 22).toFixed(1)}px`);
         if (node.classList.contains('travel-note')) node.style.setProperty('--travel-affordance', (.24 + proximity * .76).toFixed(3));
       });
+      caseNodes.forEach((node) => {
+        const nodeRect = node.getBoundingClientRect();
+        const diverRect = swimmer?.getBoundingClientRect();
+        if (!diverRect) return;
+        const dx = (diverRect.left + diverRect.width / 2) - (nodeRect.left + nodeRect.width / 2);
+        const dy = (diverRect.top + diverRect.height / 2) - (nodeRect.top + nodeRect.height / 2);
+        const radius = Math.max(240, Math.min(viewport.width, viewport.height) * .52);
+        const proximity = clamp(1 - Math.hypot(dx, dy) / radius, 0, 1);
+        node.style.setProperty('--case-proximity', proximity.toFixed(3));
+        node.classList.toggle('is-near-case', proximity > .34);
+      });
       deepNodes.forEach((node) => {
         const start = Number(node.dataset.deepStart || 0);
         const end = Number(node.dataset.deepEnd || 1);
@@ -1915,6 +1949,7 @@
         node.style.setProperty('--deep-shift', `${((1 - reveal) * 8).toFixed(2)}px`);
         node.style.setProperty('--deep-blur', `${((1 - reveal) * 3).toFixed(2)}px`);
       });
+      lastProximityPosition = diverPosition;
       dirty = Math.abs(targetDepth - currentDepth) >= .08;
     };
 
