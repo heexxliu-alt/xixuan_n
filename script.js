@@ -207,21 +207,31 @@
     }
 
     onPointerMove(event) {
-      if (!this.pointerFollowEnabled) return;
-      this.refreshBox();
       const rawX = clamp(event.clientX - this.box.left, 0, this.box.width);
       const rawY = clamp(event.clientY - this.box.top, 0, this.box.height);
-      this.pointerPosition.x = rawX;
-      this.pointerPosition.y = rawY;
-      const modeChanged = this.updateSurfaceMode(rawY);
+      // The cursor light belongs to the real pointer, even while a cinematic
+      // temporarily suspends Diver follow. This keeps the handoff immersive
+      // without moving or locking the user's actual mouse.
+      if (!this.pointerFollowEnabled) {
+        this.root.style.setProperty('--focus-x', `${(rawX / Math.max(1, this.box.width)) * 100}%`);
+        this.root.style.setProperty('--focus-y', `${(rawY / Math.max(1, this.box.height)) * 100}%`);
+        this.renderPosition(rawX, rawY);
+        return;
+      }
+      this.refreshBox();
+      const nextX = clamp(event.clientX - this.box.left, 0, this.box.width);
+      const nextY = clamp(event.clientY - this.box.top, 0, this.box.height);
+      this.pointerPosition.x = nextX;
+      this.pointerPosition.y = nextY;
+      const modeChanged = this.updateSurfaceMode(nextY);
       if (!this.isSurface || this.surfaceMode === 'FOLLOW') {
-        this.diverTarget = this.getDiverTarget(rawX, rawY);
+        this.diverTarget = this.getDiverTarget(nextX, nextY);
       } else if (modeChanged && this.surfaceMode === 'WAIT') {
         this.diverTarget = { ...this.position };
       }
-      this.root.style.setProperty('--focus-x', `${(rawX / Math.max(1, this.box.width)) * 100}%`);
-      this.root.style.setProperty('--focus-y', `${(rawY / Math.max(1, this.box.height)) * 100}%`);
-      this.renderPosition(this.pointerPosition.x, this.pointerPosition.y);
+      this.root.style.setProperty('--focus-x', `${(nextX / Math.max(1, this.box.width)) * 100}%`);
+      this.root.style.setProperty('--focus-y', `${(nextY / Math.max(1, this.box.height)) * 100}%`);
+      this.renderPosition(nextX, nextY);
     }
 
     setPosition(el, left, top) {
@@ -584,10 +594,49 @@
       surface.classList.toggle('is-planet-hover', nearPlanet);
       surface.style.setProperty('--sky-hover-x', `${x * 100}%`);
       surface.style.setProperty('--sky-hover-y', `${y * 100}%`);
+
+      // Affordance proximity is visual-only: it never changes hit areas or
+      // movement targets. Each authored interactive object gets a continuous
+      // 0..1 distance value so Idle → Proximity can ease into its existing
+      // hover/active state without adding a second interaction system.
+      const pointerX = event.clientX - rect.left;
+      const pointerY = event.clientY - rect.top;
+      const proximityTo = (selector, radiusFactor = 1.2, minRadius = 72) => {
+        const node = surface.querySelector(selector);
+        if (!node) return 0;
+        const box = node.getBoundingClientRect();
+        const cx = box.left - rect.left + box.width / 2;
+        const cy = box.top - rect.top + box.height / 2;
+        const radius = Math.max(minRadius, Math.max(box.width, box.height) * radiusFactor);
+        return clamp(1 - Math.hypot(pointerX - cx, pointerY - cy) / radius, 0, 1);
+      };
+      const applyProximity = (name, value, threshold = .02) => {
+        surface.style.setProperty(`--${name}-proximity`, value.toFixed(3));
+        surface.classList.toggle(`is-${name}-proximity`, value > threshold);
+        if (name === 'planet') {
+          surface.style.setProperty('--planet-local-glow-alpha', (0.74 + value * 0.14).toFixed(3));
+          surface.style.setProperty('--planet-orbit-alpha', (0.38 + value * 0.3).toFixed(3));
+          surface.style.setProperty('--planet-atmosphere-alpha', (0.34 + value * 0.26).toFixed(3));
+        } else if (name === 'dive-cta') {
+          surface.style.setProperty('--dive-cta-glow-radius', `${(5 + value * 5).toFixed(2)}px`);
+          surface.style.setProperty('--dive-cta-glow-alpha', (0.26 + value * 0.14).toFixed(3));
+        } else if (name === 'drift-bottle') {
+          surface.style.setProperty('--drift-bottle-glow-radius', `${(4.5 + value * 4.5).toFixed(2)}px`);
+          surface.style.setProperty('--drift-bottle-glow-alpha', (0.2 + value * 0.14).toFixed(3));
+        }
+      };
+      applyProximity('planet', proximityTo('.planet-hotspot', 1.15, 110));
+      applyProximity('dive-cta', proximityTo('.surface-lifebuoy-entry', 1.35, 120));
+      applyProximity('drift-bottle', proximityTo('.drift-bottle-trigger', 1.4, 110));
+      // The transformed Diver box includes generous transparent padding; use
+      // a tighter radius so the environmental response only appears when the
+      // pointer is genuinely near the swimmer, not near the CTA below.
+      applyProximity('diver', proximityTo('.home-diver', .45, 72));
     };
     surface.addEventListener('pointermove', updateSkyHotspot, { passive: true });
     surface.addEventListener('pointerleave', () => {
-      surface.classList.remove('is-sky-hotspot', 'is-planet-hover');
+      surface.classList.remove('is-sky-hotspot', 'is-planet-hover', 'is-planet-proximity', 'is-dive-cta-proximity', 'is-drift-bottle-proximity', 'is-diver-proximity');
+      ['planet', 'dive-cta', 'drift-bottle', 'diver'].forEach((name) => surface.style.setProperty(`--${name}-proximity`, '0'));
     });
     const particleNodes = particleField ? [...particleField.querySelectorAll('.surface-water-particle')] : [];
     if (!gs && !reducedMotion) {
@@ -1528,6 +1577,11 @@
     let dirty = true;
     let lastProximityPosition = { x: Number.NaN, y: Number.NaN };
     let onboardingDismissed = false;
+    let onboardingHasScrolled = false;
+    let onboardingHasSwum = false;
+    const onboardingStartPointer = tracker.getPointerPosition();
+    const ONBOARDING_SCROLL_DISTANCE = 16;
+    const ONBOARDING_SWIM_DISTANCE = 32;
     let ascentActive = false;
     let bubbleTimer = 0;
     let ascentTimeline = null;
@@ -1540,18 +1594,138 @@
     const ascentBubbles = world.querySelector('.ascent-bubbles');
     const PULL_THRESHOLD = 118;
     const PULL_MAX = 174;
+    const riftRegion = world.querySelector('.rift-region');
+    let riftAutoDive = false;
+    let riftCompleted = false;
+    let riftAutoState = { t: 0 };
+    let riftLockScrollY = 0;
+    let riftTimeline = null;
+
+    const renderRiftVisual = (progress) => {
+      const dropIn = clamp((progress - .225) / .14, 0, 1);
+      const dropOut = clamp((.72 - progress) / .17, 0, 1);
+      const auto = riftAutoDive ? riftAutoState.t : 0;
+      const visibility = Math.max(riftCompleted ? .72 : 0, dropIn * dropOut);
+      const restriction = Math.max(clamp((progress - .36) / .22, 0, 1), auto);
+      const exit = riftAutoDive
+        ? .22 + auto * .68
+        : riftCompleted
+          ? .82
+          : clamp((progress - .58) / .12, 0, 1) * .58;
+      world.style.setProperty('--rift-visibility', visibility.toFixed(3));
+      world.style.setProperty('--rift-exit-opacity', exit.toFixed(3));
+      world.style.setProperty('--rift-left-width', `${(29 + restriction * 14).toFixed(2)}%`);
+      world.style.setProperty('--rift-right-width', `${(25 + restriction * 18).toFixed(2)}%`);
+      world.style.setProperty('--rift-front-width', `${(35 + restriction * 13).toFixed(2)}%`);
+      // Keep the visual state on the world root even if a stale partial DOM
+      // ever omits the optional region; the rest of the descent must remain
+      // usable and the next full page load will restore the plate.
+      if (!riftRegion) return;
+    };
+
+    const setRiftAutoMotion = (progress) => {
+      riftAutoState.t = clamp(progress, 0, 1);
+      world.style.setProperty('--rift-auto-progress', riftAutoState.t.toFixed(3));
+      world.style.setProperty('--rift-auto-distant', `${(riftAutoState.t * 34).toFixed(1)}px`);
+      world.style.setProperty('--rift-auto-middle', `${(riftAutoState.t * 78).toFixed(1)}px`);
+      world.style.setProperty('--rift-auto-foreground', `${(riftAutoState.t * 132).toFixed(1)}px`);
+      world.style.setProperty('--rift-auto-content', `${(riftAutoState.t * 84).toFixed(1)}px`);
+      renderRiftVisual(clamp(currentDepth / Math.max(1, viewport.maxDepth), 0, 1));
+    };
+
+    const unlockRift = () => {
+      window.removeEventListener('wheel', lockRiftScroll);
+      window.removeEventListener('touchmove', lockRiftScroll);
+      if (riftTimeline) riftTimeline.kill();
+      riftTimeline = null;
+      riftAutoDive = false;
+      riftCompleted = true;
+      world.classList.remove('is-rift-auto');
+      document.body.classList.remove('is-rift-auto');
+      world.style.setProperty('--rift-auto-progress', '0');
+      world.style.setProperty('--rift-auto-distant', '0px');
+      world.style.setProperty('--rift-auto-middle', '0px');
+      world.style.setProperty('--rift-auto-foreground', '0px');
+      world.style.setProperty('--rift-auto-content', '0px');
+      tracker.setPointerFollowEnabled(true);
+      tracker.setDiverTarget(tracker.getPointerPosition().x, tracker.getPointerPosition().y);
+      renderRiftVisual(clamp(currentDepth / Math.max(1, viewport.maxDepth), 0, 1));
+    };
+
+    const beginRiftAutoDive = () => {
+      if (riftAutoDive || riftCompleted || ascentActive || !riftRegion) return;
+      riftAutoDive = true;
+      riftLockScrollY = window.scrollY;
+      riftAutoState = { t: 0 };
+      world.classList.add('is-rift-auto');
+      document.body.classList.add('is-rift-auto');
+      targetDepth = currentDepth;
+      window.scrollTo(0, riftLockScrollY);
+      window.addEventListener('wheel', lockRiftScroll, { passive: false });
+      window.addEventListener('touchmove', lockRiftScroll, { passive: false });
+      tracker.setPointerFollowEnabled(false);
+      const origin = tracker.getPosition();
+      const maxTravel = Math.min(viewport.height * .42, 330);
+      const destination = {
+        x: clamp(viewport.width * .5 + (origin.x - viewport.width * .5) * .34, tracker.bounds.minX, tracker.bounds.maxX),
+        y: clamp(origin.y + maxTravel, tracker.bounds.minY, tracker.bounds.maxY)
+      };
+      const swimPoint = () => {
+        const t = riftAutoState.t;
+        const arc = Math.sin(t * Math.PI);
+        const x = origin.x + (destination.x - origin.x) * t + Math.sin(t * Math.PI * 1.45) * (26 + arc * 26);
+        const y = origin.y + (destination.y - origin.y) * (t * .84 + t * t * .16) - arc * 16;
+        tracker.setDiverTarget(x, y);
+        setRiftAutoMotion(t);
+      };
+      if (!gs || reducedMotion) {
+        riftAutoState.t = 1;
+        swimPoint();
+        window.setTimeout(unlockRift, reducedMotion ? 140 : 420);
+        return;
+      }
+      riftTimeline = gs.to(riftAutoState, {
+        t: 1,
+        duration: 4.25,
+        ease: 'power2.inOut',
+        onUpdate: swimPoint,
+        onComplete: unlockRift
+      });
+    };
+
+    const lockRiftScroll = (event) => {
+      event.preventDefault();
+      window.scrollTo(0, riftLockScrollY);
+    };
 
     const dismissOnboarding = () => {
       if (onboardingDismissed || !onboarding) return;
       onboardingDismissed = true;
       onboarding.classList.add('is-dismissed');
-      window.removeEventListener('wheel', dismissOnboarding);
-      window.removeEventListener('touchmove', dismissOnboarding);
+      window.removeEventListener('pointermove', markOnboardingSwim);
+      window.removeEventListener('mousemove', markOnboardingSwim);
       window.removeEventListener('keydown', onOnboardingKey);
     };
 
+    const maybeDismissOnboarding = () => {
+      if (onboardingHasScrolled && onboardingHasSwum) dismissOnboarding();
+    };
+
+    const markOnboardingSwim = () => {
+      if (onboardingDismissed || onboardingHasSwum) return;
+      const pointer = tracker.getPointerPosition();
+      onboardingHasSwum = Math.hypot(
+        pointer.x - onboardingStartPointer.x,
+        pointer.y - onboardingStartPointer.y
+      ) >= ONBOARDING_SWIM_DISTANCE;
+      maybeDismissOnboarding();
+    };
+
     const onOnboardingKey = (event) => {
-      if (['ArrowDown', 'PageDown', ' ', 'Spacebar'].includes(event.key)) dismissOnboarding();
+      if (['ArrowDown', 'PageDown', ' ', 'Spacebar'].includes(event.key)) {
+        onboardingHasScrolled = true;
+        maybeDismissOnboarding();
+      }
     };
 
     const setPullVisual = (distance) => {
@@ -1564,15 +1738,14 @@
 
     const setLifelineDepth = (progress) => {
       if (!lifeline) return;
-      // The lower rope tail retracts first; the buoy itself remains the
-      // persistent return-to-surface anchor at the top of the viewport.
-      // Only gather the lower tail to a deliberate medium length. The
-      // return device remains readable at every depth; it never collapses
-      // into a tiny remnant or disappears from the viewport.
+      // The buoy remains the persistent return-to-surface anchor while the
+      // rope gathers from its fixed upper attachment. The visual length is
+      // capped at a deliberate half-length and never disappears.
       const ropeRetract = clamp((progress - .015) / .14, 0, .5);
       lifeline.style.setProperty('--rope-retract', ropeRetract.toFixed(3));
-      lifeline.style.setProperty('--rope-retract-height', `${(ropeRetract * 100).toFixed(1)}%`);
-      lifeline.style.setProperty('--rope-tail-lift', `${(-ropeRetract * 58).toFixed(1)}px`);
+      // Compress the rope from its fixed upper attachment so the lower knot
+      // travels with the rope instead of being erased by a bottom clip.
+      lifeline.style.setProperty('--rope-tail-lift', `${(-ropeRetract * 188).toFixed(1)}px`);
       lifeline.style.setProperty('--lifeline-lift', '0px');
       const promptDock = clamp((progress - .025) / .1, 0, 1);
       lifeline.style.setProperty('--return-copy-x', `${(promptDock * 105).toFixed(1)}px`);
@@ -1897,6 +2070,7 @@
       currentDepth += reducedMotion ? delta : delta * .105;
       if (Math.abs(targetDepth - currentDepth) < .08) currentDepth = targetDepth;
       const progress = clamp(currentDepth / viewport.maxDepth, 0, 1);
+      world.classList.toggle('is-rift-passage', progress > .21 && progress < .72);
       world.style.setProperty('--depth-light-loss', (Math.pow(progress, .72) * .52).toFixed(3));
       world.style.setProperty('--descent-depth', `${-currentDepth}px`);
       world.style.setProperty('--depth-distant', `${-currentDepth * .42}px`);
@@ -1905,6 +2079,13 @@
       world.style.setProperty('--depth-content', `${-currentDepth}px`);
       applyBounds(progress);
       setLifelineDepth(progress);
+      renderRiftVisual(progress);
+      if (!riftAutoDive && !riftCompleted && progress > .285 && progress < .61) {
+        const diver = tracker.getPosition();
+        const nearRiftOpening = diver.y > viewport.height * .66;
+        const insideRiftLane = diver.x > viewport.width * .29 && diver.x < viewport.width * .72;
+        if (nearRiftOpening && insideRiftLane) beginRiftAutoDive();
+      }
       const maxDepthMeters = debugHiddenCave ? 520 : 420;
       const depthMeters = 6 + Math.round(progress * (maxDepthMeters - 6));
       if (depthReadout) depthReadout.textContent = `${String(depthMeters).padStart(3, '0')}m`;
@@ -2007,14 +2188,17 @@
     const onScroll = () => {
       if (ascentActive) return;
       targetDepth = clamp(window.scrollY, 0, viewport.maxDepth);
-      if (targetDepth > 2) dismissOnboarding();
+      if (targetDepth > ONBOARDING_SCROLL_DISTANCE) {
+        onboardingHasScrolled = true;
+        maybeDismissOnboarding();
+      }
       dirty = true;
     };
 
     refreshGeometry();
     window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('wheel', dismissOnboarding, { passive: true });
-    window.addEventListener('touchmove', dismissOnboarding, { passive: true });
+    window.addEventListener('pointermove', markOnboardingSwim, { passive: true });
+    window.addEventListener('mousemove', markOnboardingSwim, { passive: true });
     window.addEventListener('keydown', onOnboardingKey);
     window.addEventListener('resize', refreshGeometry, { passive: true });
     render();

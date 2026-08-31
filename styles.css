@@ -13,7 +13,21 @@ a{color:inherit;text-decoration:none}
 .site-mark{font-weight:700}
 .home-copy{position:relative;z-index:3;width:min(70vw,720px);margin:clamp(38px,9vh,90px) auto 0;padding-inline:18px;text-align:center;background:transparent!important;border:none!important;box-shadow:none!important}
 .home-copy p{margin:0 0 clamp(13px,1.5vw,20px);font:clamp(10px,.74vw,12px)/1.35 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.15em;color:rgba(71,58,107,.78)}
-.dive-cta-region{position:absolute;z-index:7;left:50%;bottom:calc(12% - 38px);width:min(260px,82vw);height:62px;transform:translateX(-50%);pointer-events:auto;overflow:visible}
+.dive-cta-region{position:absolute;z-index:7;left:50%;bottom:calc(12% + 52px);width:min(260px,82vw);height:62px;transform:translateX(-50%);pointer-events:auto;overflow:visible}
+.surface-lifebuoy-entry{position:absolute;z-index:3;left:50%;top:50px;width:clamp(136px,12.5vw,198px);height:clamp(91px,8.3vw,133px);display:block;transform:translateX(-50%) rotate(-3deg);transform-origin:center center;pointer-events:auto;cursor:pointer!important;outline:0;filter:drop-shadow(0 8px 10px rgba(63,91,151,.2));transition:transform .8s cubic-bezier(.2,.75,.25,1),filter .6s ease}
+.surface-lifebuoy-entry::before,.surface-lifebuoy-entry::after{content:"";position:absolute;left:50%;top:54%;display:block;border:1px solid rgba(165,218,226,.32);border-left-color:rgba(165,218,226,.1);border-right-color:transparent;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%) scaleY(.48);transition:opacity .6s ease,transform .8s ease}
+.surface-lifebuoy-entry::before{width:118%;height:42%;opacity:.55}
+.surface-lifebuoy-entry::after{width:143%;height:54%;opacity:.3;border-top-color:rgba(255,236,198,.32);border-bottom-color:rgba(165,202,228,.16)}
+.surface-lifebuoy-float{position:absolute;inset:0;display:block;transform-origin:center center;animation:surface-lifebuoy-drift 9.8s ease-in-out infinite;pointer-events:none}
+.surface-lifebuoy-art{display:block;width:100%;height:100%;object-fit:contain;opacity:.98;filter:saturate(.82) brightness(1.1) contrast(1.04) drop-shadow(0 5px 7px rgba(66,87,145,.16));pointer-events:none;transition:filter .55s ease,opacity .55s ease}
+.surface-lifebuoy-entry:hover,.surface-lifebuoy-entry:focus-visible{transform:translate(-50%,-3px) rotate(-2deg) scale(1.035);filter:drop-shadow(0 10px 14px rgba(63,91,151,.25))}
+.surface-lifebuoy-entry:hover .surface-lifebuoy-art,.surface-lifebuoy-entry:focus-visible .surface-lifebuoy-art{opacity:1;filter:saturate(.9) brightness(1.16) contrast(1.06) drop-shadow(0 0 12px rgba(255,255,255,.38))}
+.surface-lifebuoy-entry:hover::before,.surface-lifebuoy-entry:focus-visible::before{opacity:.78;transform:translate(-50%,-50%) scaleY(.52)}
+.surface-lifebuoy-entry:hover::after,.surface-lifebuoy-entry:focus-visible::after{opacity:.48;transform:translate(-50%,-50%) scaleY(.58)}
+.surface-hero.is-dive-cta-clicking .surface-lifebuoy-entry{transform:translate(-50%,2px) rotate(-3deg) scale(.97);filter:drop-shadow(0 5px 8px rgba(63,91,151,.14))}
+.surface-hero.is-dive-cta-clicking .surface-lifebuoy-entry::before,.surface-hero.is-dive-cta-clicking .surface-lifebuoy-entry::after{opacity:0;transform:translate(-50%,-50%) scale(.5,.2)}
+.surface-hero.is-dive-cta-clicking .surface-lifebuoy-art{opacity:.6;transition:opacity .28s ease}
+@keyframes surface-lifebuoy-drift{0%,100%{transform:translate3d(0,0,0) rotate(0deg)}32%{transform:translate3d(-2px,-2px,0) rotate(.8deg)}67%{transform:translate3d(2px,1px,0) rotate(-.6deg)}}
 .dive-vortex{position:absolute;z-index:0;left:50%;top:24px;width:430px;height:116px;transform:translateX(-50%);pointer-events:none;opacity:.96;mix-blend-mode:normal;filter:blur(.08px);will-change:opacity}
 .dive-vortex-ring{position:absolute;left:50%;top:50%;display:block;width:100px;height:34px;border:2px solid rgba(80,157,187,.65);border-top-color:rgba(155,187,231,.82);border-bottom-color:rgba(92,157,196,.52);border-left-color:rgba(98,177,193,.32);border-right-color:transparent;border-radius:47% 53% 44% 56%;box-shadow:0 0 10px rgba(115,178,216,.3);transform:translate(-50%,-50%) rotate(-4deg) scaleY(.55);opacity:.95;will-change:transform,opacity,border-radius}
 .dive-vortex-ring-a{width:300px;height:88px;border-width:2px;border-color:rgba(111,181,205,.48);border-top-color:rgba(180,207,239,.76);border-bottom-color:rgba(93,164,201,.38);border-left-color:rgba(105,179,195,.24);border-right-color:transparent;box-shadow:0 0 12px rgba(111,180,214,.25)}
@@ -154,7 +168,7 @@ a{color:inherit;text-decoration:none}
 .communications{left:75%;top:31%;width:20%;height:25%}
 .tools{left:46%;top:75%;width:18%;height:15%}
 .insight{left:78%;top:72%;width:14%;height:20%}
-.glow{position:absolute;z-index:2;width:260px;height:260px;border-radius:49% 51% 46% 54%;background:radial-gradient(ellipse,rgba(255,251,214,.5) 0 7%,rgba(228,250,245,.39) 23%,rgba(176,225,236,.19) 48%,transparent 72%);transform:translate(-50%,-50%);pointer-events:none;transition:left .24s ease-out,top .24s ease-out;mix-blend-mode:screen}
+.glow{position:absolute;z-index:2;width:260px;height:260px;border-radius:49% 51% 46% 54%;background:radial-gradient(ellipse,rgba(255,251,214,.5) 0 7%,rgba(228,250,245,.39) 23%,rgba(176,225,236,.19) 48%,transparent 72%);transform:translate(-50%,-50%);pointer-events:none;transition:none;mix-blend-mode:screen}
 .cursor-light{position:absolute;z-index:12;width:12px;height:12px;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);background:#fff2b7;box-shadow:0 0 0 3px rgba(255,245,194,.35),0 0 12px 5px rgba(218,251,236,.72),0 0 30px 13px rgba(173,226,239,.3);mix-blend-mode:screen}
 .trail{position:absolute;z-index:7;inset:0;pointer-events:none;overflow:visible}
 .trail i{position:absolute;display:block;left:50%;top:50%;width:20px;height:20px;border-radius:50%;transform:translate(-50%,-50%);opacity:.82;mix-blend-mode:screen;will-change:left,top,transform;transition:left .08s linear,top .08s linear}
@@ -364,7 +378,7 @@ body.is-ascent-active .is-fallback-ascent .descent-layer{transition:transform 1.
 body.is-ascent-active{overflow:hidden}
 body.is-ascent-active .descent-lifeline{pointer-events:none}
 body.is-ascent-active .descent-onboarding{opacity:0!important}
-.descent-onboarding{position:absolute;z-index:55;left:50%;top:72%;display:grid;justify-items:center;gap:8px;min-width:220px;transform:translate3d(-50%,0,0);color:rgba(239,253,246,.92);font-family:"SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.16em;text-align:center;text-shadow:0 2px 14px rgba(8,14,58,.68);pointer-events:none;transition:opacity .78s ease,transform .78s cubic-bezier(.2,.7,.25,1)}.descent-onboarding strong{font-size:11px;font-weight:500}.descent-onboarding strong i{display:inline-block;margin-left:6px;color:rgba(255,242,208,.9);font-style:normal}.descent-onboarding span{font-size:8px;color:rgba(202,239,239,.68);letter-spacing:.2em}.descent-onboarding.is-dismissed{opacity:0;transform:translate3d(-50%,10px,0)}
+.descent-onboarding{position:absolute;z-index:55;left:50%;top:72%;display:grid;justify-items:center;gap:8px;min-width:220px;transform:translate3d(-50%,0,0);color:rgba(239,253,246,.92);font-family:"SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.16em;text-align:center;text-shadow:0 2px 14px rgba(8,14,58,.68);pointer-events:none;transition:opacity .78s ease,transform .78s cubic-bezier(.2,.7,.25,1)}.descent-onboarding strong{font-size:11px;font-weight:500}.descent-onboarding strong i{display:inline-block;margin-left:6px;color:rgba(255,242,208,.9);font-style:normal}.descent-onboarding span{font-size:8px;color:rgba(202,239,239,.68);letter-spacing:.2em}.descent-onboarding.is-dismissed{animation:none!important;opacity:0;transform:translate3d(-50%,10px,0)}
 .dive-descent .cursor-layer{z-index:60}.dive-descent .descent-diver{z-index:61;width:132px;height:auto;filter:drop-shadow(0 9px 9px rgba(20,26,78,.3)) drop-shadow(0 0 13px rgba(222,251,240,.24))}
 .dive-descent .glow{z-index:59;opacity:.82}.dive-descent .cursor-light{z-index:62}
 
@@ -444,8 +458,9 @@ body.is-ascent-active .descent-onboarding{opacity:0!important}
 /* The device stays in the upper water column while descending: its lower
    rope tail retracts by clipping from the bottom, then the buoy drifts up. */
 .dive-descent .descent-lifeline{transform:translate3d(-50%,var(--lifeline-lift,0px),0)}
-.lifeline-rope-retract{position:absolute;z-index:1;left:42px;top:7px;width:120px;height:214px;display:block;overflow:hidden;clip-path:inset(0 0 var(--rope-retract-height,0%) 0);pointer-events:none}
+.lifeline-rope-retract{position:absolute;z-index:1;left:42px;top:7px;width:120px;height:214px;display:block;overflow:visible;transform:scaleY(calc(1 - var(--rope-retract,0)));transform-origin:50% 0;pointer-events:none;will-change:transform}
 .lifeline-rope-retract .lifeline-rope-art{position:relative;left:0;top:0;width:100%;height:100%}
+.dive-descent .lifeline-rope{transform:scaleY(calc((1 - var(--rope-retract,0)) * (1 + var(--rope-stretch,0) * .16)));transform-origin:50% 0}
 .dive-descent .lifeline-grip{transform:translate3d(0,calc(var(--rope-pull) + var(--rope-tail-lift,0px)),0) rotate(-7deg)}
 .dive-descent .deep-water-motion{position:absolute;inset:0;z-index:1;display:block;overflow:hidden;opacity:1;background:none;isolation:isolate;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,transparent 20%,rgba(0,0,0,.16) 31%,#000 48%,#000 100%);mask-image:linear-gradient(to bottom,transparent 0%,transparent 20%,rgba(0,0,0,.16) 31%,#000 48%,#000 100%)}
 .dive-descent .deep-water-motion::before,.dive-descent .deep-water-motion::after{inset:-46%;border-radius:42% 58% 47% 53%;opacity:1;filter:blur(52px);mix-blend-mode:soft-light;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.12) 13%,#000 31%,#000 100%);mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.12) 13%,#000 31%,#000 100%);will-change:transform,background-position}
@@ -463,3 +478,398 @@ body.is-ascent-active .descent-onboarding{opacity:0!important}
 .dive-descent .deep-information.profile-coordinates,.dive-descent .deep-information.quiet-professional{filter:blur(var(--information-blur,0px))}
 
 @media(prefers-reduced-motion:reduce){.dive-descent .world-scene-open-water,.dive-descent .sea-surface-haze,.dive-descent .sea-light-beam,.dive-descent .deep-water-motion::before,.dive-descent .deep-water-motion::after,.dive-descent .descent-onboarding{animation:none!important}.dive-descent .descent-diver{filter:saturate(.72) brightness(.74) contrast(1.02) drop-shadow(0 9px 12px rgba(8,22,53,.34))}}
+
+/* Rift / Drop-off transition: one new environmental plate, broken into
+   distant, middle and foreground layers so the world changes scale before
+   the Great Chamber appears. It carries no content or interface. */
+.dive-descent{--rift-visibility:0;--rift-exit-opacity:0;--rift-left-width:30%;--rift-right-width:26%;--rift-auto-distant:0px;--rift-auto-middle:0px;--rift-auto-foreground:0px;--rift-auto-content:0px}
+.dive-descent .sea-foundation{overflow:visible}
+.dive-descent .rift-region{position:absolute;z-index:4;left:0;top:124vh;width:100%;height:246vh;overflow:hidden;opacity:var(--rift-visibility);pointer-events:none;isolation:isolate;will-change:opacity,transform}
+.dive-descent .rift-plate{position:absolute;inset:0;display:block;background:linear-gradient(180deg,rgba(128,188,206,.06),rgba(21,45,92,.14) 32%,rgba(8,17,51,.55) 100%),url("assets/rift-dropoff-environment-v1.png") center bottom / 100% 115% no-repeat;filter:saturate(.58) brightness(.72) contrast(.96);mix-blend-mode:normal;-webkit-mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.16) 8%,#000 21%,#000 78%,rgba(0,0,0,.82) 91%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.16) 8%,#000 21%,#000 78%,rgba(0,0,0,.82) 91%,transparent 100%)}
+.dive-descent .rift-region::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 50% 76% at 50% 58%,rgba(42,113,167,.14),rgba(8,19,56,.02) 56%,rgba(5,10,38,.48) 100%),linear-gradient(180deg,rgba(41,89,135,.1),transparent 38%,rgba(8,11,43,.34) 100%);mix-blend-mode:multiply;pointer-events:none}
+.dive-descent .rift-dropoff-glow{position:absolute;left:50%;top:42%;width:min(45vw,700px);height:82vh;display:block;transform:translateX(-50%);border-radius:50%;background:radial-gradient(ellipse,rgba(61,157,202,.24) 0,rgba(26,82,148,.13) 42%,transparent 74%);filter:blur(18px);opacity:.68}
+.dive-descent .rift-far-current{position:absolute;left:50%;top:26%;width:36%;height:58%;display:block;transform:translateX(-50%);border-radius:50%;background:repeating-linear-gradient(168deg,transparent 0 28px,rgba(166,221,222,.12) 29px 31px,transparent 33px 58px);filter:blur(4px);opacity:.42;mix-blend-mode:screen;animation:rift-current-drift 17s ease-in-out infinite}
+.dive-descent .rift-walls{position:absolute;z-index:2;left:0;top:144vh;width:100%;height:225vh;overflow:hidden;opacity:var(--rift-visibility);pointer-events:none;isolation:isolate;will-change:opacity}
+.dive-descent .rift-wall{position:absolute;top:0;height:100%;display:block;background-image:linear-gradient(145deg,rgba(8,18,51,.38),rgba(27,56,93,.26) 42%,rgba(72,106,131,.08) 76%),url("assets/rift-dropoff-environment-v1.png");background-repeat:no-repeat;background-size:190% 100%;filter:saturate(.56) brightness(.9) contrast(1.02);opacity:.54;box-shadow:inset 0 0 62px rgba(5,10,38,.22)}
+.dive-descent .rift-wall-left{left:0;width:var(--rift-left-width);background-position:left 50%;clip-path:polygon(0 0,100% 5%,82% 13%,96% 22%,73% 32%,91% 42%,66% 53%,88% 65%,61% 75%,76% 88%,49% 100%,0 100%)}
+.dive-descent .rift-wall-right{right:0;width:var(--rift-right-width);background-position:right 52%;clip-path:polygon(0 0,100% 0,100% 100%,52% 100%,73% 88%,44% 77%,83% 65%,56% 54%,86% 42%,59% 31%,93% 20%,68% 10%)}
+.dive-descent .rift-wall::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(106,168,177,.08),transparent 24%,rgba(3,9,35,.24) 100%);mix-blend-mode:screen}
+.dive-descent .rift-rift-veil{position:absolute;z-index:1;left:50%;top:8%;width:70%;height:92%;display:block;transform:translateX(-50%);background:radial-gradient(ellipse at 50% 42%,rgba(8,26,71,.02) 0 22%,rgba(6,14,53,.24) 48%,rgba(3,7,33,.76) 87%,rgba(2,5,27,.9) 100%);filter:blur(8px);opacity:.88}
+.dive-descent .rift-exit-window{position:absolute;z-index:3;left:50%;top:83%;width:min(58vw,880px);height:54vh;display:block;transform:translateX(-50%);background:radial-gradient(ellipse at 50% 55%,rgba(119,207,219,.42) 0 9%,rgba(71,142,190,.28) 26%,rgba(24,53,115,.12) 56%,transparent 76%),url("assets/dive-great-chamber-environment-candidate-v1.png") center 36% / cover no-repeat;filter:saturate(.48) brightness(.74);-webkit-mask-image:radial-gradient(ellipse at 50% 54%,#000 0 28%,rgba(0,0,0,.7) 52%,transparent 80%);mask-image:radial-gradient(ellipse at 50% 54%,#000 0 28%,rgba(0,0,0,.7) 52%,transparent 80%);opacity:var(--rift-exit-opacity);mix-blend-mode:screen}
+.dive-descent .rift-scenery-plate{position:absolute;z-index:1;left:0;top:140vh;width:100%;height:248vh;display:block;background:linear-gradient(180deg,rgba(37,85,120,.04),rgba(8,16,48,.2) 46%,rgba(3,7,31,.62) 100%),url("assets/rift-dropoff-environment-v1.png") center bottom / 100% 115% no-repeat;filter:saturate(.56) brightness(.68) contrast(.98);opacity:calc(var(--rift-visibility) * .84);-webkit-mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.08) 6%,#000 16%,#000 86%,rgba(0,0,0,.7) 95%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.08) 6%,#000 16%,#000 86%,rgba(0,0,0,.7) 95%,transparent 100%);pointer-events:none}
+.dive-descent .rift-front-rock{position:absolute;z-index:4;top:194vh;width:var(--rift-front-width,36%);height:168vh;display:block;background-image:linear-gradient(145deg,rgba(5,11,39,.44),rgba(20,41,74,.36) 48%,rgba(68,91,117,.08)),url("assets/rift-dropoff-environment-v1.png");background-size:210% 100%;filter:saturate(.48) brightness(.78) contrast(1.06);box-shadow:inset 0 0 68px rgba(2,6,29,.28);opacity:calc(var(--rift-visibility) * .48);will-change:transform,opacity}
+.dive-descent .rift-front-rock-left{left:-7vw;background-position:left 64%;clip-path:polygon(0 0,84% 6%,61% 15%,91% 26%,55% 38%,79% 49%,45% 61%,68% 73%,38% 86%,57% 100%,0 100%)}
+.dive-descent .rift-front-rock-right{right:-8vw;background-position:right 62%;clip-path:polygon(16% 0,100% 0,100% 100%,44% 100%,64% 87%,33% 76%,57% 63%,24% 51%,50% 38%,19% 26%,42% 14%)}
+.dive-descent .rift-current-streak{position:absolute;z-index:5;left:50%;top:190vh;width:52%;height:126vh;display:block;transform:translateX(-50%);background:repeating-linear-gradient(165deg,transparent 0 31px,rgba(156,222,224,.12) 32px 34px,transparent 36px 74px);filter:blur(3px);opacity:calc(var(--rift-visibility) * .45);mix-blend-mode:screen;animation:rift-current-drift 13s ease-in-out infinite}
+.dive-descent.is-rift-auto .rift-front-rock-left{transform:translate3d(calc(var(--rift-auto-progress,0) * -16px),calc(var(--rift-auto-foreground) * -1),0)}
+.dive-descent.is-rift-auto .rift-front-rock-right{transform:translate3d(calc(var(--rift-auto-progress,0) * 18px),calc(var(--rift-auto-foreground) * -1),0)}
+.dive-descent.is-rift-auto .rift-current-streak{animation-duration:1.8s;opacity:.66}
+.dive-descent.is-rift-auto .rift-far-current{animation-duration:2.4s;opacity:.68}
+.dive-descent.is-rift-auto .descent-layer-distant{transform:translate3d(0,calc(var(--depth-distant) + var(--rift-auto-distant)),0)}
+.dive-descent.is-rift-auto .descent-layer-middle{transform:translate3d(0,calc(var(--depth-middle) + var(--rift-auto-middle)),0)}
+.dive-descent.is-rift-auto .descent-layer-foreground{transform:translate3d(0,calc(var(--depth-foreground) + var(--rift-auto-foreground)),0)}
+.dive-descent.is-rift-auto .descent-layer-content{transform:translate3d(0,calc(var(--depth-content) + var(--rift-auto-content)),0)}
+@keyframes rift-current-drift{0%,100%{transform:translate3d(-50%,0,0) skewX(-4deg);opacity:.28}50%{transform:translate3d(-47%,18px,0) skewX(3deg);opacity:.58}}
+@media(max-width:700px){.dive-descent .rift-wall-left{width:var(--rift-left-width)}.dive-descent .rift-wall-right{width:var(--rift-right-width)}.dive-descent .rift-front-rock{width:var(--rift-front-width,43%)}.dive-descent .rift-exit-window{width:84vw}}
+@media(prefers-reduced-motion:reduce){.dive-descent .rift-far-current,.dive-descent .rift-current-streak{animation:none!important}}
+
+/* Keep the transition itself quiet: later placeholder nodes and Case copy
+   stay out of frame until the Great Chamber phase is intentionally resumed. */
+.dive-descent.is-rift-passage .node-writing,
+.dive-descent.is-rift-passage .world-scene-open-water,
+.dive-descent.is-rift-passage .node-side,
+.dive-descent.is-rift-passage .node-deepest,
+.dive-descent.is-rift-passage .distant-signal,
+.dive-descent.is-rift-passage .chamber-approach,
+.dive-descent.is-rift-passage .great-chamber{opacity:0!important;visibility:hidden!important;pointer-events:none!important}
+.dive-descent.is-rift-passage .cave-shell-writing,
+.dive-descent.is-rift-passage .cave-shell-side,
+.dive-descent.is-rift-passage .cave-shell-quiet,
+.dive-descent.is-rift-passage .cave-shell-deep,
+.dive-descent.is-rift-passage .rock-writing-left,
+.dive-descent.is-rift-passage .rock-writing-right,
+.dive-descent.is-rift-passage .rock-side-right,
+.dive-descent.is-rift-passage .rock-deep-left,
+.dive-descent.is-rift-passage .cave-echo-writing,
+.dive-descent.is-rift-passage .cave-echo-deep{opacity:0!important;visibility:hidden!important}
+
+/* Surface Lifebuoy entry: keep the shared pastel details legible and let the
+   two-line invitation sit directly above the object. */
+.surface-hero .dive-cta-region .dive-vortex{display:none!important}
+.surface-hero .dive-cta-region .dive-trigger{opacity:1;color:rgba(190,248,243,.98);text-shadow:0 1px 1px rgba(58,103,120,.28);animation:none!important}
+.surface-hero .dive-cta-region .dive-trigger-hint{top:calc(100% + clamp(95px,7vw,110px));z-index:4;opacity:1;color:rgba(190,248,243,.96);text-shadow:0 1px 1px rgba(58,103,120,.24);animation:none!important}
+.surface-hero .dive-cta-region:hover .dive-trigger,.surface-hero .dive-cta-region:focus-within .dive-trigger{color:rgba(190,248,243,.98);text-shadow:0 1px 1px rgba(58,103,120,.3)}
+.surface-hero .dive-cta-region:hover .dive-trigger-hint,.surface-hero .dive-cta-region:focus-within .dive-trigger-hint{color:rgba(190,248,243,.98);text-shadow:0 1px 1px rgba(58,103,120,.26)}
+.surface-hero .dive-cta-region .dive-trigger{animation:none!important}
+.surface-hero .dive-cta-region:hover .dive-trigger,.surface-hero .dive-cta-region:focus-within .dive-trigger{animation:none!important}
+.surface-hero.is-dive-cta-clicking .dive-cta-region .dive-trigger{animation:none!important}
+@keyframes surface-lifebuoy-text-breathe{0%,100%{text-shadow:0 1px 0 rgba(55,110,143,.34),0 0 1px rgba(255,255,255,.38),0 0 4px rgba(190,235,244,.18)}50%{text-shadow:0 1px 0 rgba(55,110,143,.34),0 0 2px rgba(255,255,255,.92),0 0 7px rgba(190,235,244,.56),0 0 12px rgba(155,213,231,.22)}}
+
+/* Deep Sea water base: keep the original framework blue beneath one
+   continuous, softly moving water-surface texture. */
+.dive-descent.dive-world{--depth-light-loss:0;background:radial-gradient(ellipse at 50% -8%,#cef5f4 0%,#77bcdc 23%,#384e98 64%,#191a4c 100%)}
+.dive-descent::before{z-index:30;opacity:.14!important;background:repeating-linear-gradient(104deg,rgba(210,239,255,.12) 0 1px,transparent 1px 8px),repeating-linear-gradient(15deg,rgba(45,39,103,.2) 0 1px,transparent 1px 10px)}
+.dive-descent::after{z-index:31;opacity:1;background:radial-gradient(ellipse at var(--focus-x,50%) var(--focus-y,52%),transparent 0 10%,rgba(19,25,77,.05) 36%,rgba(10,14,54,.32) 100%);mix-blend-mode:multiply}
+.dive-descent .world-scene-open-water{display:none!important}
+.dive-descent .deep-water-motion{display:none!important}
+.dive-descent .sea-surface-haze{display:block!important;top:-30vh;height:132vh;opacity:.8;filter:blur(15px)}
+.dive-descent .sea-light-beam{display:block!important;opacity:.56}
+.dive-descent .sea-light-beam-b{opacity:.38}
+.dive-descent .sea-caustic-suggestion{display:block!important;opacity:.18}
+.dive-descent .surface-look-up-wash{display:block!important}
+.dive-descent .surface-look-up-ripple{border-color:rgba(218,250,244,.16);border-bottom-color:transparent;mix-blend-mode:normal}
+.dive-descent .surface-look-up-shimmer{opacity:.16;background:repeating-linear-gradient(165deg,transparent 0 18px,rgba(235,255,247,.42) 19px 21px,transparent 22px 36px);mix-blend-mode:normal}
+
+/* Deep Sea water texture: the supplied reference is a broad, soft open-water
+   field, so movement comes from large masked luminance masses rather than
+   repeated lines, hard beam edges, or a pasted image plate. */
+.dive-descent::before{opacity:.025!important;background:none!important}
+.dive-descent .deep-water-motion{display:block!important;z-index:1;opacity:1;background:none;mix-blend-mode:soft-light;isolation:isolate;-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.24) 0%,#000 18%,#000 82%,rgba(0,0,0,.22) 100%);mask-image:linear-gradient(180deg,rgba(0,0,0,.24) 0%,#000 18%,#000 82%,rgba(0,0,0,.22) 100%)}
+.dive-descent .deep-water-motion::before,.dive-descent .deep-water-motion::after{content:"";position:absolute;display:block;pointer-events:none;border-radius:50%;will-change:transform,background-position;background-repeat:no-repeat}
+.dive-descent .deep-water-motion::before{inset:-25%;opacity:.08;filter:blur(31px);mix-blend-mode:screen;background:radial-gradient(ellipse 60% 32% at 13% 8%,rgba(228,243,242,.52),rgba(193,220,231,.2) 42%,transparent 78%),radial-gradient(ellipse 49% 42% at 48% 3%,rgba(231,244,242,.58),rgba(181,213,227,.18) 45%,transparent 80%),radial-gradient(ellipse 63% 35% at 88% 18%,rgba(174,208,226,.38),transparent 78%),radial-gradient(ellipse 38% 58% at 26% 68%,rgba(55,82,153,.25),transparent 79%),radial-gradient(ellipse 57% 39% at 78% 75%,rgba(31,48,122,.22),transparent 82%);background-size:142% 120%,132% 132%,154% 126%,142% 154%,152% 146%;background-position:0% 4%,48% 0%,100% 18%,18% 76%,88% 82%;animation:deep-reference-water-drift 37s ease-in-out infinite}
+.dive-descent .deep-water-motion::after{inset:-16%;opacity:.06;filter:blur(19px);mix-blend-mode:multiply;background:radial-gradient(ellipse 38% 22% at 32% 22%,rgba(222,239,240,.16),transparent 76%),radial-gradient(ellipse 45% 28% at 67% 29%,rgba(195,222,232,.13),transparent 78%),radial-gradient(ellipse 34% 38% at 15% 58%,rgba(26,52,121,.36),transparent 78%),radial-gradient(ellipse 54% 28% at 72% 76%,rgba(12,26,92,.3),transparent 80%);background-size:136% 128%,148% 136%,144% 152%,158% 142%;background-position:10% 18%,84% 22%,4% 70%,92% 84%;animation:deep-reference-water-drift-b 49s ease-in-out -13s infinite}
+.dive-descent .world-scene-open-water{display:block!important;z-index:0;top:-6vh;width:106vw;height:132vh;background-image:url("assets/dive-open-water-first-view-candidate-v1.png");background-size:cover;background-position:50% 0%;opacity:.42;filter:saturate(.56) contrast(1.08) brightness(1.08);mix-blend-mode:soft-light;-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.94) 0%,#000 22%,#000 76%,rgba(0,0,0,.34) 94%,transparent 100%);mask-image:linear-gradient(180deg,rgba(0,0,0,.94) 0%,#000 22%,#000 76%,rgba(0,0,0,.34) 94%,transparent 100%);animation:deep-open-water-drift 43s ease-in-out infinite}
+.dive-descent .sea-light-beam{display:block!important;top:-18vh;left:4%;width:92vw;height:132vh;opacity:.26;filter:blur(29px);clip-path:none;border-radius:50%;background:radial-gradient(ellipse 76% 42% at 55% 3%,rgba(231,247,244,.16),rgba(188,220,230,.07) 48%,transparent 80%),linear-gradient(180deg,rgba(218,240,239,.045),transparent 58%);mix-blend-mode:screen;animation:deep-reference-light-drift 41s ease-in-out infinite}
+.dive-descent .sea-light-beam-b{left:auto;right:-14%;width:72vw;opacity:.14;animation-delay:-17s}
+.dive-descent .sea-caustic-suggestion{display:block!important;opacity:.08;filter:blur(8px);background:radial-gradient(ellipse 62% 28% at 52% 8%,rgba(224,242,241,.15),transparent 78%),radial-gradient(ellipse 42% 24% at 18% 42%,rgba(187,216,229,.08),transparent 80%);-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.42),#000 28%,rgba(0,0,0,.42) 74%,transparent 100%);mask-image:linear-gradient(180deg,rgba(0,0,0,.42),#000 28%,rgba(0,0,0,.42) 74%,transparent 100%);animation:deep-reference-caustic-drift 53s ease-in-out infinite}
+.dive-descent .surface-look-up-wash{display:block!important;opacity:.28;filter:blur(22px) saturate(.78)}
+.dive-descent .surface-look-up-ripple{opacity:.09;filter:blur(3px)}
+.dive-descent .surface-look-up-shimmer{display:none!important}
+@keyframes deep-reference-water-drift{0%,100%{transform:translate3d(-1.2%,-.6%,0) scale(1.02);background-position:0% 4%,48% 0%,100% 18%,18% 76%,88% 82%}32%{transform:translate3d(1.8%,1.4%,0) scale(1.045);background-position:18% 12%,36% 8%,86% 28%,30% 62%,74% 72%}67%{transform:translate3d(2.4%,-1.1%,0) scale(1.015);background-position:36% 2%,62% 14%,72% 10%,12% 84%,96% 64%}}
+@keyframes deep-reference-water-drift-b{0%,100%{transform:translate3d(1.4%,.4%,0) scale(1.015);background-position:10% 18%,84% 22%,4% 70%,92% 84%}38%{transform:translate3d(-1.2%,-1.2%,0) scale(1.035);background-position:30% 8%,68% 34%,16% 56%,76% 70%}72%{transform:translate3d(-2%,.9%,0) scale(1.02);background-position:4% 28%,94% 12%,2% 80%,64% 90%}}
+@keyframes deep-reference-light-drift{0%,100%{transform:translate3d(-1.4%,-.4%,0) scale(1.01) rotate(-1deg)}38%{transform:translate3d(1.2%,.7%,0) scale(1.035) rotate(.5deg)}72%{transform:translate3d(2%,-.5%,0) scale(1.02) rotate(-.5deg)}}
+@keyframes deep-reference-caustic-drift{0%,100%{transform:translate3d(-1.5%,-.4%,0) scale(1.01)}48%{transform:translate3d(1.8%,1.2%,0) scale(1.035)}78%{transform:translate3d(-.4%,-.6%,0) scale(1.02)}}
+
+/* Deep Sea Cursor Light: keep the crisp cursor dot, while letting its
+   surrounding illumination dissolve into the water instead of reading as a
+   second cursor or a hard circular spotlight. */
+.dive-descent .glow{width:220px;height:220px;opacity:.82;background:radial-gradient(ellipse,rgba(255,244,202,.46) 0 6%,rgba(248,231,181,.28) 19%,rgba(205,226,224,.14) 39%,rgba(167,199,219,.05) 62%,transparent 84%);filter:blur(2px);mix-blend-mode:screen}
+
+/* Deep Sea Tyndall light: several broad, low-contrast shafts scatter from
+   the bright upper water. The mask and blur dissolve their edges; movement
+   is carried by a slow drift/turn only, so the light does not visibly pulse. */
+.dive-descent .sea-light-beam{display:block!important;top:-19vh;left:7%;width:86vw;height:138vh;opacity:.46;filter:blur(18px) saturate(.88);clip-path:none;border-radius:0;background:radial-gradient(ellipse 34% 18% at 34% 1%,rgba(231,249,246,.2),transparent 76%),radial-gradient(ellipse 28% 20% at 58% 7%,rgba(220,245,244,.15),transparent 78%),linear-gradient(108deg,transparent 0 21%,rgba(221,247,243,.055) 36%,rgba(229,249,245,.08) 46%,transparent 68%),linear-gradient(101deg,transparent 0 48%,rgba(220,245,244,.045) 58%,rgba(229,249,245,.065) 69%,transparent 84%);-webkit-mask-image:radial-gradient(ellipse 78% 94% at 50% 0%,#000 0 23%,rgba(0,0,0,.78) 43%,rgba(0,0,0,.4) 72%,transparent 100%);mask-image:radial-gradient(ellipse 78% 94% at 50% 0%,#000 0 23%,rgba(0,0,0,.78) 43%,rgba(0,0,0,.4) 72%,transparent 100%);mix-blend-mode:screen;animation:deep-tyndall-drift-a 39s ease-in-out infinite}
+.dive-descent .sea-light-beam::before,.dive-descent .sea-light-beam::after{content:"";position:absolute;inset:-10% -8%;display:block;pointer-events:none;filter:blur(24px);-webkit-mask-image:radial-gradient(ellipse 72% 86% at 50% 0%,#000 0 25%,rgba(0,0,0,.6) 56%,transparent 94%);mask-image:radial-gradient(ellipse 72% 86% at 50% 0%,#000 0 25%,rgba(0,0,0,.6) 56%,transparent 94%)}
+.dive-descent .sea-light-beam::before{background:radial-gradient(ellipse 38% 16% at 43% 8%,rgba(234,250,246,.14),transparent 78%),linear-gradient(114deg,transparent 0 34%,rgba(229,249,245,.045) 48%,transparent 66%);opacity:.9}
+.dive-descent .sea-light-beam::after{background:radial-gradient(ellipse 48% 24% at 64% 18%,rgba(212,242,241,.09),transparent 80%),linear-gradient(97deg,transparent 0 42%,rgba(221,247,243,.035) 58%,transparent 76%);opacity:.72}
+.dive-descent .sea-light-beam-b{left:auto;right:-12%;width:72vw;opacity:.3;animation:deep-tyndall-drift-b 47s ease-in-out -18s infinite}
+@keyframes deep-tyndall-drift-a{0%,100%{transform:translate3d(-1.3%,-.4vh,0) rotate(-1.1deg) scale(1.02);background-position:0% 0%,48% 2%,0% 0%,100% 8%}34%{transform:translate3d(.8%,.7vh,0) rotate(-.3deg) scale(1.035);background-position:8% 4%,54% 7%,4% 2%,94% 12%}68%{transform:translate3d(1.5%,-.2vh,0) rotate(.55deg) scale(1.025);background-position:16% 1%,42% 4%,8% 0%,88% 9%}}
+@keyframes deep-tyndall-drift-b{0%,100%{transform:translate3d(1.1%,.2vh,0) rotate(1deg) scale(1.018);background-position:100% 4%,44% 1%,96% 6%,4% 0%}38%{transform:translate3d(-.7%,-.6vh,0) rotate(1.8deg) scale(1.03);background-position:92% 9%,38% 5%,90% 3%,12% 6%}72%{transform:translate3d(-1.2%,.5vh,0) rotate(.35deg) scale(1.022);background-position:84% 2%,52% 8%,82% 8%,18% 2%}}
+
+/* Visibility correction: make three broad descending light paths readable
+   through the water without restoring a geometric edge or a pulse. */
+.dive-descent .sea-light-beam{opacity:.64;filter:blur(14px) saturate(.92);background:radial-gradient(ellipse 38% 17% at 43% 1%,rgba(236,251,247,.24),transparent 78%),linear-gradient(110deg,transparent 0 12%,rgba(225,248,244,.055) 22%,rgba(232,251,247,.13) 34%,rgba(229,250,246,.1) 44%,transparent 59%),linear-gradient(104deg,transparent 0 37%,rgba(220,246,243,.045) 47%,rgba(231,251,247,.105) 58%,rgba(226,249,245,.08) 68%,transparent 82%),linear-gradient(98deg,transparent 0 59%,rgba(220,245,242,.035) 68%,rgba(230,250,246,.08) 77%,transparent 89%);-webkit-mask-image:radial-gradient(ellipse 82% 96% at 50% 0%,#000 0 19%,rgba(0,0,0,.82) 42%,rgba(0,0,0,.48) 73%,transparent 100%);mask-image:radial-gradient(ellipse 82% 96% at 50% 0%,#000 0 19%,rgba(0,0,0,.82) 42%,rgba(0,0,0,.48) 73%,transparent 100%)}
+.dive-descent .sea-light-beam-b{opacity:.38;filter:blur(16px) saturate(.88)}
+
+/* Readability pass: the shafts need to register against the deep blue water
+   at a glance, while their broad radial falloff keeps them atmospheric. */
+.dive-descent .sea-light-beam{opacity:.84;filter:blur(12px) saturate(1.02);background:radial-gradient(ellipse 13% 74% at 30% 51%,rgba(229,251,247,.16) 0%,rgba(224,248,245,.105) 38%,transparent 78%),radial-gradient(ellipse 17% 82% at 49% 54%,rgba(238,253,248,.205) 0%,rgba(226,250,245,.12) 39%,transparent 80%),radial-gradient(ellipse 12% 71% at 69% 55%,rgba(225,249,245,.145) 0%,rgba(219,245,243,.08) 41%,transparent 79%),radial-gradient(ellipse 44% 21% at 49% 2%,rgba(241,255,249,.22),transparent 78%);-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.96) 0%,rgba(0,0,0,.9) 22%,rgba(0,0,0,.68) 56%,rgba(0,0,0,.28) 83%,transparent 100%);mask-image:linear-gradient(180deg,rgba(0,0,0,.96) 0%,rgba(0,0,0,.9) 22%,rgba(0,0,0,.68) 56%,rgba(0,0,0,.28) 83%,transparent 100%)}
+.dive-descent .sea-light-beam::before{opacity:1;background:radial-gradient(ellipse 19% 76% at 37% 50%,rgba(226,250,246,.11),transparent 80%),radial-gradient(ellipse 12% 65% at 61% 56%,rgba(235,252,247,.1),transparent 79%)}
+.dive-descent .sea-light-beam::after{opacity:.9;background:radial-gradient(ellipse 29% 28% at 49% 5%,rgba(241,255,249,.14),transparent 82%),linear-gradient(106deg,transparent 0 24%,rgba(229,250,246,.055) 39%,transparent 59%,rgba(225,248,245,.04) 72%,transparent 88%)}
+.dive-descent .sea-light-beam-b{opacity:.48;filter:blur(14px) saturate(.96)}
+
+/* Surface Dive CTA: the buoy, title and hint are one discoverable object.
+   The parent hover state is the single source of truth for their response. */
+.surface-hero .dive-cta-region .dive-trigger{transition:transform .55s cubic-bezier(.2,.75,.25,1),text-shadow .55s ease,color .55s ease;will-change:transform,text-shadow}
+.surface-hero .dive-cta-region .dive-trigger-hint{top:calc(100% + clamp(154px,11.5vw,188px));transition:color .55s ease,text-shadow .55s ease,opacity .55s ease}
+.surface-hero.is-dive-cta-hover .dive-trigger,.surface-hero .dive-cta-region:hover .dive-trigger,.surface-hero .dive-cta-region:focus-within .dive-trigger{transform:translate3d(calc(-50% + var(--cta-parallax-x,0px)),calc(-3px + var(--cta-parallax-y,0px)),0);color:rgba(190,248,243,.98);text-shadow:0 0 4px rgba(133,237,224,.8),0 0 12px rgba(113,219,224,.42);animation:none}
+.surface-hero.is-dive-cta-hover .dive-trigger-hint,.surface-hero .dive-cta-region:hover .dive-trigger-hint,.surface-hero .dive-cta-region:focus-within .dive-trigger-hint{color:rgba(190,248,243,.92);text-shadow:0 0 7px rgba(113,219,224,.4);opacity:1}
+.surface-hero.is-dive-cta-hover .surface-lifebuoy-entry,.surface-hero .dive-cta-region:hover .surface-lifebuoy-entry,.surface-lifebuoy-entry:focus-visible{transform:translate(-50%,-3px) rotate(-2deg) scale(1.035);filter:drop-shadow(0 10px 14px rgba(63,91,151,.25))}
+.surface-hero.is-dive-cta-hover .surface-lifebuoy-art,.surface-hero .dive-cta-region:hover .surface-lifebuoy-art,.surface-lifebuoy-entry:focus-visible .surface-lifebuoy-art{opacity:1;filter:saturate(.9) brightness(1.13) contrast(1.06) drop-shadow(5px 2px 4px rgba(255,246,220,.38))}
+.surface-hero.is-dive-cta-hover .surface-lifebuoy-entry::before,.surface-hero .dive-cta-region:hover .surface-lifebuoy-entry::before,.surface-lifebuoy-entry:focus-visible::before{opacity:.78;transform:translate(-50%,-50%) scaleY(.52)}
+.surface-hero.is-dive-cta-hover .surface-lifebuoy-entry::after,.surface-hero .dive-cta-region:hover .surface-lifebuoy-entry::after,.surface-lifebuoy-entry:focus-visible::after{opacity:.48;transform:translate(-50%,-50%) scaleY(.58)}
+
+/* Final CTA readability: keep both labels mint-blue with only a restrained
+   contact shadow; the click hint sits directly beneath the buoy. */
+.surface-hero .dive-cta-region .dive-trigger{top:22px;color:rgba(190,248,243,.98);opacity:1;text-shadow:0 1px 1px rgba(58,103,120,.28);animation:none!important}
+.surface-hero .dive-cta-region .dive-trigger-hint{top:calc(100% + clamp(118px,9.4vw,122px));color:rgba(190,248,243,.96);opacity:1;text-shadow:0 1px 1px rgba(58,103,120,.24);animation:none!important}
+.surface-hero.is-dive-cta-hover .dive-trigger,.surface-hero .dive-cta-region:hover .dive-trigger,.surface-hero .dive-cta-region:focus-within .dive-trigger{color:rgba(190,248,243,.98);text-shadow:0 1px 1px rgba(58,103,120,.3);animation:none!important}
+.surface-hero.is-dive-cta-hover .dive-trigger-hint,.surface-hero .dive-cta-region:hover .dive-trigger-hint,.surface-hero .dive-cta-region:focus-within .dive-trigger-hint{color:rgba(190,248,243,.98);text-shadow:0 1px 1px rgba(58,103,120,.26);animation:none!important}
+
+/* Unified Interactive Affordance: distance only modulates each object's
+   existing material response; it never changes layout, hit areas or motion. */
+.surface-hero .surface-planet-layer::before{
+  opacity:var(--planet-local-glow-alpha,.74);
+  animation:surface-planet-affordance-breathe 7.2s ease-in-out infinite alternate;
+}
+.surface-hero.is-planet-proximity .surface-planet-layer::before{
+  opacity:var(--planet-local-glow-alpha,.82);
+}
+.surface-hero.is-planet-proximity .planet-hotspot::before{
+  opacity:var(--planet-orbit-alpha,.5);
+  transform:rotate(-14deg) scale(.9);
+}
+.surface-hero.is-planet-proximity .planet-hotspot::after{
+  opacity:var(--planet-atmosphere-alpha,.48);
+  transform:scale(.94);
+}
+.surface-hero.is-planet-hover .surface-planet-layer::before,
+.surface-hero.is-planet-hover.is-planet-proximity .surface-planet-layer::before{opacity:.9}
+.surface-hero.is-planet-hover .planet-hotspot::before,
+.surface-hero.is-planet-hover.is-planet-proximity .planet-hotspot::before{opacity:.82;transform:rotate(-14deg) scale(1)}
+.surface-hero.is-planet-hover .planet-hotspot::after,
+.surface-hero.is-planet-hover.is-planet-proximity .planet-hotspot::after{opacity:.9;transform:scale(1.08)}
+.surface-hero[data-time="blue-hour"].is-planet-proximity .surface-planet-layer::before{opacity:.16}
+.surface-hero[data-time="blue-hour"].is-planet-hover .surface-planet-layer::before,
+.surface-hero[data-time="blue-hour"].is-planet-hover.is-planet-proximity .surface-planet-layer::before{opacity:.28}
+@keyframes surface-planet-affordance-breathe{0%,100%{opacity:.62}50%{opacity:.8}}
+
+.surface-hero .surface-lifebuoy-entry{
+  filter:drop-shadow(0 8px 10px rgba(63,91,151,.2)) drop-shadow(0 0 var(--dive-cta-glow-radius,5px) rgba(255,246,220,var(--dive-cta-glow-alpha,.28)));
+}
+.surface-hero.is-dive-cta-proximity .surface-lifebuoy-entry{
+  filter:drop-shadow(0 8px 10px rgba(63,91,151,.2)) drop-shadow(0 0 var(--dive-cta-glow-radius,8px) rgba(255,246,220,var(--dive-cta-glow-alpha,.34)));
+}
+.surface-hero.is-dive-cta-hover .surface-lifebuoy-entry,
+.surface-hero .dive-cta-region:hover .surface-lifebuoy-entry,
+.surface-hero .dive-cta-region:focus-within .surface-lifebuoy-entry{
+  filter:drop-shadow(0 10px 14px rgba(63,91,151,.25)) drop-shadow(0 0 8px rgba(255,246,220,.24));
+}
+
+.surface-hero .drift-bottle-art{
+  filter:saturate(.82) contrast(.9) drop-shadow(0 6px 8px rgba(71,78,144,.12)) drop-shadow(0 0 var(--drift-bottle-glow-radius,4.5px) rgba(255,231,189,var(--drift-bottle-glow-alpha,.2)));
+}
+.surface-hero.is-drift-bottle-proximity .drift-bottle-art{
+  filter:saturate(.86) contrast(.92) drop-shadow(0 6px 8px rgba(71,78,144,.12)) drop-shadow(0 0 var(--drift-bottle-glow-radius,8px) rgba(255,231,189,var(--drift-bottle-glow-alpha,.34)));
+}
+.surface-hero.is-drift-bottle-hover .drift-bottle-art,
+.surface-hero.is-drift-bottle-open .drift-bottle-art{
+  filter:saturate(.92) contrast(.96) drop-shadow(0 0 10px rgba(255,222,171,.28));
+}
+
+/* Diver already responds through its movement tracker; keep affordance
+   environmental and almost imperceptible rather than button-like. */
+.surface-hero .home-diver{
+  filter:drop-shadow(0 8px 6px rgba(91,75,140,.18)) drop-shadow(0 0 5px rgba(196,240,235,.16));
+}
+.surface-hero.is-diver-proximity .home-diver{
+  filter:brightness(1.045) drop-shadow(0 8px 6px rgba(91,75,140,.18)) drop-shadow(0 0 9px rgba(196,240,235,.25));
+}
+
+@media(prefers-reduced-motion:reduce){
+  .surface-hero.is-diver-proximity .home-diver{filter:drop-shadow(0 8px 6px rgba(91,75,140,.18))}
+}
+
+/* Affordance visibility pass: keep each material's existing response, but
+   raise the local light just enough to register at a normal desktop glance. */
+.surface-hero:not([data-time="blue-hour"]) .surface-planet-layer::before{
+  background:radial-gradient(ellipse 46% 42% at 30% 30%,rgba(255,238,190,.9) 0%,rgba(255,222,170,.52) 34%,rgba(255,210,165,.22) 58%,transparent 80%);
+}
+.surface-hero .surface-lifebuoy-entry{
+  filter:drop-shadow(0 8px 10px rgba(63,91,151,.22))
+          drop-shadow(0 0 9px rgba(255,246,220,.48))
+          drop-shadow(0 0 17px rgba(184,229,232,.2));
+}
+.surface-hero.is-dive-cta-proximity .surface-lifebuoy-entry{
+  filter:drop-shadow(0 8px 10px rgba(63,91,151,.22))
+          drop-shadow(0 0 var(--dive-cta-glow-radius,10px) rgba(255,246,220,.56))
+          drop-shadow(0 0 19px rgba(184,229,232,.24));
+}
+.surface-hero.is-dive-cta-hover .surface-lifebuoy-entry,
+.surface-hero .dive-cta-region:hover .surface-lifebuoy-entry,
+.surface-hero .dive-cta-region:focus-within .surface-lifebuoy-entry{
+  filter:drop-shadow(0 10px 14px rgba(63,91,151,.28))
+          drop-shadow(0 0 11px rgba(255,246,220,.64))
+          drop-shadow(0 0 22px rgba(184,229,232,.28));
+}
+.surface-hero .drift-bottle-art{
+  filter:saturate(.82) contrast(.9)
+          drop-shadow(0 6px 8px rgba(71,78,144,.14))
+          drop-shadow(0 0 8px rgba(255,231,189,.36))
+          drop-shadow(0 0 15px rgba(190,221,231,.16));
+}
+.surface-hero.is-drift-bottle-proximity .drift-bottle-art{
+  filter:saturate(.86) contrast(.92)
+          drop-shadow(0 6px 8px rgba(71,78,144,.14))
+          drop-shadow(0 0 var(--drift-bottle-glow-radius,9px) rgba(255,231,189,.48))
+          drop-shadow(0 0 17px rgba(190,221,231,.2));
+}
+.surface-hero.is-drift-bottle-hover .drift-bottle-art,
+.surface-hero.is-drift-bottle-open .drift-bottle-art{
+  filter:saturate(.92) contrast(.96)
+          drop-shadow(0 0 12px rgba(255,222,171,.56))
+          drop-shadow(0 0 21px rgba(190,221,231,.24));
+}
+.surface-hero .home-diver{
+  filter:drop-shadow(0 8px 6px rgba(91,75,140,.2))
+          drop-shadow(0 0 7px rgba(196,240,235,.24));
+}
+.surface-hero.is-diver-proximity .home-diver{
+  filter:brightness(1.045)
+          drop-shadow(0 8px 6px rgba(91,75,140,.2))
+          drop-shadow(0 0 11px rgba(196,240,235,.34));
+}
+
+@media(prefers-reduced-motion:reduce){
+  .surface-hero .surface-planet-layer::before{animation:none}
+  .surface-hero .home-diver{filter:drop-shadow(0 8px 6px rgba(91,75,140,.2)) drop-shadow(0 0 6px rgba(196,240,235,.2))}
+}
+
+/* Final readability tuning: concentrate the authored light close to each
+   object so it reads clearly on the pale surface without becoming a neon rim. */
+.surface-hero:not([data-time="blue-hour"]) .surface-planet-layer::before{
+  background:radial-gradient(ellipse 40% 36% at 30% 30%,rgba(255,242,201,.98) 0%,rgba(255,226,178,.66) 30%,rgba(255,214,171,.28) 52%,transparent 70%);
+}
+@keyframes surface-planet-affordance-breathe{0%,100%{opacity:.72}50%{opacity:.92}}
+.surface-hero .surface-lifebuoy-entry{
+  filter:drop-shadow(0 8px 9px rgba(63,91,151,.22))
+          drop-shadow(0 0 1.4px rgba(255,247,222,.68))
+          drop-shadow(0 0 5.5px rgba(198,235,233,.3));
+}
+.surface-hero .surface-lifebuoy-entry::before,
+.surface-hero .surface-lifebuoy-entry::after{display:none}
+.surface-hero.is-dive-cta-proximity .surface-lifebuoy-entry{
+  filter:drop-shadow(0 8px 9px rgba(63,91,151,.24))
+          drop-shadow(0 0 1.6px rgba(255,247,222,.76))
+          drop-shadow(0 0 7px rgba(198,235,233,.36));
+}
+.surface-hero.is-dive-cta-hover .surface-lifebuoy-entry,
+.surface-hero .dive-cta-region:hover .surface-lifebuoy-entry,
+.surface-hero .dive-cta-region:focus-within .surface-lifebuoy-entry{
+  filter:drop-shadow(0 10px 12px rgba(63,91,151,.28))
+          drop-shadow(0 0 1.8px rgba(255,247,222,.86))
+          drop-shadow(0 0 8px rgba(198,235,233,.42));
+}
+.surface-hero .drift-bottle-art{
+  filter:saturate(.82) contrast(.9)
+          drop-shadow(0 6px 7px rgba(71,78,144,.14))
+          drop-shadow(0 0 5px rgba(255,231,189,.5))
+          drop-shadow(0 0 10px rgba(190,221,231,.18));
+}
+.surface-hero.is-drift-bottle-proximity .drift-bottle-art{
+  filter:saturate(.86) contrast(.92)
+          drop-shadow(0 6px 7px rgba(71,78,144,.14))
+          drop-shadow(0 0 var(--drift-bottle-glow-radius,7px) rgba(255,231,189,.64))
+          drop-shadow(0 0 12px rgba(190,221,231,.2));
+}
+.surface-hero.is-drift-bottle-hover .drift-bottle-art,
+.surface-hero.is-drift-bottle-open .drift-bottle-art{
+  filter:saturate(.92) contrast(.96)
+          drop-shadow(0 0 7px rgba(255,222,171,.76))
+          drop-shadow(0 0 13px rgba(190,221,231,.24));
+}
+.surface-hero .home-diver{
+  filter:drop-shadow(0 8px 6px rgba(91,75,140,.2))
+          drop-shadow(0 0 5px rgba(196,240,235,.32));
+}
+.surface-hero.is-diver-proximity .home-diver{
+  filter:brightness(1.045)
+          drop-shadow(0 8px 6px rgba(91,75,140,.2))
+          drop-shadow(0 0 7px rgba(196,240,235,.44));
+}
+
+/* Concentrated local atmosphere for the two small surface objects. The
+   glow sits behind the existing art and follows its authored material,
+   avoiding a detached ring or page-level light wash. */
+.surface-hero .surface-lifebuoy-float::before,
+.surface-hero .drift-bottle-float::before{
+  content:"";
+  position:absolute;
+  z-index:0;
+  pointer-events:none;
+  border-radius:50%;
+  filter:blur(5px);
+  mix-blend-mode:screen;
+  opacity:.7;
+  animation:surface-object-affordance-breathe 6.4s ease-in-out infinite;
+}
+.surface-hero .surface-lifebuoy-float::before{
+  display:none;
+}
+.surface-hero .drift-bottle-float::before{
+  inset:-6% -5%;
+  background:radial-gradient(ellipse at 50% 50%,rgba(255,230,183,.62) 0 26%,rgba(198,225,232,.28) 48%,transparent 72%);
+  filter:blur(3px);
+  opacity:.78;
+  animation-duration:7.3s;
+  animation-delay:-1.8s;
+}
+.surface-hero .surface-lifebuoy-art,
+.surface-hero .drift-bottle-art{position:relative;z-index:1}
+.surface-hero.is-dive-cta-proximity .surface-lifebuoy-float::before{opacity:.82;filter:blur(2.4px)}
+.surface-hero.is-dive-cta-hover .surface-lifebuoy-float::before,
+.surface-hero .dive-cta-region:hover .surface-lifebuoy-float::before,
+.surface-hero .dive-cta-region:focus-within .surface-lifebuoy-float::before{opacity:.94;filter:blur(2.4px)}
+.surface-hero.is-drift-bottle-proximity .drift-bottle-float::before{opacity:.9;filter:blur(4px)}
+.surface-hero.is-drift-bottle-hover .drift-bottle-float::before,
+.surface-hero.is-drift-bottle-open .drift-bottle-float::before{opacity:1;filter:blur(3px)}
+@keyframes surface-object-affordance-breathe{0%,100%{transform:scale(.94);opacity:.66}50%{transform:scale(1);opacity:.94}}
+@media(prefers-reduced-motion:reduce){
+  .surface-hero .surface-lifebuoy-float::before,
+  .surface-hero .drift-bottle-float::before{animation:none!important;opacity:.66}
+}
+
+/* Final surface feedback: keep the planet light outside the art frame, and
+   let the buoy read as a softly expanded outline instead of a filled glow. */
+.surface-hero:not([data-time="blue-hour"]) .surface-planet-layer::before{
+  inset:-16%;
+  z-index:0;
+  background:radial-gradient(ellipse 46% 42% at 35% 34%,rgba(255,245,202,.78) 0%,rgba(255,225,176,.48) 34%,rgba(255,209,166,.2) 58%,transparent 78%);
+  filter:blur(7px);
+  opacity:var(--planet-local-glow-alpha,.84);
+}
+.surface-hero[data-time="blue-hour"] .surface-planet-layer::before{
+  inset:-16%;
+  z-index:0;
+  filter:blur(7px);
+}
+.surface-hero .surface-lifebuoy-float::before{display:none}
+.surface-hero.is-dive-cta-hover .surface-lifebuoy-art,
+.surface-hero .dive-cta-region:hover .surface-lifebuoy-art,
+.surface-hero .dive-cta-region:focus-within .surface-lifebuoy-art{
+  filter:saturate(.9) brightness(1.13) contrast(1.06)
+          drop-shadow(0 0 1.2px rgba(255,247,222,.62))
+          drop-shadow(0 0 5px rgba(198,235,233,.26));
+}
+.surface-hero .surface-planet-frame{
+  filter:drop-shadow(0 0 1.6px rgba(255,246,207,.72))
+          drop-shadow(0 0 11px rgba(255,215,174,.34));
+}
+.surface-hero.is-planet-proximity .surface-planet-frame{
+  filter:drop-shadow(0 0 2px rgba(255,246,207,.8))
+          drop-shadow(0 0 15px rgba(255,215,174,.42));
+}
+.surface-hero.is-planet-hover .surface-planet-frame{
+  filter:drop-shadow(0 0 2.4px rgba(255,246,207,.88))
+          drop-shadow(0 0 18px rgba(255,215,174,.48));
+}
