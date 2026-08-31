@@ -31,9 +31,9 @@
       this.layer = root.querySelector('.cursor-layer');
       this.light = this.layer?.querySelector('.cursor-light');
       this.glow = this.layer?.querySelector('.glow');
-      // Surface uses a world-space Diver Wake instead of an attached cursor
-      // trail. The Dive Map keeps its existing trail behavior unchanged.
-      this.motes = this.isSurface ? [] : [...(this.layer?.querySelectorAll('.trail i') || [])];
+      // The diver now moves without a DOM trail in both worlds. Surface wake
+      // effects, where present, remain independent world-space effects.
+      this.motes = [];
       this.box = root.getBoundingClientRect();
       this.bounds = { minX: 0, maxX: this.box.width, minY: 0, maxY: this.box.height, hardMinY: 0, hardMaxY: this.box.height };
       const start = swimmer ? swimmer.getBoundingClientRect() : { left: this.box.width * .5, top: this.box.height * .52, width: 0, height: 0 };
@@ -52,6 +52,9 @@
       }
       this.previous = { ...this.position };
       this.velocity = { x: 0, y: 0, speed: 0 };
+      // Deep Sea follows the earlier free-swim pose: the body turns through
+      // the full pointer direction instead of being constrained to a vertical
+      // pitch. Surface keeps its existing heading/pitch system below.
       this.heading = this.isSurface ? DIVER_BASE_HEADING : -180;
       this.poseAngle = 0;
       this.targetPoseAngle = 0;
@@ -338,8 +341,7 @@
           let next = Math.atan2(dy, dx) * 180 / Math.PI - 180;
           while (next - this.heading > 180) next -= 360;
           while (next - this.heading < -180) next += 360;
-          const turnEase = .22;
-          this.heading += (next - this.heading) * turnEase;
+          this.heading += (next - this.heading) * .22;
           this.heading = ((this.heading + 180) % 360 + 360) % 360 - 180;
         }
         this.renderDiver();
@@ -1483,6 +1485,8 @@
     const depthReadout = world.querySelector('.descent-depth b');
     const instruction = world.querySelector('.descent-instruction');
     const onboarding = world.querySelector('.descent-onboarding');
+    const professional = world.querySelector('.quiet-professional');
+    const profileCoordinates = world.querySelector('.profile-coordinates');
     const signals = [...world.querySelectorAll('[data-signal-start]')];
     const sideNodes = [...world.querySelectorAll('[data-side-start]')];
     const writingNodes = [...world.querySelectorAll('[data-writing-start]')];
@@ -1490,6 +1494,15 @@
     const revealNodes = [...world.querySelectorAll('[data-reveal-start]')];
     const caseNodes = [...world.querySelectorAll('[data-case]')];
     const approachNodes = [...world.querySelectorAll('[data-approach]')];
+    const informationNodes = [...new Set([
+      professional,
+      profileCoordinates,
+      ...world.querySelectorAll('.depth-reveal, .prototype-node')
+    ].filter(Boolean))];
+    informationNodes.forEach((node) => {
+      node.classList.add('deep-information');
+      node.style.setProperty('--information-base-opacity', '1');
+    });
     const scrollSpacer = document.querySelector('.descent-scroll-spacer');
     const debugHiddenCave = DEBUG_HIDDEN_CAVE || new URLSearchParams(window.location.search).has('debug-hidden-cave');
     document.body.classList.toggle('debug-hidden-cave', debugHiddenCave);
@@ -1547,6 +1560,23 @@
       const ratio = pullDistance / PULL_MAX;
       lifeline.style.setProperty('--rope-pull', `${pullDistance.toFixed(1)}px`);
       lifeline.style.setProperty('--rope-stretch', ratio.toFixed(3));
+    };
+
+    const setLifelineDepth = (progress) => {
+      if (!lifeline) return;
+      // The lower rope tail retracts first; the buoy itself remains the
+      // persistent return-to-surface anchor at the top of the viewport.
+      // Only gather the lower tail to a deliberate medium length. The
+      // return device remains readable at every depth; it never collapses
+      // into a tiny remnant or disappears from the viewport.
+      const ropeRetract = clamp((progress - .015) / .14, 0, .5);
+      lifeline.style.setProperty('--rope-retract', ropeRetract.toFixed(3));
+      lifeline.style.setProperty('--rope-retract-height', `${(ropeRetract * 100).toFixed(1)}%`);
+      lifeline.style.setProperty('--rope-tail-lift', `${(-ropeRetract * 58).toFixed(1)}px`);
+      lifeline.style.setProperty('--lifeline-lift', '0px');
+      const promptDock = clamp((progress - .025) / .1, 0, 1);
+      lifeline.style.setProperty('--return-copy-x', `${(promptDock * 105).toFixed(1)}px`);
+      lifeline.style.setProperty('--return-copy-y', `${(-promptDock * 176).toFixed(1)}px`);
     };
 
     const springLifelineBack = () => {
@@ -1867,13 +1897,17 @@
       currentDepth += reducedMotion ? delta : delta * .105;
       if (Math.abs(targetDepth - currentDepth) < .08) currentDepth = targetDepth;
       const progress = clamp(currentDepth / viewport.maxDepth, 0, 1);
+      world.style.setProperty('--depth-light-loss', (Math.pow(progress, .72) * .52).toFixed(3));
       world.style.setProperty('--descent-depth', `${-currentDepth}px`);
       world.style.setProperty('--depth-distant', `${-currentDepth * .42}px`);
       world.style.setProperty('--depth-middle', `${-currentDepth * .9}px`);
       world.style.setProperty('--depth-foreground', `${-currentDepth * 1.08}px`);
       world.style.setProperty('--depth-content', `${-currentDepth}px`);
       applyBounds(progress);
-      if (depthReadout) depthReadout.textContent = `${String(Math.round(progress * (debugHiddenCave ? 520 : 420))).padStart(3, '0')}m`;
+      setLifelineDepth(progress);
+      const maxDepthMeters = debugHiddenCave ? 520 : 420;
+      const depthMeters = 6 + Math.round(progress * (maxDepthMeters - 6));
+      if (depthReadout) depthReadout.textContent = `${String(depthMeters).padStart(3, '0')}m`;
       if (instruction) instruction.style.opacity = String(.92 - progress * .58);
       revealNodes.forEach((node) => {
         const start = Number(node.dataset.revealStart || 0);
@@ -1885,7 +1919,9 @@
           : clamp(1 - (progress - exit) / .11, 0, 1);
         const easedReveal = reveal * reveal * (3 - 2 * reveal);
         const shift = (1 - easedReveal) * Number(node.dataset.revealY || 14);
-        node.style.setProperty('--entry-opacity', (easedReveal * departure).toFixed(3));
+        const baseOpacity = easedReveal * departure;
+        node.style.setProperty('--entry-opacity', baseOpacity.toFixed(3));
+        node.style.setProperty('--information-base-opacity', baseOpacity.toFixed(3));
         node.style.setProperty('--entry-shift', `${shift.toFixed(2)}px`);
         node.style.setProperty('--entry-scale', (0.985 + easedReveal * .015).toFixed(3));
         node.style.setProperty('--entry-blur', `${((1 - easedReveal) * 3 + (1 - departure) * 2).toFixed(2)}px`);
@@ -1903,7 +1939,9 @@
         const start = Number(node.dataset.sideStart || 0);
         const end = Number(node.dataset.sideEnd || 1);
         const reveal = clamp((progress - start) / Math.max(.01, end - start), 0, 1);
-        node.style.setProperty('--side-opacity', (.08 + reveal * .92).toFixed(3));
+        const baseOpacity = .08 + reveal * .92;
+        node.style.setProperty('--side-opacity', baseOpacity.toFixed(3));
+        node.style.setProperty('--information-base-opacity', baseOpacity.toFixed(3));
         node.style.setProperty('--side-scale', (.94 + reveal * .06).toFixed(3));
         node.style.setProperty('--side-shift', `${((1 - reveal) * 12).toFixed(2)}px`);
         node.style.setProperty('--side-blur', `${((1 - reveal) * 3).toFixed(2)}px`);
@@ -1912,7 +1950,9 @@
         const start = Number(node.dataset.writingStart || 0);
         const end = Number(node.dataset.writingEnd || 1);
         const reveal = clamp((progress - start) / Math.max(.01, end - start), 0, 1);
-        node.style.setProperty('--writing-opacity', (.08 + reveal * .92).toFixed(3));
+        const baseOpacity = .08 + reveal * .92;
+        node.style.setProperty('--writing-opacity', baseOpacity.toFixed(3));
+        node.style.setProperty('--information-base-opacity', baseOpacity.toFixed(3));
         node.style.setProperty('--writing-scale', (.96 + reveal * .04).toFixed(3));
         node.style.setProperty('--writing-shift', `${((1 - reveal) * 8).toFixed(2)}px`);
         node.style.setProperty('--writing-blur', `${((1 - reveal) * 3).toFixed(2)}px`);
@@ -1944,10 +1984,21 @@
         const start = Number(node.dataset.deepStart || 0);
         const end = Number(node.dataset.deepEnd || 1);
         const reveal = clamp((progress - start) / Math.max(.01, end - start), 0, 1);
-        node.style.setProperty('--deep-opacity', (.08 + reveal * .92).toFixed(3));
+        const baseOpacity = .08 + reveal * .92;
+        node.style.setProperty('--deep-opacity', baseOpacity.toFixed(3));
+        node.style.setProperty('--information-base-opacity', baseOpacity.toFixed(3));
         node.style.setProperty('--deep-scale', (.96 + reveal * .04).toFixed(3));
         node.style.setProperty('--deep-shift', `${((1 - reveal) * 8).toFixed(2)}px`);
         node.style.setProperty('--deep-blur', `${((1 - reveal) * 3).toFixed(2)}px`);
+      });
+      const fadeStart = viewport.height * .30;
+      const fadeEnd = viewport.height * .07;
+      informationNodes.forEach((node) => {
+        const infoRect = node.getBoundingClientRect();
+        const fade = clamp((fadeStart - infoRect.top) / Math.max(1, fadeStart - fadeEnd), 0, 1);
+        const baseOpacity = Number(node.style.getPropertyValue('--information-base-opacity')) || 0;
+        node.style.setProperty('--information-opacity', (baseOpacity * (1 - fade * .94)).toFixed(3));
+        node.style.setProperty('--information-blur', `${(fade * 1.35).toFixed(2)}px`);
       });
       lastProximityPosition = diverPosition;
       dirty = Math.abs(targetDepth - currentDepth) >= .08;
