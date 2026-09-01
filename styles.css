@@ -269,12 +269,15 @@ a{color:inherit;text-decoration:none}
 
 /* Continuous Descent prototype — a fixed viewport looking into one continuous cave. */
 html:has(.descent-body){background:#15163d}
-.descent-body{min-height:420vh;background:#15163d;overflow-x:hidden;scrollbar-width:none}
+/* The lower master stays at its native aspect ratio.  Give it enough actual
+   scroll distance to pass through the viewport instead of compressing its
+   journey into the old prototype length. */
+.descent-body{min-height:374.83vw;background:#15163d;overflow-x:hidden;scrollbar-width:none}
 .descent-body::-webkit-scrollbar{width:0;height:0}
 .dive-world.dive-descent{--descent-depth:0px;--depth-distant:0px;--depth-middle:0px;--depth-foreground:0px;--depth-content:0px;position:fixed!important;inset:0!important;width:100vw!important;height:100svh!important;min-height:0!important;aspect-ratio:auto!important;margin:0!important;background:radial-gradient(ellipse at 50% -8%,#cef5f4 0%,#77bcdc 23%,#384e98 64%,#191a4c 100%);overflow:hidden;isolation:isolate}
 .dive-descent::before{z-index:30;opacity:.14;background:repeating-linear-gradient(104deg,rgba(210,239,255,.12) 0 1px,transparent 1px 8px),repeating-linear-gradient(15deg,rgba(45,39,103,.2) 0 1px,transparent 1px 10px)}
 .dive-descent::after{z-index:31;background:radial-gradient(ellipse at var(--focus-x,50%) var(--focus-y,52%),transparent 0 10%,rgba(19,25,77,.05) 36%,rgba(10,14,54,.32) 100%);mix-blend-mode:multiply}
-.descent-scroll-spacer{height:420vh;pointer-events:none}
+.descent-scroll-spacer{height:374.83vw;pointer-events:none}
 .descent-stage{position:absolute;inset:0;z-index:1;overflow:hidden;isolation:isolate}
 .descent-layer{position:absolute;left:0;top:0;width:100%;height:455vh;pointer-events:none;will-change:transform}
 .descent-layer-distant{z-index:1;transform:translate3d(0,var(--depth-distant),0)}
@@ -537,18 +540,12 @@ body.is-ascent-active .descent-onboarding{opacity:0!important}
 @keyframes deep-rift-flow{0%,100%{background-position:0 0;opacity:.28}48%{background-position:18px 42px;opacity:.58}78%{background-position:-12px 76px;opacity:.42}}
 @media(max-width:700px){.dive-descent .terrain-project-ltpo{left:7%;width:24vw}.dive-descent .terrain-project-media{right:6%;width:39vw}.dive-descent .terrain-project-hundred{right:25%;width:24vw}.dive-descent .terrain-project-beijing{left:42%;width:42vw}}
 
-/* Long-world handoff: the master image begins while 006m's light is still
-   falling. The chamber is anchored to the first throat below the meeting
-   cliffs, so this reads as one underwater route rather than page sections. */
-.dive-descent .downstream-world-integration{--downstream-shift:0px;--downstream-base-opacity:0;--downstream-chamber-opacity:0;position:absolute;left:0;top:0;width:100%;height:920vh;z-index:0;pointer-events:none;overflow:visible;transform:translate3d(0,var(--downstream-shift),0);will-change:transform}
-.dive-descent .downstream-world-base{position:absolute;left:0;top:132vh;width:100vw;opacity:var(--downstream-base-opacity);will-change:opacity;-webkit-mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.24) 84px,#000 390px,#000 100%);mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.24) 84px,#000 390px,#000 100%)}
-.dive-descent .downstream-world-base img{display:block;width:100%;height:auto;max-width:none}
-.dive-descent .downstream-world-base::after{content:"";position:absolute;left:0;top:0;width:100%;height:clamp(330px,46vh,480px);background:linear-gradient(180deg,rgba(93,157,185,.21),rgba(43,104,145,.1) 58%,transparent);pointer-events:none}
-.dive-descent .downstream-great-chamber{position:absolute;left:0;top:166vh;width:100vw;aspect-ratio:1672/941;background:#061f3e;opacity:var(--downstream-chamber-opacity);-webkit-mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.34) 9%,rgba(0,0,0,.88) 18%,#000 25%,#000 82%,rgba(0,0,0,.68) 93%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.34) 9%,rgba(0,0,0,.88) 18%,#000 25%,#000 82%,rgba(0,0,0,.68) 93%,transparent 100%);will-change:opacity}
-.dive-descent .downstream-great-chamber img{position:relative;z-index:0;display:block;width:100%;height:auto;max-width:none;aspect-ratio:1672/941;object-fit:contain}
-.dive-descent .downstream-great-chamber::before{content:"";position:absolute;z-index:1;left:-8%;top:-10%;width:116%;height:38%;background:radial-gradient(ellipse 76% 74% at 50% 19%,rgba(48,113,151,.22),rgba(15,58,94,.1) 49%,transparent 78%);filter:blur(23px);pointer-events:none}
-.dive-descent .downstream-hidden-cave{position:absolute;left:0;top:320vh;width:100vw;height:100vh;overflow:hidden;background:#020817;-webkit-mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.24) 8%,rgba(0,0,0,.76) 22%,#000 38%,#000 100%);mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.24) 8%,rgba(0,0,0,.76) 22%,#000 38%,#000 100%)}
-.dive-descent .downstream-hidden-cave img{position:absolute;left:50%;top:0;display:block;width:auto;min-width:100%;height:100%;max-width:none;transform:translateX(-50%);object-fit:cover;object-position:center top;filter:saturate(.82) brightness(.88) contrast(.96)}
+/* One full-bleed lower-world scene. The image holds all geology; moving water
+   atmospheres are the only separate layers, so no duplicate rocks or page seams
+   can appear as the visitor descends. */
+.dive-descent .downstream-world-scene{--scene-shift:0px;--scene-opacity:0;--scene-water-shift:0px;--scene-depth-shift:0px;position:absolute;left:0;top:0;width:100%;height:374.83vw;z-index:0;overflow:visible;pointer-events:none;background:#07162c;transform:translate3d(0,var(--scene-shift),0);will-change:transform}
+.dive-descent .downstream-world-master{position:absolute;left:50%;top:0;display:block;width:100vw;height:auto;max-width:none;transform:translateX(-50%);opacity:1;will-change:transform}
+.dive-descent .downstream-water-atmosphere,.dive-descent .downstream-depth-atmosphere{display:none!important}
 
 /* The supplied images become the only lower environment. The original water
    light survives briefly above the first join, then dissolves away. */
@@ -583,7 +580,7 @@ body.is-ascent-active .descent-onboarding{opacity:0!important}
 .dive-descent .deep-water-motion::before,.dive-descent .deep-water-motion::after{content:"";position:absolute;display:block;pointer-events:none;border-radius:50%;will-change:transform,background-position;background-repeat:no-repeat}
 .dive-descent .deep-water-motion::before{inset:-25%;opacity:.08;filter:blur(31px);mix-blend-mode:screen;background:radial-gradient(ellipse 60% 32% at 13% 8%,rgba(228,243,242,.52),rgba(193,220,231,.2) 42%,transparent 78%),radial-gradient(ellipse 49% 42% at 48% 3%,rgba(231,244,242,.58),rgba(181,213,227,.18) 45%,transparent 80%),radial-gradient(ellipse 63% 35% at 88% 18%,rgba(174,208,226,.38),transparent 78%),radial-gradient(ellipse 38% 58% at 26% 68%,rgba(55,82,153,.25),transparent 79%),radial-gradient(ellipse 57% 39% at 78% 75%,rgba(31,48,122,.22),transparent 82%);background-size:142% 120%,132% 132%,154% 126%,142% 154%,152% 146%;background-position:0% 4%,48% 0%,100% 18%,18% 76%,88% 82%;animation:deep-reference-water-drift 37s ease-in-out infinite}
 .dive-descent .deep-water-motion::after{inset:-16%;opacity:.06;filter:blur(19px);mix-blend-mode:multiply;background:radial-gradient(ellipse 38% 22% at 32% 22%,rgba(222,239,240,.16),transparent 76%),radial-gradient(ellipse 45% 28% at 67% 29%,rgba(195,222,232,.13),transparent 78%),radial-gradient(ellipse 34% 38% at 15% 58%,rgba(26,52,121,.36),transparent 78%),radial-gradient(ellipse 54% 28% at 72% 76%,rgba(12,26,92,.3),transparent 80%);background-size:136% 128%,148% 136%,144% 152%,158% 142%;background-position:10% 18%,84% 22%,4% 70%,92% 84%;animation:deep-reference-water-drift-b 49s ease-in-out -13s infinite}
-.dive-descent .world-scene-open-water{display:block!important;z-index:0;top:-6vh;width:106vw;height:132vh;background-image:url("assets/dive-open-water-first-view-candidate-v1.png");background-size:cover;background-position:50% 0%;opacity:.42;filter:saturate(.56) contrast(1.08) brightness(1.08);mix-blend-mode:soft-light;-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.94) 0%,#000 22%,#000 76%,rgba(0,0,0,.34) 94%,transparent 100%);mask-image:linear-gradient(180deg,rgba(0,0,0,.94) 0%,#000 22%,#000 76%,rgba(0,0,0,.34) 94%,transparent 100%);animation:deep-open-water-drift 43s ease-in-out infinite}
+.dive-descent .world-scene-open-water{display:none!important}
 .dive-descent .sea-light-beam{display:block!important;top:-18vh;left:4%;width:92vw;height:132vh;opacity:.26;filter:blur(29px);clip-path:none;border-radius:50%;background:radial-gradient(ellipse 76% 42% at 55% 3%,rgba(231,247,244,.16),rgba(188,220,230,.07) 48%,transparent 80%),linear-gradient(180deg,rgba(218,240,239,.045),transparent 58%);mix-blend-mode:screen;animation:deep-reference-light-drift 41s ease-in-out infinite}
 .dive-descent .sea-light-beam-b{left:auto;right:-14%;width:72vw;opacity:.14;animation-delay:-17s}
 .dive-descent .sea-caustic-suggestion{display:block!important;opacity:.08;filter:blur(8px);background:radial-gradient(ellipse 62% 28% at 52% 8%,rgba(224,242,241,.15),transparent 78%),radial-gradient(ellipse 42% 24% at 18% 42%,rgba(187,216,229,.08),transparent 80%);-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.42),#000 28%,rgba(0,0,0,.42) 74%,transparent 100%);mask-image:linear-gradient(180deg,rgba(0,0,0,.42),#000 28%,rgba(0,0,0,.42) 74%,transparent 100%);animation:deep-reference-caustic-drift 53s ease-in-out infinite}

@@ -1588,7 +1588,7 @@
     const ascentBubbles = world.querySelector('.ascent-bubbles');
     const PULL_THRESHOLD = 118;
     const PULL_MAX = 174;
-    const downstreamIntegration = world.querySelector('.downstream-world-integration');
+    const downstreamScene = world.querySelector('.downstream-world-scene');
     let riftAutoDive = false;
     let riftCompleted = false;
     let riftAutoState = { t: 0 };
@@ -1624,15 +1624,18 @@
     };
 
     const renderDownstreamVisual = (progress, depth) => {
-      if (!downstreamIntegration) return;
-      const worldReveal = clamp((progress - .18) / .14, 0, 1);
-      const chamberReveal = clamp((progress - .32) / .08, 0, 1);
-      const lightFade = clamp((progress - .22) / .2, 0, 1);
-      world.classList.toggle('is-long-world-active', progress > .32);
+      if (!downstreamScene) return;
+      const sceneReveal = clamp((progress - .16) / .14, 0, 1);
+      const lightFade = clamp((progress - .20) / .18, 0, 1);
+      world.classList.toggle('is-long-world-active', progress > .30);
       world.classList.remove('is-downstream-clean');
-      downstreamIntegration.style.setProperty('--downstream-shift', `${-depth}px`);
-      downstreamIntegration.style.setProperty('--downstream-base-opacity', worldReveal.toFixed(3));
-      downstreamIntegration.style.setProperty('--downstream-chamber-opacity', chamberReveal.toFixed(3));
+      downstreamScene.style.setProperty('--scene-shift', `${-depth}px`);
+      downstreamScene.style.setProperty('--scene-opacity', sceneReveal.toFixed(3));
+      // Keep the master artwork on the same scroll plane as the world.  The
+      // atmosphere only drifts a trace slower, so descent reads as continuous
+      // water rather than a compressed or forcefully zooming camera move.
+      downstreamScene.style.setProperty('--scene-water-shift', `${(-depth * .018).toFixed(1)}px`);
+      downstreamScene.style.setProperty('--scene-depth-shift', `${(-depth * .008).toFixed(1)}px`);
       world.style.setProperty('--long-world-light', (.84 * (1 - lightFade)).toFixed(3));
     };
 
