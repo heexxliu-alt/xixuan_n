@@ -19,7 +19,7 @@
   const DIVER_VERTICAL_DEAD_ZONE = 28;
   const DIVER_MAX_POSE_DELTA = 1.1;
   const DIVER_WAIT_POSTURE = 72;
-  const DEBUG_HIDDEN_CAVE = true;
+  const DEBUG_HIDDEN_CAVE = false;
   if (gs && window.MorphSVGPlugin) gs.registerPlugin(window.MorphSVGPlugin);
 
   class DiverPointerTracker {
@@ -1536,13 +1536,7 @@
     const onboarding = world.querySelector('.descent-onboarding');
     const professional = world.querySelector('.quiet-professional');
     const profileCoordinates = world.querySelector('.profile-coordinates');
-    const signals = [...world.querySelectorAll('[data-signal-start]')];
-    const sideNodes = [...world.querySelectorAll('[data-side-start]')];
-    const writingNodes = [...world.querySelectorAll('[data-writing-start]')];
-    const deepNodes = [...world.querySelectorAll('[data-deep-start]')];
     const revealNodes = [...world.querySelectorAll('[data-reveal-start]')];
-    const caseNodes = [...world.querySelectorAll('[data-case]')];
-    const approachNodes = [...world.querySelectorAll('[data-approach]')];
     const informationNodes = [...new Set([
       professional,
       profileCoordinates,
@@ -1594,7 +1588,7 @@
     const ascentBubbles = world.querySelector('.ascent-bubbles');
     const PULL_THRESHOLD = 118;
     const PULL_MAX = 174;
-    const riftRegion = world.querySelector('.rift-region');
+    const downstreamIntegration = world.querySelector('.downstream-world-integration');
     let riftAutoDive = false;
     let riftCompleted = false;
     let riftAutoState = { t: 0 };
@@ -1602,11 +1596,16 @@
     let riftTimeline = null;
 
     const renderRiftVisual = (progress) => {
-      const dropIn = clamp((progress - .225) / .14, 0, 1);
+      // The reset world is downstream-only: terrain stays dormant until the
+      // confirmed Profile / Experience / Education field has left the frame.
+      const dropoff = clamp((progress - .34) / .12, 0, 1);
+      const dropIn = clamp((progress - .34) / .16, 0, 1);
       const dropOut = clamp((.72 - progress) / .17, 0, 1);
       const auto = riftAutoDive ? riftAutoState.t : 0;
       const visibility = Math.max(riftCompleted ? .72 : 0, dropIn * dropOut);
       const restriction = Math.max(clamp((progress - .36) / .22, 0, 1), auto);
+      const chamber = clamp((progress - .62) / .2, 0, 1);
+      const openBelow = clamp((progress - .78) / .2, 0, 1);
       const exit = riftAutoDive
         ? .22 + auto * .68
         : riftCompleted
@@ -1617,10 +1616,24 @@
       world.style.setProperty('--rift-left-width', `${(29 + restriction * 14).toFixed(2)}%`);
       world.style.setProperty('--rift-right-width', `${(25 + restriction * 18).toFixed(2)}%`);
       world.style.setProperty('--rift-front-width', `${(35 + restriction * 13).toFixed(2)}%`);
-      // Keep the visual state on the world root even if a stale partial DOM
-      // ever omits the optional region; the rest of the descent must remain
-      // usable and the next full page load will restore the plate.
-      if (!riftRegion) return;
+      world.style.setProperty('--terrain-dropoff', dropoff.toFixed(3));
+      world.style.setProperty('--terrain-rift', visibility.toFixed(3));
+      world.style.setProperty('--terrain-restriction', restriction.toFixed(3));
+      world.style.setProperty('--terrain-chamber', chamber.toFixed(3));
+      world.style.setProperty('--terrain-open-below', openBelow.toFixed(3));
+    };
+
+    const renderDownstreamVisual = (progress, depth) => {
+      if (!downstreamIntegration) return;
+      const worldReveal = clamp((progress - .18) / .14, 0, 1);
+      const chamberReveal = clamp((progress - .32) / .08, 0, 1);
+      const lightFade = clamp((progress - .22) / .2, 0, 1);
+      world.classList.toggle('is-long-world-active', progress > .32);
+      world.classList.remove('is-downstream-clean');
+      downstreamIntegration.style.setProperty('--downstream-shift', `${-depth}px`);
+      downstreamIntegration.style.setProperty('--downstream-base-opacity', worldReveal.toFixed(3));
+      downstreamIntegration.style.setProperty('--downstream-chamber-opacity', chamberReveal.toFixed(3));
+      world.style.setProperty('--long-world-light', (.84 * (1 - lightFade)).toFixed(3));
     };
 
     const setRiftAutoMotion = (progress) => {
@@ -2080,98 +2093,17 @@
       applyBounds(progress);
       setLifelineDepth(progress);
       renderRiftVisual(progress);
-      if (!riftAutoDive && !riftCompleted && progress > .285 && progress < .61) {
+      renderDownstreamVisual(progress, currentDepth);
+      if (!riftAutoDive && !riftCompleted && progress > .35 && progress < .66) {
         const diver = tracker.getPosition();
         const nearRiftOpening = diver.y > viewport.height * .66;
         const insideRiftLane = diver.x > viewport.width * .29 && diver.x < viewport.width * .72;
         if (nearRiftOpening && insideRiftLane) beginRiftAutoDive();
       }
-      const maxDepthMeters = debugHiddenCave ? 520 : 420;
+      const maxDepthMeters = 420;
       const depthMeters = 6 + Math.round(progress * (maxDepthMeters - 6));
       if (depthReadout) depthReadout.textContent = `${String(depthMeters).padStart(3, '0')}m`;
       if (instruction) instruction.style.opacity = String(.92 - progress * .58);
-      revealNodes.forEach((node) => {
-        const start = Number(node.dataset.revealStart || 0);
-        const end = Number(node.dataset.revealEnd || 1);
-        const exit = Number(node.dataset.revealExit || 2);
-        const reveal = clamp((progress - start) / Math.max(.01, end - start), 0, 1);
-        const departure = progress <= exit
-          ? 1
-          : clamp(1 - (progress - exit) / .11, 0, 1);
-        const easedReveal = reveal * reveal * (3 - 2 * reveal);
-        const shift = (1 - easedReveal) * Number(node.dataset.revealY || 14);
-        const baseOpacity = easedReveal * departure;
-        node.style.setProperty('--entry-opacity', baseOpacity.toFixed(3));
-        node.style.setProperty('--information-base-opacity', baseOpacity.toFixed(3));
-        node.style.setProperty('--entry-shift', `${shift.toFixed(2)}px`);
-        node.style.setProperty('--entry-scale', (0.985 + easedReveal * .015).toFixed(3));
-        node.style.setProperty('--entry-blur', `${((1 - easedReveal) * 3 + (1 - departure) * 2).toFixed(2)}px`);
-      });
-      signals.forEach((signal) => {
-        const start = Number(signal.dataset.signalStart || 0);
-        const end = Number(signal.dataset.signalEnd || 1);
-        const reveal = clamp((progress - start) / Math.max(.01, end - start), 0, 1);
-        const isDistantSignal = signal.classList.contains('distant-signal');
-        signal.style.setProperty('--signal-opacity', (isDistantSignal ? .035 + reveal * .245 : .11 + reveal * .73).toFixed(3));
-        signal.style.setProperty('--signal-scale', (isDistantSignal ? .55 + reveal * .4 : .78 + reveal * .22).toFixed(3));
-        signal.style.setProperty('--signal-blur', `${(isDistantSignal ? 8 - reveal * 4.5 : 2.8 - reveal * 2.8).toFixed(2)}px`);
-      });
-      sideNodes.forEach((node) => {
-        const start = Number(node.dataset.sideStart || 0);
-        const end = Number(node.dataset.sideEnd || 1);
-        const reveal = clamp((progress - start) / Math.max(.01, end - start), 0, 1);
-        const baseOpacity = .08 + reveal * .92;
-        node.style.setProperty('--side-opacity', baseOpacity.toFixed(3));
-        node.style.setProperty('--information-base-opacity', baseOpacity.toFixed(3));
-        node.style.setProperty('--side-scale', (.94 + reveal * .06).toFixed(3));
-        node.style.setProperty('--side-shift', `${((1 - reveal) * 12).toFixed(2)}px`);
-        node.style.setProperty('--side-blur', `${((1 - reveal) * 3).toFixed(2)}px`);
-      });
-      writingNodes.forEach((node) => {
-        const start = Number(node.dataset.writingStart || 0);
-        const end = Number(node.dataset.writingEnd || 1);
-        const reveal = clamp((progress - start) / Math.max(.01, end - start), 0, 1);
-        const baseOpacity = .08 + reveal * .92;
-        node.style.setProperty('--writing-opacity', baseOpacity.toFixed(3));
-        node.style.setProperty('--information-base-opacity', baseOpacity.toFixed(3));
-        node.style.setProperty('--writing-scale', (.96 + reveal * .04).toFixed(3));
-        node.style.setProperty('--writing-shift', `${((1 - reveal) * 8).toFixed(2)}px`);
-        node.style.setProperty('--writing-blur', `${((1 - reveal) * 3).toFixed(2)}px`);
-      });
-      approachNodes.forEach((node) => {
-        const nodeRect = node.getBoundingClientRect();
-        const diverRect = swimmer?.getBoundingClientRect();
-        if (!diverRect) return;
-        const dx = (diverRect.left + diverRect.width / 2) - (nodeRect.left + nodeRect.width / 2);
-        const dy = (diverRect.top + diverRect.height / 2) - (nodeRect.top + nodeRect.height / 2);
-        const radius = Math.max(220, Math.min(viewport.width, viewport.height) * .46);
-        const proximity = clamp(1 - Math.hypot(dx, dy) / radius, 0, 1);
-        node.style.setProperty('--approach-boost', (proximity * .2).toFixed(3));
-        node.style.setProperty('--approach-glow', `${(proximity * 22).toFixed(1)}px`);
-        if (node.classList.contains('travel-note')) node.style.setProperty('--travel-affordance', (.24 + proximity * .76).toFixed(3));
-      });
-      caseNodes.forEach((node) => {
-        const nodeRect = node.getBoundingClientRect();
-        const diverRect = swimmer?.getBoundingClientRect();
-        if (!diverRect) return;
-        const dx = (diverRect.left + diverRect.width / 2) - (nodeRect.left + nodeRect.width / 2);
-        const dy = (diverRect.top + diverRect.height / 2) - (nodeRect.top + nodeRect.height / 2);
-        const radius = Math.max(240, Math.min(viewport.width, viewport.height) * .52);
-        const proximity = clamp(1 - Math.hypot(dx, dy) / radius, 0, 1);
-        node.style.setProperty('--case-proximity', proximity.toFixed(3));
-        node.classList.toggle('is-near-case', proximity > .34);
-      });
-      deepNodes.forEach((node) => {
-        const start = Number(node.dataset.deepStart || 0);
-        const end = Number(node.dataset.deepEnd || 1);
-        const reveal = clamp((progress - start) / Math.max(.01, end - start), 0, 1);
-        const baseOpacity = .08 + reveal * .92;
-        node.style.setProperty('--deep-opacity', baseOpacity.toFixed(3));
-        node.style.setProperty('--information-base-opacity', baseOpacity.toFixed(3));
-        node.style.setProperty('--deep-scale', (.96 + reveal * .04).toFixed(3));
-        node.style.setProperty('--deep-shift', `${((1 - reveal) * 8).toFixed(2)}px`);
-        node.style.setProperty('--deep-blur', `${((1 - reveal) * 3).toFixed(2)}px`);
-      });
       const fadeStart = viewport.height * .30;
       const fadeEnd = viewport.height * .07;
       informationNodes.forEach((node) => {

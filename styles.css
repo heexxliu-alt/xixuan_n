@@ -479,60 +479,6 @@ body.is-ascent-active .descent-onboarding{opacity:0!important}
 
 @media(prefers-reduced-motion:reduce){.dive-descent .world-scene-open-water,.dive-descent .sea-surface-haze,.dive-descent .sea-light-beam,.dive-descent .deep-water-motion::before,.dive-descent .deep-water-motion::after,.dive-descent .descent-onboarding{animation:none!important}.dive-descent .descent-diver{filter:saturate(.72) brightness(.74) contrast(1.02) drop-shadow(0 9px 12px rgba(8,22,53,.34))}}
 
-/* Rift / Drop-off transition: one new environmental plate, broken into
-   distant, middle and foreground layers so the world changes scale before
-   the Great Chamber appears. It carries no content or interface. */
-.dive-descent{--rift-visibility:0;--rift-exit-opacity:0;--rift-left-width:30%;--rift-right-width:26%;--rift-auto-distant:0px;--rift-auto-middle:0px;--rift-auto-foreground:0px;--rift-auto-content:0px}
-.dive-descent .sea-foundation{overflow:visible}
-.dive-descent .rift-region{position:absolute;z-index:4;left:0;top:124vh;width:100%;height:246vh;overflow:hidden;opacity:var(--rift-visibility);pointer-events:none;isolation:isolate;will-change:opacity,transform}
-.dive-descent .rift-plate{position:absolute;inset:0;display:block;background:linear-gradient(180deg,rgba(128,188,206,.06),rgba(21,45,92,.14) 32%,rgba(8,17,51,.55) 100%),url("assets/rift-dropoff-environment-v1.png") center bottom / 100% 115% no-repeat;filter:saturate(.58) brightness(.72) contrast(.96);mix-blend-mode:normal;-webkit-mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.16) 8%,#000 21%,#000 78%,rgba(0,0,0,.82) 91%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.16) 8%,#000 21%,#000 78%,rgba(0,0,0,.82) 91%,transparent 100%)}
-.dive-descent .rift-region::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 50% 76% at 50% 58%,rgba(42,113,167,.14),rgba(8,19,56,.02) 56%,rgba(5,10,38,.48) 100%),linear-gradient(180deg,rgba(41,89,135,.1),transparent 38%,rgba(8,11,43,.34) 100%);mix-blend-mode:multiply;pointer-events:none}
-.dive-descent .rift-dropoff-glow{position:absolute;left:50%;top:42%;width:min(45vw,700px);height:82vh;display:block;transform:translateX(-50%);border-radius:50%;background:radial-gradient(ellipse,rgba(61,157,202,.24) 0,rgba(26,82,148,.13) 42%,transparent 74%);filter:blur(18px);opacity:.68}
-.dive-descent .rift-far-current{position:absolute;left:50%;top:26%;width:36%;height:58%;display:block;transform:translateX(-50%);border-radius:50%;background:repeating-linear-gradient(168deg,transparent 0 28px,rgba(166,221,222,.12) 29px 31px,transparent 33px 58px);filter:blur(4px);opacity:.42;mix-blend-mode:screen;animation:rift-current-drift 17s ease-in-out infinite}
-.dive-descent .rift-walls{position:absolute;z-index:2;left:0;top:144vh;width:100%;height:225vh;overflow:hidden;opacity:var(--rift-visibility);pointer-events:none;isolation:isolate;will-change:opacity}
-.dive-descent .rift-wall{position:absolute;top:0;height:100%;display:block;background-image:linear-gradient(145deg,rgba(8,18,51,.38),rgba(27,56,93,.26) 42%,rgba(72,106,131,.08) 76%),url("assets/rift-dropoff-environment-v1.png");background-repeat:no-repeat;background-size:190% 100%;filter:saturate(.56) brightness(.9) contrast(1.02);opacity:.54;box-shadow:inset 0 0 62px rgba(5,10,38,.22)}
-.dive-descent .rift-wall-left{left:0;width:var(--rift-left-width);background-position:left 50%;clip-path:polygon(0 0,100% 5%,82% 13%,96% 22%,73% 32%,91% 42%,66% 53%,88% 65%,61% 75%,76% 88%,49% 100%,0 100%)}
-.dive-descent .rift-wall-right{right:0;width:var(--rift-right-width);background-position:right 52%;clip-path:polygon(0 0,100% 0,100% 100%,52% 100%,73% 88%,44% 77%,83% 65%,56% 54%,86% 42%,59% 31%,93% 20%,68% 10%)}
-.dive-descent .rift-wall::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(106,168,177,.08),transparent 24%,rgba(3,9,35,.24) 100%);mix-blend-mode:screen}
-.dive-descent .rift-rift-veil{position:absolute;z-index:1;left:50%;top:8%;width:70%;height:92%;display:block;transform:translateX(-50%);background:radial-gradient(ellipse at 50% 42%,rgba(8,26,71,.02) 0 22%,rgba(6,14,53,.24) 48%,rgba(3,7,33,.76) 87%,rgba(2,5,27,.9) 100%);filter:blur(8px);opacity:.88}
-.dive-descent .rift-exit-window{position:absolute;z-index:3;left:50%;top:83%;width:min(58vw,880px);height:54vh;display:block;transform:translateX(-50%);background:radial-gradient(ellipse at 50% 55%,rgba(119,207,219,.42) 0 9%,rgba(71,142,190,.28) 26%,rgba(24,53,115,.12) 56%,transparent 76%),url("assets/dive-great-chamber-environment-candidate-v1.png") center 36% / cover no-repeat;filter:saturate(.48) brightness(.74);-webkit-mask-image:radial-gradient(ellipse at 50% 54%,#000 0 28%,rgba(0,0,0,.7) 52%,transparent 80%);mask-image:radial-gradient(ellipse at 50% 54%,#000 0 28%,rgba(0,0,0,.7) 52%,transparent 80%);opacity:var(--rift-exit-opacity);mix-blend-mode:screen}
-.dive-descent .rift-scenery-plate{position:absolute;z-index:1;left:0;top:140vh;width:100%;height:248vh;display:block;background:linear-gradient(180deg,rgba(37,85,120,.04),rgba(8,16,48,.2) 46%,rgba(3,7,31,.62) 100%),url("assets/rift-dropoff-environment-v1.png") center bottom / 100% 115% no-repeat;filter:saturate(.56) brightness(.68) contrast(.98);opacity:calc(var(--rift-visibility) * .84);-webkit-mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.08) 6%,#000 16%,#000 86%,rgba(0,0,0,.7) 95%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.08) 6%,#000 16%,#000 86%,rgba(0,0,0,.7) 95%,transparent 100%);pointer-events:none}
-.dive-descent .rift-front-rock{position:absolute;z-index:4;top:194vh;width:var(--rift-front-width,36%);height:168vh;display:block;background-image:linear-gradient(145deg,rgba(5,11,39,.44),rgba(20,41,74,.36) 48%,rgba(68,91,117,.08)),url("assets/rift-dropoff-environment-v1.png");background-size:210% 100%;filter:saturate(.48) brightness(.78) contrast(1.06);box-shadow:inset 0 0 68px rgba(2,6,29,.28);opacity:calc(var(--rift-visibility) * .48);will-change:transform,opacity}
-.dive-descent .rift-front-rock-left{left:-7vw;background-position:left 64%;clip-path:polygon(0 0,84% 6%,61% 15%,91% 26%,55% 38%,79% 49%,45% 61%,68% 73%,38% 86%,57% 100%,0 100%)}
-.dive-descent .rift-front-rock-right{right:-8vw;background-position:right 62%;clip-path:polygon(16% 0,100% 0,100% 100%,44% 100%,64% 87%,33% 76%,57% 63%,24% 51%,50% 38%,19% 26%,42% 14%)}
-.dive-descent .rift-current-streak{position:absolute;z-index:5;left:50%;top:190vh;width:52%;height:126vh;display:block;transform:translateX(-50%);background:repeating-linear-gradient(165deg,transparent 0 31px,rgba(156,222,224,.12) 32px 34px,transparent 36px 74px);filter:blur(3px);opacity:calc(var(--rift-visibility) * .45);mix-blend-mode:screen;animation:rift-current-drift 13s ease-in-out infinite}
-.dive-descent.is-rift-auto .rift-front-rock-left{transform:translate3d(calc(var(--rift-auto-progress,0) * -16px),calc(var(--rift-auto-foreground) * -1),0)}
-.dive-descent.is-rift-auto .rift-front-rock-right{transform:translate3d(calc(var(--rift-auto-progress,0) * 18px),calc(var(--rift-auto-foreground) * -1),0)}
-.dive-descent.is-rift-auto .rift-current-streak{animation-duration:1.8s;opacity:.66}
-.dive-descent.is-rift-auto .rift-far-current{animation-duration:2.4s;opacity:.68}
-.dive-descent.is-rift-auto .descent-layer-distant{transform:translate3d(0,calc(var(--depth-distant) + var(--rift-auto-distant)),0)}
-.dive-descent.is-rift-auto .descent-layer-middle{transform:translate3d(0,calc(var(--depth-middle) + var(--rift-auto-middle)),0)}
-.dive-descent.is-rift-auto .descent-layer-foreground{transform:translate3d(0,calc(var(--depth-foreground) + var(--rift-auto-foreground)),0)}
-.dive-descent.is-rift-auto .descent-layer-content{transform:translate3d(0,calc(var(--depth-content) + var(--rift-auto-content)),0)}
-@keyframes rift-current-drift{0%,100%{transform:translate3d(-50%,0,0) skewX(-4deg);opacity:.28}50%{transform:translate3d(-47%,18px,0) skewX(3deg);opacity:.58}}
-@media(max-width:700px){.dive-descent .rift-wall-left{width:var(--rift-left-width)}.dive-descent .rift-wall-right{width:var(--rift-right-width)}.dive-descent .rift-front-rock{width:var(--rift-front-width,43%)}.dive-descent .rift-exit-window{width:84vw}}
-@media(prefers-reduced-motion:reduce){.dive-descent .rift-far-current,.dive-descent .rift-current-streak{animation:none!important}}
-
-/* Keep the transition itself quiet: later placeholder nodes and Case copy
-   stay out of frame until the Great Chamber phase is intentionally resumed. */
-.dive-descent.is-rift-passage .node-writing,
-.dive-descent.is-rift-passage .world-scene-open-water,
-.dive-descent.is-rift-passage .node-side,
-.dive-descent.is-rift-passage .node-deepest,
-.dive-descent.is-rift-passage .distant-signal,
-.dive-descent.is-rift-passage .chamber-approach,
-.dive-descent.is-rift-passage .great-chamber{opacity:0!important;visibility:hidden!important;pointer-events:none!important}
-.dive-descent.is-rift-passage .cave-shell-writing,
-.dive-descent.is-rift-passage .cave-shell-side,
-.dive-descent.is-rift-passage .cave-shell-quiet,
-.dive-descent.is-rift-passage .cave-shell-deep,
-.dive-descent.is-rift-passage .rock-writing-left,
-.dive-descent.is-rift-passage .rock-writing-right,
-.dive-descent.is-rift-passage .rock-side-right,
-.dive-descent.is-rift-passage .rock-deep-left,
-.dive-descent.is-rift-passage .cave-echo-writing,
-.dive-descent.is-rift-passage .cave-echo-deep{opacity:0!important;visibility:hidden!important}
-
 /* Surface Lifebuoy entry: keep the shared pastel details legible and let the
    two-line invitation sit directly above the object. */
 .surface-hero .dive-cta-region .dive-vortex{display:none!important}
@@ -544,6 +490,75 @@ body.is-ascent-active .descent-onboarding{opacity:0!important}
 .surface-hero .dive-cta-region:hover .dive-trigger,.surface-hero .dive-cta-region:focus-within .dive-trigger{animation:none!important}
 .surface-hero.is-dive-cta-clicking .dive-cta-region .dive-trigger{animation:none!important}
 @keyframes surface-lifebuoy-text-breathe{0%,100%{text-shadow:0 1px 0 rgba(55,110,143,.34),0 0 1px rgba(255,255,255,.38),0 0 4px rgba(190,235,244,.18)}50%{text-shadow:0 1px 0 rgba(55,110,143,.34),0 0 2px rgba(255,255,255,.92),0 0 7px rgba(190,235,244,.56),0 0 12px rgba(155,213,231,.22)}}
+
+/* Deep Sea structural reset: Profile ends in one continuous terrain field.
+   These layers are scenery inside one world, never stacked webpage sections. */
+.dive-descent{--terrain-dropoff:0;--terrain-rift:0;--terrain-restriction:0;--terrain-chamber:0;--terrain-open-below:0;--terrain-rock:url("assets/rift-dropoff-environment-v1.png")}
+.dive-descent .deep-world-structure{position:absolute;inset:0;pointer-events:none;isolation:isolate}
+.dive-descent .deep-world-distant{z-index:0}
+.dive-descent .deep-world-middle{z-index:2}
+.dive-descent .deep-world-foreground{z-index:5}
+.dive-descent .deep-water-open{position:absolute;inset:-8vh 0 0;display:block;background:linear-gradient(180deg,rgba(61,124,154,.14),rgba(13,31,65,.2) 54%,rgba(5,12,38,.56) 100%),url("assets/dive-open-water-first-view-candidate-v1.png") center top / cover no-repeat;opacity:calc(1 - var(--terrain-dropoff) * .34);filter:saturate(.58) brightness(.7) contrast(1.04);-webkit-mask-image:linear-gradient(180deg,#000 0%,#000 55%,rgba(0,0,0,.72) 76%,transparent 94%);mask-image:linear-gradient(180deg,#000 0%,#000 55%,rgba(0,0,0,.72) 76%,transparent 94%)}
+.dive-descent .terrain-dropoff-haze{position:absolute;left:0;top:66vh;width:100%;height:190vh;display:block;background:radial-gradient(ellipse 52% 50% at 49% 32%,rgba(68,148,174,.2),transparent 68%),linear-gradient(180deg,transparent,rgba(8,25,60,.35) 42%,rgba(5,12,39,.72));opacity:var(--terrain-dropoff);filter:blur(12px);-webkit-mask-image:linear-gradient(180deg,transparent,#000 17%,#000 78%,transparent);mask-image:linear-gradient(180deg,transparent,#000 17%,#000 78%,transparent)}
+.dive-descent .terrain-dropoff-shelf,.dive-descent .terrain-dropoff-rock{position:absolute;display:block;background:linear-gradient(145deg,rgba(17,34,68,.9),rgba(39,68,96,.68) 48%,rgba(18,32,64,.9)),var(--terrain-rock) center / cover no-repeat;filter:saturate(.48) brightness(.66) contrast(1.08);box-shadow:inset 0 0 46px rgba(3,10,36,.38),0 -2px 20px rgba(93,181,183,.06);opacity:calc(var(--terrain-dropoff) * (1 - var(--terrain-rift)) * .88);will-change:transform,opacity}
+.dive-descent .terrain-dropoff-shelf{top:98vh;height:96vh;width:39vw;min-width:300px}
+.dive-descent .terrain-dropoff-shelf-left{left:-7vw;clip-path:polygon(0 0,80% 8%,95% 23%,71% 35%,91% 49%,63% 62%,78% 78%,49% 100%,0 94%);background-position:left 64%}
+.dive-descent .terrain-dropoff-shelf-right{right:-9vw;top:119vh;width:34vw;clip-path:polygon(19% 0,100% 8%,100% 100%,45% 96%,61% 80%,34% 65%,55% 48%,25% 34%,42% 16%);background-position:right 58%}
+.dive-descent .terrain-dropoff-rock{top:153vh;height:122vh;width:31vw;min-width:270px;z-index:2}
+.dive-descent .terrain-dropoff-rock-left{left:-10vw;clip-path:polygon(0 0,78% 6%,57% 22%,87% 40%,49% 56%,77% 73%,42% 100%,0 92%);background-position:left 72%}
+.dive-descent .terrain-dropoff-rock-right{right:-12vw;top:137vh;width:27vw;clip-path:polygon(29% 0,100% 4%,100% 92%,62% 100%,72% 77%,43% 61%,67% 41%,35% 22%);background-position:right 68%}
+.dive-descent .deep-terrain-rift{position:absolute;z-index:1;left:0;top:137vh;width:100vw;height:min(56.28vw,100vh);overflow:visible;opacity:1;pointer-events:none;isolation:isolate;will-change:transform}
+.dive-descent .terrain-rift-depth{position:absolute;inset:0;display:block;background:url("assets/rift-formal-background-v1.png") center top / 100% auto no-repeat;-webkit-mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.86) 8%,#000 18%,#000 90%,rgba(0,0,0,.55) 97%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.86) 8%,#000 18%,#000 90%,rgba(0,0,0,.55) 97%,transparent 100%)}
+.dive-descent .deep-terrain-rift::after{display:none!important}
+.dive-descent .terrain-chamber-backdrop{position:absolute;left:50%;top:214vh;width:100%;height:215vh;display:block;transform:translateX(-50%);background:linear-gradient(180deg,rgba(8,21,51,.9),rgba(11,35,71,.18) 28%,rgba(4,13,42,.52) 100%),url("assets/dive-great-chamber-environment-candidate-v1.png") center 38% / cover no-repeat;filter:saturate(.34) brightness(.58) contrast(1.05);opacity:calc(var(--terrain-chamber) * .84);-webkit-mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.3) 8%,#000 20%,#000 78%,rgba(0,0,0,.82) 93%,transparent);mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.3) 8%,#000 20%,#000 78%,rgba(0,0,0,.82) 93%,transparent)}
+.dive-descent .terrain-chamber-backdrop::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 45% 46% at 50% 37%,rgba(91,172,186,.22),transparent 70%),linear-gradient(180deg,transparent 26%,rgba(4,10,34,.48) 100%);mix-blend-mode:screen;opacity:.72}
+.dive-descent .terrain-chamber-wall{position:absolute;z-index:3;top:262vh;height:150vh;display:block;background:linear-gradient(145deg,rgba(7,16,43,.78),rgba(34,66,86,.6) 46%,rgba(86,111,112,.12)),url("assets/rift-dropoff-environment-v1.png") center / 205% 100% no-repeat;filter:saturate(.4) brightness(.62) contrast(1.06);opacity:calc(var(--terrain-chamber) * (.42 + var(--terrain-open-below) * -.18));box-shadow:inset 0 0 76px rgba(2,7,29,.46)}
+.dive-descent .terrain-chamber-wall-left{left:-9vw;width:31vw;clip-path:polygon(0 0,92% 5%,65% 19%,85% 35%,55% 48%,76% 64%,45% 79%,57% 100%,0 94%);background-position:left 65%}
+.dive-descent .terrain-chamber-wall-right{right:-11vw;width:28vw;top:286vh;clip-path:polygon(22% 0,100% 0,100% 94%,47% 100%,61% 81%,35% 65%,58% 49%,27% 35%,48% 18%);background-position:right 61%}
+.dive-descent .terrain-chamber-scale{position:absolute;z-index:2;left:50%;top:247vh;width:66%;height:145vh;display:block;transform:translateX(-50%);background:radial-gradient(ellipse at 50% 39%,rgba(95,177,190,.19),rgba(27,74,104,.1) 45%,transparent 74%);filter:blur(18px);opacity:calc(var(--terrain-chamber) * .9)}
+.dive-descent .terrain-chamber-ledge{position:absolute;z-index:4;top:303vh;height:112vh;display:block;background:linear-gradient(145deg,rgba(4,12,36,.86),rgba(22,48,70,.7) 50%,rgba(83,103,104,.1)),url("assets/rift-dropoff-environment-v1.png") center / 220% 100% no-repeat;filter:saturate(.4) brightness(.6);opacity:calc(var(--terrain-chamber) * (.46 - var(--terrain-open-below) * .23));box-shadow:inset 0 0 72px rgba(2,7,29,.42)}
+.dive-descent .terrain-chamber-ledge-left{left:-12vw;width:35vw;clip-path:polygon(0 0,90% 8%,68% 22%,96% 39%,59% 55%,80% 73%,47% 100%,0 93%);background-position:left 70%}
+.dive-descent .terrain-chamber-ledge-right{right:-14vw;width:31vw;top:320vh;clip-path:polygon(25% 0,100% 8%,100% 100%,42% 94%,62% 74%,32% 56%,57% 38%,24% 21%);background-position:right 63%}
+.dive-descent .terrain-chamber-terrace{position:absolute;z-index:5;left:13%;top:365vh;width:31vw;height:26vh;display:block;background:linear-gradient(180deg,rgba(87,113,113,.28),rgba(8,19,43,.82)),url("assets/rift-dropoff-environment-v1.png") left bottom / 210% auto no-repeat;clip-path:polygon(0 38%,17% 23%,34% 31%,49% 8%,67% 18%,82% 2%,100% 22%,95% 100%,0 100%);filter:saturate(.38) brightness(.62);opacity:calc(var(--terrain-chamber) * (.5 - var(--terrain-open-below) * .3));box-shadow:0 -8px 20px rgba(83,153,157,.08)}
+.dive-descent .deep-terrain-projects{position:absolute;z-index:9;left:0;top:0;width:100%;height:430vh;opacity:var(--terrain-chamber);pointer-events:none;transition:opacity .4s ease}
+.dive-descent .project-area-cue{position:absolute;left:50%;top:278vh;margin:0;transform:translateX(-50%);color:rgba(211,239,235,.6);font:8px/1.5 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.22em;text-align:center;text-shadow:0 2px 16px rgba(2,9,34,.86);white-space:nowrap}
+.dive-descent .project-area-cue span{display:block;margin-top:5px;color:rgba(255,235,197,.68);font-size:9px;letter-spacing:.19em}
+.dive-descent .terrain-project{position:absolute;display:block;filter:saturate(.52) brightness(.7);opacity:.9;box-shadow:inset 0 0 24px rgba(2,9,34,.42);will-change:transform,opacity}
+.dive-descent .terrain-project::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 22%,rgba(172,221,211,.13),transparent 64%);mix-blend-mode:screen}
+.dive-descent .terrain-project-ltpo{left:16%;top:300vh;width:15vw;min-width:150px;height:93vh;background:linear-gradient(90deg,rgba(4,10,34,.92),rgba(35,74,92,.62) 47%,rgba(3,9,34,.96)),url("assets/rift-dropoff-environment-v1.png") center / 255% 100% no-repeat;clip-path:polygon(13% 0,82% 5%,63% 17%,88% 32%,60% 47%,79% 61%,52% 77%,68% 91%,44% 100%,0 95%,22% 80%,4% 62%,24% 46%,3% 29%,29% 14%);box-shadow:inset 0 0 34px rgba(2,7,28,.72),0 0 22px rgba(56,142,157,.08)}
+.dive-descent .terrain-project-media{right:14%;top:310vh;width:27vw;height:45vh;background:linear-gradient(145deg,rgba(8,18,44,.78),rgba(45,82,99,.5)),url("assets/dive-great-chamber-environment-candidate-v1.png") 68% 55% / 185% auto no-repeat;clip-path:polygon(0 30%,18% 14%,40% 17%,57% 4%,76% 16%,100% 7%,94% 74%,76% 91%,46% 100%,17% 86%);border-radius:48% 36% 24% 40%;box-shadow:inset 0 0 30px rgba(3,10,35,.62)}
+.dive-descent .terrain-project-hundred{right:31%;top:291vh;width:17vw;height:23vh;background:radial-gradient(ellipse at 50% 49%,rgba(8,21,51,.94) 0 26%,rgba(55,92,104,.52) 28% 46%,rgba(7,17,44,.82) 68%,transparent 72%),url("assets/rift-dropoff-environment-v1.png") right 46% / 260% auto no-repeat;clip-path:polygon(8% 20%,28% 4%,74% 9%,94% 31%,87% 76%,63% 94%,27% 88%,5% 63%);box-shadow:inset 0 0 24px rgba(1,6,29,.72)}
+.dive-descent .terrain-project-beijing{left:51%;top:363vh;width:27vw;height:25vh;background:linear-gradient(180deg,rgba(82,112,113,.36),rgba(9,21,46,.84)),url("assets/rift-dropoff-environment-v1.png") center bottom / 175% auto no-repeat;clip-path:polygon(0 43%,13% 23%,26% 29%,39% 11%,57% 19%,73% 4%,90% 27%,100% 20%,96% 100%,0 100%);box-shadow:0 -10px 24px rgba(81,159,160,.08),inset 0 0 30px rgba(2,7,30,.52)}
+.dive-descent .terrain-open-descent{position:absolute;left:50%;top:330vh;width:68%;height:140vh;display:block;transform:translateX(-50%);background:radial-gradient(ellipse 58% 42% at 50% 20%,rgba(68,145,171,.16),transparent 70%),linear-gradient(180deg,transparent,rgba(4,12,39,.26) 58%,rgba(2,7,29,.52));opacity:calc(var(--terrain-open-below) * .64);filter:blur(10px);-webkit-mask-image:linear-gradient(180deg,transparent,#000 18%,#000 82%,transparent);mask-image:linear-gradient(180deg,transparent,#000 18%,#000 82%,transparent)}
+.dive-descent.is-rift-auto .deep-world-distant{transform:translate3d(0,var(--rift-auto-distant),0)}
+.dive-descent.is-rift-auto .deep-world-middle{transform:translate3d(0,var(--rift-auto-middle),0)}
+.dive-descent.is-rift-auto .deep-world-foreground{transform:translate3d(0,var(--rift-auto-foreground),0)}
+.dive-descent.is-rift-auto .deep-terrain-projects{transform:translate3d(0,var(--rift-auto-content),0)}
+@keyframes deep-rift-flow{0%,100%{background-position:0 0;opacity:.28}48%{background-position:18px 42px;opacity:.58}78%{background-position:-12px 76px;opacity:.42}}
+@media(max-width:700px){.dive-descent .terrain-project-ltpo{left:7%;width:24vw}.dive-descent .terrain-project-media{right:6%;width:39vw}.dive-descent .terrain-project-hundred{right:25%;width:24vw}.dive-descent .terrain-project-beijing{left:42%;width:42vw}}
+
+/* Long-world handoff: the master image begins while 006m's light is still
+   falling. The chamber is anchored to the first throat below the meeting
+   cliffs, so this reads as one underwater route rather than page sections. */
+.dive-descent .downstream-world-integration{--downstream-shift:0px;--downstream-base-opacity:0;--downstream-chamber-opacity:0;position:absolute;left:0;top:0;width:100%;height:920vh;z-index:0;pointer-events:none;overflow:visible;transform:translate3d(0,var(--downstream-shift),0);will-change:transform}
+.dive-descent .downstream-world-base{position:absolute;left:0;top:132vh;width:100vw;opacity:var(--downstream-base-opacity);will-change:opacity;-webkit-mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.24) 84px,#000 390px,#000 100%);mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.24) 84px,#000 390px,#000 100%)}
+.dive-descent .downstream-world-base img{display:block;width:100%;height:auto;max-width:none}
+.dive-descent .downstream-world-base::after{content:"";position:absolute;left:0;top:0;width:100%;height:clamp(330px,46vh,480px);background:linear-gradient(180deg,rgba(93,157,185,.21),rgba(43,104,145,.1) 58%,transparent);pointer-events:none}
+.dive-descent .downstream-great-chamber{position:absolute;left:0;top:166vh;width:100vw;aspect-ratio:1672/941;background:#061f3e;opacity:var(--downstream-chamber-opacity);-webkit-mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.34) 9%,rgba(0,0,0,.88) 18%,#000 25%,#000 82%,rgba(0,0,0,.68) 93%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.34) 9%,rgba(0,0,0,.88) 18%,#000 25%,#000 82%,rgba(0,0,0,.68) 93%,transparent 100%);will-change:opacity}
+.dive-descent .downstream-great-chamber img{position:relative;z-index:0;display:block;width:100%;height:auto;max-width:none;aspect-ratio:1672/941;object-fit:contain}
+.dive-descent .downstream-great-chamber::before{content:"";position:absolute;z-index:1;left:-8%;top:-10%;width:116%;height:38%;background:radial-gradient(ellipse 76% 74% at 50% 19%,rgba(48,113,151,.22),rgba(15,58,94,.1) 49%,transparent 78%);filter:blur(23px);pointer-events:none}
+.dive-descent .downstream-hidden-cave{position:absolute;left:0;top:320vh;width:100vw;height:100vh;overflow:hidden;background:#020817;-webkit-mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.24) 8%,rgba(0,0,0,.76) 22%,#000 38%,#000 100%);mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.24) 8%,rgba(0,0,0,.76) 22%,#000 38%,#000 100%)}
+.dive-descent .downstream-hidden-cave img{position:absolute;left:50%;top:0;display:block;width:auto;min-width:100%;height:100%;max-width:none;transform:translateX(-50%);object-fit:cover;object-position:center top;filter:saturate(.82) brightness(.88) contrast(.96)}
+
+/* The supplied images become the only lower environment. The original water
+   light survives briefly above the first join, then dissolves away. */
+.dive-descent.is-long-world-active .descent-layer-distant .deep-world-structure,
+.dive-descent.is-long-world-active .descent-layer-distant .world-environments,
+.dive-descent.is-long-world-active .descent-layer-middle,
+.dive-descent.is-long-world-active .deep-terrain-projects,
+.dive-descent.is-long-world-active .surface-look-up{display:none!important}
+.dive-descent.is-long-world-active .sea-foundation > :not(.sea-light-beam){display:none!important}
+.dive-descent.is-long-world-active .sea-light-beam{opacity:var(--long-world-light,0)!important}
 
 /* Deep Sea water base: keep the original framework blue beneath one
    continuous, softly moving water-surface texture. */
