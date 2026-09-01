@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="Dreaming of the Sea — Continuous Descent prototype">
   <title>Deep Sea — Continuous Descent</title>
-  <link rel="stylesheet" href="styles.css?v=20260901-world-handoff-v14">
+  <link rel="stylesheet" href="styles.css?v=20260901-world-handoff-v15">
   <link rel="stylesheet" href="motion.css?v=20260830-deep-water-v6">
 </head>
 <body class="descent-body">
@@ -15,6 +15,15 @@
         <img class="downstream-world-master" src="assets/deep-sea-world-master-v16-unified-blue.png" alt="">
         <i class="downstream-water-atmosphere"></i>
         <i class="downstream-depth-atmosphere"></i>
+      </div>
+      <div class="swim-map-debug" hidden aria-hidden="true">
+        <svg class="swim-map-debug-plot" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <rect class="swim-map-debug-master" x="0" y="0" width="100" height="100"></rect>
+          <path class="swim-map-debug-free"></path>
+          <circle class="swim-map-debug-cursor" r="7"></circle>
+          <circle class="swim-map-debug-diver" r="7"></circle>
+        </svg>
+        <pre class="swim-map-debug-readout"></pre>
       </div>
       <div class="descent-layer descent-layer-distant" aria-hidden="true">
         <div class="world-environments"><i class="world-scene world-scene-open-water"></i><img class="entry-far-fish entry-far-fish-a" src="assets/surface-fish-near-school.png" alt=""><img class="entry-far-fish entry-far-fish-b" src="assets/surface-fish-near-school.png" alt=""></div><div class="sea-foundation"><i class="sea-surface-haze"></i><i class="surface-water-particles deep-water-motion"></i><i class="sea-light-beam sea-light-beam-a"></i><i class="sea-light-beam sea-light-beam-b"></i><i class="sea-caustic-suggestion"></i><i class="sea-distant-form sea-distant-form-left"></i><i class="sea-distant-form sea-distant-form-right"></i><i class="sea-chamber-basin"></i></div>
@@ -45,6 +54,6 @@
   </main>
   <div class="descent-scroll-spacer" aria-hidden="true"></div>
   <script src="vendor/gsap.min.js"></script>
-  <script src="script.js?v=20260901-world-handoff-v8"></script>
+  <script src="script.js?v=20260901-world-handoff-v9"></script>
 </body>
 </html>

@@ -482,6 +482,18 @@ body.is-ascent-active .descent-onboarding{opacity:0!important}
 
 @media(prefers-reduced-motion:reduce){.dive-descent .world-scene-open-water,.dive-descent .sea-surface-haze,.dive-descent .sea-light-beam,.dive-descent .deep-water-motion::before,.dive-descent .deep-water-motion::after,.dive-descent .descent-onboarding{animation:none!important}.dive-descent .descent-diver{filter:saturate(.72) brightness(.74) contrast(1.02) drop-shadow(0 9px 12px rgba(8,22,53,.34))}}
 
+/* Swim Map V1 debug is opt-in and fixed above the scene, so it cannot affect
+   layout, scroll geometry, or the production appearance. */
+.dive-descent .swim-map-debug{position:fixed;inset:0;z-index:180;display:none;pointer-events:none;font:10px/1.55 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.04em}
+.dive-descent.debug-swim-map .swim-map-debug{display:block}
+.dive-descent .swim-map-debug[hidden]{display:none}
+.swim-map-debug-plot{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.swim-map-debug-master{fill:none;stroke:rgba(255,255,255,.56);stroke-width:2;stroke-dasharray:8 7}
+.swim-map-debug-free{fill:rgba(94,228,205,.13);stroke:rgba(104,244,215,.86);stroke-width:2;vector-effect:non-scaling-stroke}
+.swim-map-debug-cursor{fill:#fff1bd;stroke:#fff;stroke-width:2;vector-effect:non-scaling-stroke}
+.swim-map-debug-diver{fill:#ff9e92;stroke:#fff;stroke-width:2;vector-effect:non-scaling-stroke}
+.swim-map-debug-readout{position:absolute;left:18px;bottom:18px;margin:0;padding:12px 14px;min-width:330px;color:rgba(233,255,248,.92);background:rgba(2,10,28,.76);border:1px solid rgba(146,224,211,.32);box-shadow:0 12px 30px rgba(0,0,0,.24);white-space:pre-wrap}
+
 /* Surface Lifebuoy entry: keep the shared pastel details legible and let the
    two-line invitation sit directly above the object. */
 .surface-hero .dive-cta-region .dive-vortex{display:none!important}
@@ -545,17 +557,21 @@ body.is-ascent-active .descent-onboarding{opacity:0!important}
    can appear as the visitor descends. */
 .dive-descent .downstream-world-scene{--scene-shift:0px;--scene-opacity:0;--scene-water-shift:0px;--scene-depth-shift:0px;position:absolute;left:0;top:0;width:100%;height:374.83vw;z-index:0;overflow:visible;pointer-events:none;background:#07162c;transform:translate3d(0,var(--scene-shift),0);will-change:transform}
 .dive-descent .downstream-world-master{position:absolute;left:50%;top:0;display:block;width:100vw;height:auto;max-width:none;transform:translateX(-50%);opacity:1;will-change:transform}
-.dive-descent .downstream-water-atmosphere,.dive-descent .downstream-depth-atmosphere{display:none!important}
+.dive-descent .downstream-water-atmosphere,
+.dive-descent .downstream-depth-atmosphere{position:absolute;inset:0;display:block!important;pointer-events:none;will-change:transform,opacity}
+.dive-descent .downstream-water-atmosphere{z-index:1;opacity:var(--downstream-water-alpha,.07);transform:translate3d(0,var(--scene-water-shift),0);background:radial-gradient(ellipse 58% 22% at 50% 0%,rgba(174,231,237,.22),transparent 72%),linear-gradient(180deg,rgba(116,190,214,.06),transparent 24%,rgba(20,61,118,.035) 68%,transparent 100%)}
+.dive-descent .downstream-depth-atmosphere{z-index:2;opacity:var(--downstream-depth-alpha,.035);transform:translate3d(0,var(--scene-depth-shift),0);background:radial-gradient(ellipse 44% 20% at 50% 34%,rgba(95,159,193,.18),transparent 76%),radial-gradient(ellipse 38% 24% at 38% 76%,rgba(25,66,128,.14),transparent 78%),radial-gradient(ellipse 33% 18% at 70% 88%,rgba(18,48,108,.18),transparent 80%)}
 
-/* The supplied images become the only lower environment. The original water
-   light survives briefly above the first join, then dissolves away. */
-.dive-descent.is-long-world-active .descent-layer-distant .deep-world-structure,
-.dive-descent.is-long-world-active .descent-layer-distant .world-environments,
-.dive-descent.is-long-world-active .descent-layer-middle,
-.dive-descent.is-long-world-active .deep-terrain-projects,
-.dive-descent.is-long-world-active .surface-look-up{display:none!important}
-.dive-descent.is-long-world-active .sea-foundation > :not(.sea-light-beam){display:none!important}
-.dive-descent.is-long-world-active .sea-light-beam{opacity:var(--long-world-light,0)!important}
+/* The supplied image is the only lower environment. Keep the legacy water
+   layers on the same continuously changing opacity curve from the first
+   frame, so the active-state class cannot create a horizontal join. */
+.dive-descent .descent-layer-distant .deep-world-structure,
+.dive-descent .descent-layer-distant .world-environments,
+.dive-descent .descent-layer-middle,
+.dive-descent .deep-terrain-projects,
+.dive-descent .surface-look-up{opacity:var(--long-world-old-opacity,1)!important;visibility:visible!important}
+.dive-descent .sea-foundation > :not(.sea-light-beam){opacity:var(--long-world-old-opacity,1)!important;visibility:visible!important}
+.dive-descent .sea-light-beam{opacity:var(--long-world-light,.84)!important}
 
 /* Deep Sea water base: keep the original framework blue beneath one
    continuous, softly moving water-surface texture. */
@@ -885,3 +901,9 @@ body.is-ascent-active .descent-onboarding{opacity:0!important}
   filter:drop-shadow(0 0 2.4px rgba(255,246,207,.88))
           drop-shadow(0 0 18px rgba(255,215,174,.48));
 }
+
+/* Keep both old light layers on the same continuous attenuation curve. The
+   secondary beam retains its established relative weight without introducing
+   a second join or a new light source. */
+.dive-descent .sea-light-beam{opacity:var(--long-world-light,.84)!important}
+.dive-descent .sea-light-beam-b{opacity:calc(var(--long-world-light,.84) * .5714)!important}

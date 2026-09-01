@@ -6,6 +6,157 @@
 (() => {
   const gs = window.gsap;
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+  // One normalized coordinate system for the continuous Deep Sea camera.
+  // scrollStart/End describe the visitor's scroll progress; worldStart/End
+  // describe the corresponding position inside the accepted master artwork.
+  const DEEP_SEA_WORLD_RANGES = Object.freeze({
+    upperOpenWater: Object.freeze({ scrollStart: 0, scrollEnd: .20, worldStart: 0, worldEnd: .17, pace: 'slow' }),
+    riftApproach: Object.freeze({ scrollStart: .20, scrollEnd: .30, worldStart: .17, worldEnd: .31, pace: 'tighten' }),
+    rift: Object.freeze({ scrollStart: .30, scrollEnd: .40, worldStart: .31, worldEnd: .43, pace: 'direct' }),
+    riftExit: Object.freeze({ scrollStart: .40, scrollEnd: .47, worldStart: .43, worldEnd: .49, pace: 'open' }),
+    greatChamber: Object.freeze({ scrollStart: .47, scrollEnd: .72, worldStart: .49, worldEnd: .72, pace: 'linger' }),
+    deeperOpenSea: Object.freeze({ scrollStart: .72, scrollEnd: 1, worldStart: .72, worldEnd: 1, pace: 'slow' })
+  });
+  const DEEP_SEA_WORLD_RANGE_ENTRIES = Object.values(DEEP_SEA_WORLD_RANGES);
+  const RIFT_AUTO_STATES = Object.freeze({
+    FREE: 'FREE',
+    ENTERING_RIFT: 'ENTERING_RIFT',
+    AUTO_DIVE: 'AUTO_DIVE',
+    EXITING_RIFT: 'EXITING_RIFT',
+    SETTLING_IN_CHAMBER: 'SETTLING_IN_CHAMBER',
+    FREE_IN_CHAMBER: 'FREE_IN_CHAMBER'
+  });
+  const smoothstep = (value) => value * value * (3 - 2 * value);
+  const mapScrollToWorldProgress = (scrollProgress) => {
+    const progress = clamp(scrollProgress, 0, 1);
+    const range = DEEP_SEA_WORLD_RANGE_ENTRIES.find((item) => progress <= item.scrollEnd)
+      || DEEP_SEA_WORLD_RANGE_ENTRIES[DEEP_SEA_WORLD_RANGE_ENTRIES.length - 1];
+    const local = clamp(
+      (progress - range.scrollStart) / Math.max(.0001, range.scrollEnd - range.scrollStart),
+      0,
+      1
+    );
+    const eased = range.pace === 'direct' || range.pace === 'slow'
+      ? local
+      : smoothstep(local);
+    return range.worldStart + (range.worldEnd - range.worldStart) * eased;
+  };
+  const DEEP_SEA_SWIM_MAP = Object.freeze({
+    version: 'v1',
+    // Each stop describes the central free-water lane in Master coordinates.
+    // The map is deliberately coarse: it blocks the major rock masses while
+    // leaving small geology details to the visual world.
+    regions: Object.freeze([
+      Object.freeze({ id: 'upperOpenWater', yStart: 0, yEnd: .17, stops: Object.freeze([
+        Object.freeze({ y: 0, left: .31, right: .69 }),
+        Object.freeze({ y: .17, left: .12, right: .88 })
+      ]) }),
+      Object.freeze({ id: 'riftApproach', yStart: .17, yEnd: .31, stops: Object.freeze([
+        Object.freeze({ y: .17, left: .14, right: .86 }),
+        Object.freeze({ y: .31, left: .29, right: .71 })
+      ]) }),
+      Object.freeze({ id: 'rift', yStart: .31, yEnd: .43, stops: Object.freeze([
+        Object.freeze({ y: .31, left: .29, right: .71 }),
+        Object.freeze({ y: .43, left: .37, right: .63 })
+      ]) }),
+      Object.freeze({ id: 'riftExit', yStart: .43, yEnd: .49, stops: Object.freeze([
+        Object.freeze({ y: .43, left: .37, right: .63 }),
+        Object.freeze({ y: .49, left: .23, right: .77 })
+      ]) }),
+      Object.freeze({ id: 'greatChamber', yStart: .49, yEnd: .72, stops: Object.freeze([
+        Object.freeze({ y: .49, left: .23, right: .77 }),
+        Object.freeze({ y: .64, left: .13, right: .87 }),
+        Object.freeze({ y: .72, left: .10, right: .90 })
+      ]) }),
+      Object.freeze({ id: 'deeperOpenSea', yStart: .72, yEnd: 1, stops: Object.freeze([
+        Object.freeze({ y: .72, left: .10, right: .90 }),
+        Object.freeze({ y: .90, left: .08, right: .92 }),
+        Object.freeze({ y: 1, left: .18, right: .82 })
+      ]) })
+    ]),
+    // Reserved route records keep future cave branches in the same coordinate
+    // system without making them active collision geometry in V1.
+    routes: Object.freeze([
+      Object.freeze({ id: 'ltpoPrimaryCave', type: 'cave-corridor', enabled: false }),
+      Object.freeze({ id: 'mediaSecondaryCave', type: 'cave-corridor', enabled: false }),
+      Object.freeze({ id: 'hundredInchAlcove', type: 'entrance', enabled: false }),
+      Object.freeze({ id: 'beijing2022Terrace', type: 'entrance', enabled: false })
+    ])
+  });
+  const swimRegionAt = (worldY) => {
+    const y = clamp(worldY, 0, 1);
+    return DEEP_SEA_SWIM_MAP.regions.find((region) => y <= region.yEnd)
+      || DEEP_SEA_SWIM_MAP.regions[DEEP_SEA_SWIM_MAP.regions.length - 1];
+  };
+  const swimLaneAt = (worldY) => {
+    const y = clamp(worldY, 0, 1);
+    const region = swimRegionAt(y);
+    const stops = region.stops;
+    const nextIndex = stops.findIndex((stop) => y <= stop.y);
+    const end = stops[Math.max(1, nextIndex)];
+    const start = stops[Math.max(0, stops.indexOf(end) - 1)];
+    const t = clamp((y - start.y) / Math.max(.0001, end.y - start.y), 0, 1);
+    return {
+      region,
+      left: start.left + (end.left - start.left) * t,
+      right: start.right + (end.right - start.right) * t
+    };
+  };
+  const projectSwimWorldPoint = (point) => {
+    const y = clamp(point.y, 0, 1);
+    const lane = swimLaneAt(y);
+    return {
+      x: clamp(point.x, lane.left, lane.right),
+      y,
+      region: lane.region.id,
+      wasBlocked: point.x < lane.left || point.x > lane.right
+    };
+  };
+  const createMasterWorldProjection = (root, scene) => {
+    const image = scene?.querySelector('.downstream-world-master');
+    let snapshot = {
+      rootRect: root.getBoundingClientRect(),
+      imageRect: image?.getBoundingClientRect() || root.getBoundingClientRect()
+    };
+    const refresh = () => {
+      const rootRect = root.getBoundingClientRect();
+      const imageRect = image?.getBoundingClientRect();
+      snapshot = {
+        rootRect,
+        imageRect: imageRect && imageRect.width > 0 && imageRect.height > 0
+          ? imageRect
+          : rootRect
+      };
+      return snapshot;
+    };
+    return {
+      refresh,
+      getSnapshot: () => snapshot,
+      worldToScreen(point) {
+        const rect = refresh().imageRect;
+        return {
+          x: rect.left + clamp(point.x, 0, 1) * rect.width,
+          y: rect.top + clamp(point.y, 0, 1) * rect.height
+        };
+      },
+      screenToWorld(point) {
+        const rect = refresh().imageRect;
+        return {
+          x: clamp((point.x - rect.left) / Math.max(1, rect.width), 0, 1),
+          y: clamp((point.y - rect.top) / Math.max(1, rect.height), 0, 1)
+        };
+      },
+      worldToLocal(point) {
+        const screen = this.worldToScreen(point);
+        const rootRect = snapshot.rootRect;
+        return { x: screen.x - rootRect.left, y: screen.y - rootRect.top };
+      },
+      screenToLocal(point) {
+        const rootRect = snapshot.rootRect;
+        return { x: point.x - rootRect.left, y: point.y - rootRect.top };
+      }
+    };
+  };
   const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   // The source PNG faces left and its body axis sits roughly 34deg nose-up.
   // Surface rotation is therefore expressed as a constrained pose around this
@@ -28,6 +179,9 @@
       this.swimmer = swimmer;
       this.isSurface = root.classList.contains('surface-hero');
       this.diveBounds = null;
+      this.worldProjection = null;
+      this.swimMap = null;
+      this.swimDebugState = null;
       this.layer = root.querySelector('.cursor-layer');
       this.light = this.layer?.querySelector('.cursor-light');
       this.glow = this.layer?.querySelector('.glow');
@@ -70,6 +224,10 @@
       this.calm = false;
       this.calmFloat = 0;
       this.pointerFollowEnabled = true;
+      this.cinematicTarget = null;
+      this.cinematicInfluence = 0;
+      this.cinematicHeading = null;
+      this.pointerFollowHold = false;
       // Normalize percentage-based initial positions to pixel coordinates before
       // the pointer setters start writing left/top; otherwise GSAP can interpret
       // the initial percentage values as layout offsets.
@@ -169,11 +327,31 @@
       return value;
     }
 
-    getDiverTarget(pointerX, pointerY) {
-      if (!this.isSurface) return {
-        x: clamp(pointerX, this.bounds.minX, this.bounds.maxX),
-        y: clamp(pointerY, this.bounds.minY, this.bounds.maxY)
-      };
+    getDiverTarget(pointerX, pointerY, { bypassSwimMap = false } = {}) {
+      if (!this.isSurface) {
+        const localTarget = {
+          x: clamp(pointerX, this.bounds.minX, this.bounds.maxX),
+          y: clamp(pointerY, this.bounds.minY, this.bounds.maxY)
+        };
+        if (bypassSwimMap || !this.worldProjection || !this.swimMap) return localTarget;
+        const rawWorld = this.worldProjection.screenToWorld({
+          x: this.box.left + localTarget.x,
+          y: this.box.top + localTarget.y
+        });
+        const projectedWorld = projectSwimWorldPoint(rawWorld);
+        const projectedScreen = this.worldProjection.worldToScreen(projectedWorld);
+        const projectedTarget = {
+          x: clamp(projectedScreen.x - this.box.left, this.bounds.minX, this.bounds.maxX),
+          y: clamp(projectedScreen.y - this.box.top, this.bounds.minY, this.bounds.maxY)
+        };
+        this.swimDebugState = {
+          rawTarget: { ...localTarget },
+          rawWorld,
+          projectedWorld,
+          projectedTarget: { ...projectedTarget }
+        };
+        return projectedTarget;
+      }
       this.surfaceProximity = 0;
       const safeX = this.softLimit(pointerX, this.bounds.minX, this.bounds.maxX, .08);
       // Keep the visible boundary springy: the hard margin is only a final
@@ -213,6 +391,7 @@
       // temporarily suspends Diver follow. This keeps the handoff immersive
       // without moving or locking the user's actual mouse.
       if (!this.pointerFollowEnabled) {
+        if (!this.isSurface) this.pointerPosition = { x: rawX, y: rawY };
         this.root.style.setProperty('--focus-x', `${(rawX / Math.max(1, this.box.width)) * 100}%`);
         this.root.style.setProperty('--focus-y', `${(rawY / Math.max(1, this.box.height)) * 100}%`);
         this.renderPosition(rawX, rawY);
@@ -223,6 +402,8 @@
       const nextY = clamp(event.clientY - this.box.top, 0, this.box.height);
       this.pointerPosition.x = nextX;
       this.pointerPosition.y = nextY;
+      // The chamber landing is held only until the next genuine user motion.
+      this.pointerFollowHold = false;
       const modeChanged = this.updateSurfaceMode(nextY);
       if (!this.isSurface || this.surfaceMode === 'FOLLOW') {
         this.diverTarget = this.getDiverTarget(nextX, nextY);
@@ -347,6 +528,12 @@
         this.velocity.speed = speed;
         if (this.isSurface) {
           this.updateSurfacePose();
+        } else if (this.cinematicHeading != null) {
+          let next = this.cinematicHeading;
+          while (next - this.heading > 180) next -= 360;
+          while (next - this.heading < -180) next += 360;
+          this.heading += (next - this.heading) * .12;
+          this.heading = ((this.heading + 180) % 360 + 360) % 360 - 180;
         } else if (speed > .08) {
           let next = Math.atan2(dy, dx) * 180 / Math.PI - 180;
           while (next - this.heading > 180) next -= 360;
@@ -374,12 +561,25 @@
       if (this.isSurface || !bounds) return;
       this.diveBounds = { ...bounds };
       this.bounds = { ...bounds };
-      this.diverTarget = this.getDiverTarget(this.pointerPosition.x, this.pointerPosition.y);
+      // Bounds are refreshed on every scroll frame. During the cinematic or
+      // its short chamber settle, retain the path target instead of letting a
+      // stale mouse coordinate overwrite the approved landing position.
+      if (this.pointerFollowHold) return;
+      if (this.cinematicTarget && this.cinematicInfluence > 0) this.applyTargetBlend();
+      else this.diverTarget = this.getDiverTarget(this.pointerPosition.x, this.pointerPosition.y);
       this.position.x = clamp(this.position.x, this.bounds.minX, this.bounds.maxX);
       this.position.y = clamp(this.position.y, this.bounds.minY, this.bounds.maxY);
     }
 
     getPointerPosition() { return { ...this.pointerPosition }; }
+
+    setSwimMap(worldProjection, swimMap) {
+      if (this.isSurface) return;
+      this.worldProjection = worldProjection;
+      this.swimMap = swimMap;
+    }
+
+    getSwimDebugState() { return this.swimDebugState; }
 
     getDiverTargetPosition() { return { ...this.diverTarget }; }
 
@@ -389,9 +589,60 @@
       this.diverTarget = this.getDiverTarget(x, y);
     }
 
+    applyTargetBlend(pointerTarget = this.getDiverTarget(this.pointerPosition.x, this.pointerPosition.y)) {
+      if (!this.cinematicTarget || this.cinematicInfluence <= 0) {
+        this.diverTarget = { ...pointerTarget };
+        return;
+      }
+      const influence = clamp(this.cinematicInfluence, 0, 1);
+      this.diverTarget = {
+        x: pointerTarget.x + (this.cinematicTarget.x - pointerTarget.x) * influence,
+        y: pointerTarget.y + (this.cinematicTarget.y - pointerTarget.y) * influence
+      };
+    }
+
+    setCinematicTarget(x, y, influence = 1) {
+      this.cinematicTarget = this.getDiverTarget(x, y, { bypassSwimMap: true });
+      this.cinematicInfluence = clamp(influence, 0, 1);
+      this.applyTargetBlend();
+    }
+
+    clearCinematicTarget({ preserveTarget = false } = {}) {
+      this.cinematicTarget = null;
+      this.cinematicInfluence = 0;
+      if (preserveTarget) {
+        this.diverTarget = { ...this.position };
+        return;
+      }
+      this.applyTargetBlend();
+    }
+
+    setCinematicHeading(heading) {
+      this.cinematicHeading = heading;
+    }
+
+    snapCinematicHeading(heading) {
+      this.cinematicHeading = heading;
+      this.heading = heading;
+      this.renderDiver();
+    }
+
+    clearCinematicHeading() {
+      this.cinematicHeading = null;
+    }
+
+    holdPointerFollowAtCurrentPosition() {
+      this.pointerFollowHold = true;
+      this.diverTarget = { ...this.position };
+    }
+
     setPointerFollowEnabled(enabled) {
       this.pointerFollowEnabled = Boolean(enabled);
-      if (!this.pointerFollowEnabled) this.diverTarget = { ...this.position };
+      if (!this.pointerFollowEnabled) {
+        this.cinematicTarget = null;
+        this.cinematicInfluence = 0;
+        this.diverTarget = { ...this.position };
+      }
     }
 
     getVelocity() { return { ...this.velocity }; }
@@ -1550,21 +1801,6 @@
     const debugHiddenCave = DEBUG_HIDDEN_CAVE || new URLSearchParams(window.location.search).has('debug-hidden-cave');
     document.body.classList.toggle('debug-hidden-cave', debugHiddenCave);
     if (debugHiddenCave && scrollSpacer) scrollSpacer.style.height = '520vh';
-    const baseBoundaryStops = [
-      { at: 0, left: .31, right: .69, zone: 'entry' },
-      { at: .14, left: .12, right: .88, zone: 'opening' },
-      { at: .34, left: .08, right: .92, zone: 'great-chamber' },
-      { at: .51, left: .31, right: .69, zone: 'writing-passage' },
-      { at: .65, left: .27, right: .86, zone: 'side-expansion' },
-      { at: .78, left: .14, right: .88, zone: 'quiet-descent' },
-      { at: .92, left: .08, right: .92, zone: 'deepest-point' },
-      { at: 1, left: .1, right: .9, zone: 'deepest-point' }
-    ];
-    const boundaryStops = debugHiddenCave ? [
-      ...baseBoundaryStops.slice(0, 7),
-      { at: .965, left: .23, right: .77, zone: 'hidden-cave' },
-      { at: 1, left: .25, right: .75, zone: 'hidden-cave' }
-    ] : baseBoundaryStops;
     let viewport = { width: 0, height: 0, halfW: 66, halfH: 47, maxDepth: 1 };
     let targetDepth = 0;
     let currentDepth = 0;
@@ -1589,11 +1825,88 @@
     const PULL_THRESHOLD = 118;
     const PULL_MAX = 174;
     const downstreamScene = world.querySelector('.downstream-world-scene');
+    const worldProjection = createMasterWorldProjection(world, downstreamScene);
+    tracker.setSwimMap(worldProjection, DEEP_SEA_SWIM_MAP);
+    const debugSwimMap = new URLSearchParams(window.location.search).has('debug-swim-map');
+    const swimMapDebug = world.querySelector('.swim-map-debug');
+    const swimMapDebugPlot = swimMapDebug?.querySelector('.swim-map-debug-plot');
+    const swimMapDebugMaster = swimMapDebug?.querySelector('.swim-map-debug-master');
+    const swimMapDebugFree = swimMapDebug?.querySelector('.swim-map-debug-free');
+    const swimMapDebugCursor = swimMapDebug?.querySelector('.swim-map-debug-cursor');
+    const swimMapDebugDiver = swimMapDebug?.querySelector('.swim-map-debug-diver');
+    const swimMapDebugReadout = swimMapDebug?.querySelector('.swim-map-debug-readout');
+    world.classList.toggle('debug-swim-map', debugSwimMap);
+    if (swimMapDebug) swimMapDebug.hidden = !debugSwimMap;
+
+    const renderSwimMapDebug = (progress, worldProgress) => {
+      if (!debugSwimMap || !swimMapDebugPlot || !swimMapDebugReadout) return;
+      const snapshot = worldProjection.refresh();
+      const rootRect = snapshot.rootRect;
+      const imageRect = snapshot.imageRect;
+      const toLocalScreen = (point) => ({ x: point.x - rootRect.left, y: point.y - rootRect.top });
+      swimMapDebugPlot.setAttribute('viewBox', `0 0 ${Math.max(1, rootRect.width)} ${Math.max(1, rootRect.height)}`);
+      swimMapDebugMaster?.setAttribute('x', String(imageRect.left - rootRect.left));
+      swimMapDebugMaster?.setAttribute('y', String(imageRect.top - rootRect.top));
+      swimMapDebugMaster?.setAttribute('width', String(imageRect.width));
+      swimMapDebugMaster?.setAttribute('height', String(imageRect.height));
+      const samples = Array.from({ length: 48 }, (_, index) => index / 47);
+      const leftPoints = samples.map((y) => toLocalScreen(worldProjection.worldToScreen({ x: swimLaneAt(y).left, y })));
+      const rightPoints = samples.map((y) => toLocalScreen(worldProjection.worldToScreen({ x: swimLaneAt(y).right, y })));
+      const lanePath = [
+        `M ${leftPoints.map((point) => `${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' L ')}`,
+        `L ${rightPoints.reverse().map((point) => `${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' L ')}`,
+        'Z'
+      ].join(' ');
+      swimMapDebugFree?.setAttribute('d', lanePath);
+      const pointer = tracker.getPointerPosition();
+      const pointerScreen = { x: rootRect.left + pointer.x, y: rootRect.top + pointer.y };
+      const diver = tracker.getPosition();
+      const diverScreen = { x: rootRect.left + diver.x, y: rootRect.top + diver.y };
+      const cursorPoint = toLocalScreen(pointerScreen);
+      const diverPoint = toLocalScreen(diverScreen);
+      swimMapDebugCursor?.setAttribute('cx', String(cursorPoint.x));
+      swimMapDebugCursor?.setAttribute('cy', String(cursorPoint.y));
+      swimMapDebugDiver?.setAttribute('cx', String(diverPoint.x));
+      swimMapDebugDiver?.setAttribute('cy', String(diverPoint.y));
+      const cursorWorld = worldProjection.screenToWorld(pointerScreen);
+      const diverWorld = worldProjection.screenToWorld(diverScreen);
+      const swimDebug = tracker.getSwimDebugState();
+      const rawTargetWorld = swimDebug?.rawWorld || cursorWorld;
+      const projectedWorld = swimDebug?.projectedWorld || projectSwimWorldPoint(cursorWorld);
+      swimMapDebugReadout.textContent = [
+        `SWIM MAP ${DEEP_SEA_SWIM_MAP.version}  |  ${swimLaneAt(cursorWorld.y).region.id}`,
+        `master image  x:${imageRect.left.toFixed(1)} y:${imageRect.top.toFixed(1)} w:${imageRect.width.toFixed(1)} h:${imageRect.height.toFixed(1)}`,
+        `scroll ${progress.toFixed(3)}  world ${worldProgress.toFixed(3)}`,
+        `cursor screen (${pointer.x.toFixed(1)}, ${pointer.y.toFixed(1)})  world (${cursorWorld.x.toFixed(3)}, ${cursorWorld.y.toFixed(3)})`,
+        `diver  screen (${diver.x.toFixed(1)}, ${diver.y.toFixed(1)})  world (${diverWorld.x.toFixed(3)}, ${diverWorld.y.toFixed(3)})`,
+        `target raw (${rawTargetWorld.x.toFixed(3)}, ${rawTargetWorld.y.toFixed(3)})  projected (${projectedWorld.x.toFixed(3)}, ${projectedWorld.y.toFixed(3)})${projectedWorld.wasBlocked ? '  [BLOCKED → FREE_WATER]' : '  [FREE_WATER]'}`,
+        `projection: worldToScreen / screenToWorld  | routes reserved: ${DEEP_SEA_SWIM_MAP.routes.length}`
+      ].join('\n');
+    };
     let riftAutoDive = false;
     let riftCompleted = false;
     let riftAutoState = { t: 0 };
-    let riftLockScrollY = 0;
+    let riftAutoMode = RIFT_AUTO_STATES.FREE;
+    let riftAutoPath = null;
     let riftTimeline = null;
+    let riftLandingTimer = null;
+    let riftAutoScrollStart = null;
+    let riftAutoScrollEnd = null;
+
+    const setRiftAutoMode = (mode) => {
+      riftAutoMode = mode;
+      world.dataset.riftAutoState = mode;
+    };
+    setRiftAutoMode(RIFT_AUTO_STATES.FREE);
+    const riftAutoWindow = {
+      triggerStart: DEEP_SEA_WORLD_RANGES.riftApproach.scrollStart,
+      triggerEnd: DEEP_SEA_WORLD_RANGES.rift.scrollEnd,
+      exitStart: DEEP_SEA_WORLD_RANGES.riftExit.scrollStart,
+      chamberStart: DEEP_SEA_WORLD_RANGES.greatChamber.scrollStart,
+      diverTriggerY: .46,
+      diverLaneLeft: .24,
+      diverLaneRight: .76
+    };
 
     const renderRiftVisual = (progress) => {
       // The reset world is downstream-only: terrain stays dormant until the
@@ -1624,23 +1937,82 @@
     };
 
     const renderDownstreamVisual = (progress, depth) => {
-      if (!downstreamScene) return;
+      const worldProgress = mapScrollToWorldProgress(progress);
+      if (!downstreamScene) return { worldProgress };
       const sceneReveal = clamp((progress - .16) / .14, 0, 1);
-      const lightFade = clamp((progress - .20) / .18, 0, 1);
+      const lightFade = clamp((progress - .22) / .34, 0, 1);
+      const lightFalloff = lightFade * lightFade * (3 - 2 * lightFade);
+      const oldLayerFade = clamp((progress - .22) / .28, 0, 1);
+      const oldLayerFalloff = oldLayerFade * oldLayerFade * (3 - 2 * oldLayerFade);
+      const sceneTravel = Math.max(0, downstreamScene.offsetHeight - viewport.height);
+      const worldDepth = worldProgress * sceneTravel;
       world.classList.toggle('is-long-world-active', progress > .30);
       world.classList.remove('is-downstream-clean');
-      downstreamScene.style.setProperty('--scene-shift', `${-depth}px`);
+      downstreamScene.style.setProperty('--scene-shift', `${(-worldDepth).toFixed(1)}px`);
       downstreamScene.style.setProperty('--scene-opacity', sceneReveal.toFixed(3));
-      // Keep the master artwork on the same scroll plane as the world.  The
-      // atmosphere only drifts a trace slower, so descent reads as continuous
-      // water rather than a compressed or forcefully zooming camera move.
-      downstreamScene.style.setProperty('--scene-water-shift', `${(-depth * .018).toFixed(1)}px`);
-      downstreamScene.style.setProperty('--scene-depth-shift', `${(-depth * .008).toFixed(1)}px`);
-      world.style.setProperty('--long-world-light', (.84 * (1 - lightFade)).toFixed(3));
+      // The master remains the world baseline. Atmosphere layers drift only a
+      // trace slower, creating depth without turning the scene into a demo.
+      downstreamScene.style.setProperty('--scene-water-shift', `${(-worldDepth * .018).toFixed(1)}px`);
+      downstreamScene.style.setProperty('--scene-depth-shift', `${(-worldDepth * .008).toFixed(1)}px`);
+      downstreamScene.style.setProperty('--downstream-water-alpha', (.07 + worldProgress * .015).toFixed(3));
+      downstreamScene.style.setProperty('--downstream-depth-alpha', (.035 + worldProgress * .025).toFixed(3));
+      world.style.setProperty('--long-world-light', (.84 * (1 - lightFalloff)).toFixed(3));
+      world.style.setProperty('--long-world-old-opacity', (1 - oldLayerFalloff).toFixed(3));
+      world.dataset.scrollProgress = progress.toFixed(4);
+      world.dataset.worldProgress = worldProgress.toFixed(4);
+      world.dataset.worldRangeMap = JSON.stringify(DEEP_SEA_WORLD_RANGES);
+      return { worldProgress, worldDepth };
     };
 
     const setRiftAutoMotion = (progress) => {
       riftAutoState.t = clamp(progress, 0, 1);
+      const t = riftAutoState.t;
+      const enteringBlend = smoothstep(clamp(t / .055, 0, 1));
+      const scrollProgress = clamp(currentDepth / Math.max(1, viewport.maxDepth), 0, 1);
+      const timelineExitBlend = smoothstep(clamp((t - .92) / .08, 0, 1));
+      const scrollExitBlend = riftAutoDive ? 0 : clamp(
+        (scrollProgress - riftAutoWindow.exitStart)
+        / Math.max(.0001, riftAutoWindow.chamberStart - riftAutoWindow.exitStart),
+        0,
+        1
+      );
+      const exitingBlend = Math.max(timelineExitBlend, scrollExitBlend);
+      const pathInfluence = t < .08 ? enteringBlend : 1;
+      const followWeight = 1 - pathInfluence;
+      if (exitingBlend > 0) setRiftAutoMode(RIFT_AUTO_STATES.EXITING_RIFT);
+      else if (t < .18) setRiftAutoMode(RIFT_AUTO_STATES.ENTERING_RIFT);
+      else if (t < .92) setRiftAutoMode(RIFT_AUTO_STATES.AUTO_DIVE);
+      else setRiftAutoMode(RIFT_AUTO_STATES.EXITING_RIFT);
+      if (riftAutoPath) {
+        const arc = Math.sin(t * Math.PI);
+        const centerEase = smoothstep(clamp(t / .62, 0, 1));
+        const caveApproachEase = smoothstep(clamp((t - .52) / .48, 0, 1));
+        const drift = Math.sin(t * Math.PI * 1.12) * (.006 + arc * riftAutoPath.drift);
+        const x = riftAutoPath.originX
+          + (riftAutoPath.centerX - riftAutoPath.originX) * centerEase
+          + (riftAutoPath.arrivalX - riftAutoPath.centerX) * caveApproachEase
+          + drift;
+        const y = riftAutoPath.originY
+          + (riftAutoPath.destinationY - riftAutoPath.originY) * (t * .22 + t * t * .78)
+          - arc * .006;
+        tracker.setCinematicTarget(x * viewport.width, y * viewport.height, pathInfluence);
+        const headDownBlend = smoothstep(clamp((t - .015) / .22, 0, 1));
+        const headingDelta = ((-90 - riftAutoPath.startHeading + 540) % 360) - 180;
+        const descentHeading = riftAutoPath.startHeading + headingDelta * headDownBlend;
+        const caveLiftBlend = smoothstep(clamp((t - .72) / .28, 0, 1));
+        tracker.setCinematicHeading(
+          descentHeading + (riftAutoPath.arrivalHeading - descentHeading) * caveLiftBlend
+        );
+      }
+      if (riftAutoScrollStart != null && riftAutoScrollEnd != null) {
+        const cameraT = smoothstep(t);
+        targetDepth = riftAutoScrollStart + (riftAutoScrollEnd - riftAutoScrollStart) * cameraT;
+        dirty = true;
+      }
+      riftAutoState.pathInfluence = pathInfluence;
+      riftAutoState.followWeight = followWeight;
+      world.dataset.riftAutoPathInfluence = pathInfluence.toFixed(3);
+      world.dataset.riftAutoFollowWeight = followWeight.toFixed(3);
       world.style.setProperty('--rift-auto-progress', riftAutoState.t.toFixed(3));
       world.style.setProperty('--rift-auto-distant', `${(riftAutoState.t * 34).toFixed(1)}px`);
       world.style.setProperty('--rift-auto-middle', `${(riftAutoState.t * 78).toFixed(1)}px`);
@@ -1649,13 +2021,27 @@
       renderRiftVisual(clamp(currentDepth / Math.max(1, viewport.maxDepth), 0, 1));
     };
 
+    const lockRiftScroll = (event) => {
+      if (riftAutoDive) event.preventDefault();
+    };
+
     const unlockRift = () => {
-      window.removeEventListener('wheel', lockRiftScroll);
-      window.removeEventListener('touchmove', lockRiftScroll);
       if (riftTimeline) riftTimeline.kill();
+      if (riftLandingTimer) window.clearTimeout(riftLandingTimer);
       riftTimeline = null;
+      riftLandingTimer = null;
       riftAutoDive = false;
       riftCompleted = true;
+      riftAutoPath = null;
+      if (riftAutoScrollEnd != null) {
+        targetDepth = riftAutoScrollEnd;
+        window.scrollTo(0, riftAutoScrollEnd);
+      }
+      riftAutoScrollStart = null;
+      riftAutoScrollEnd = null;
+      window.removeEventListener('wheel', lockRiftScroll);
+      window.removeEventListener('touchmove', lockRiftScroll);
+      setRiftAutoMode(RIFT_AUTO_STATES.FREE_IN_CHAMBER);
       world.classList.remove('is-rift-auto');
       document.body.classList.remove('is-rift-auto');
       world.style.setProperty('--rift-auto-progress', '0');
@@ -1663,55 +2049,79 @@
       world.style.setProperty('--rift-auto-middle', '0px');
       world.style.setProperty('--rift-auto-foreground', '0px');
       world.style.setProperty('--rift-auto-content', '0px');
+      // Keep the visible landing point until the user's next real pointer
+      // movement; otherwise the restored follow target immediately erases the
+      // chosen chamber arrival on the same frame.
+      tracker.clearCinematicTarget({ preserveTarget: true });
+      tracker.clearCinematicHeading();
       tracker.setPointerFollowEnabled(true);
-      tracker.setDiverTarget(tracker.getPointerPosition().x, tracker.getPointerPosition().y);
+      tracker.holdPointerFollowAtCurrentPosition();
       renderRiftVisual(clamp(currentDepth / Math.max(1, viewport.maxDepth), 0, 1));
     };
 
+    const settleRiftLanding = () => {
+      // A short, still arrival makes the destination legible before free swim
+      // resumes. Cursor Light stays on the user's actual pointer throughout.
+      if (riftAutoPath) tracker.snapCinematicHeading(riftAutoPath.arrivalHeading);
+      setRiftAutoMode(RIFT_AUTO_STATES.SETTLING_IN_CHAMBER);
+      riftLandingTimer = window.setTimeout(unlockRift, 820);
+    };
+
     const beginRiftAutoDive = () => {
-      if (riftAutoDive || riftCompleted || ascentActive || !riftRegion) return;
+      const triggerStart = riftAutoWindow.triggerStart;
+      const triggerEnd = riftAutoWindow.triggerEnd;
+      const scrollProgress = clamp(targetDepth / Math.max(1, viewport.maxDepth), 0, 1);
+      if (
+        riftAutoMode !== RIFT_AUTO_STATES.FREE
+        || riftAutoDive
+        || riftCompleted
+        || ascentActive
+        || scrollProgress < triggerStart
+        || scrollProgress > triggerEnd
+      ) return;
       riftAutoDive = true;
-      riftLockScrollY = window.scrollY;
-      riftAutoState = { t: 0 };
+      riftAutoScrollStart = clamp(currentDepth, 0, viewport.maxDepth);
+      riftAutoScrollEnd = clamp(
+        riftAutoWindow.chamberStart * viewport.maxDepth,
+        riftAutoScrollStart,
+        viewport.maxDepth
+      );
+      riftAutoState = { t: .055, pathInfluence: 0, followWeight: 1 };
       world.classList.add('is-rift-auto');
       document.body.classList.add('is-rift-auto');
-      targetDepth = currentDepth;
-      window.scrollTo(0, riftLockScrollY);
       window.addEventListener('wheel', lockRiftScroll, { passive: false });
       window.addEventListener('touchmove', lockRiftScroll, { passive: false });
       tracker.setPointerFollowEnabled(false);
       const origin = tracker.getPosition();
-      const maxTravel = Math.min(viewport.height * .42, 330);
-      const destination = {
-        x: clamp(viewport.width * .5 + (origin.x - viewport.width * .5) * .34, tracker.bounds.minX, tracker.bounds.maxX),
-        y: clamp(origin.y + maxTravel, tracker.bounds.minY, tracker.bounds.maxY)
+      const originX = clamp(origin.x / Math.max(1, viewport.width), .08, .92);
+      const originY = clamp(origin.y / Math.max(1, viewport.height), .18, .82);
+      riftAutoPath = {
+        originX,
+        originY,
+        startHeading: tracker.heading,
+        // Chamber landing is anchored to the approved composition: central
+        // lower waterway, head lifted toward the upper-left, clear of both
+        // walls and the Primary Cave mouth.
+        arrivalHeading: 42,
+        centerX: clamp(.5 + (originX - .5) * .2, .39, .61),
+        arrivalX: .47,
+        destinationY: .75,
+        drift: .010
       };
-      const swimPoint = () => {
-        const t = riftAutoState.t;
-        const arc = Math.sin(t * Math.PI);
-        const x = origin.x + (destination.x - origin.x) * t + Math.sin(t * Math.PI * 1.45) * (26 + arc * 26);
-        const y = origin.y + (destination.y - origin.y) * (t * .84 + t * t * .16) - arc * 16;
-        tracker.setDiverTarget(x, y);
-        setRiftAutoMotion(t);
-      };
+      setRiftAutoMotion(riftAutoState.t);
       if (!gs || reducedMotion) {
         riftAutoState.t = 1;
-        swimPoint();
-        window.setTimeout(unlockRift, reducedMotion ? 140 : 420);
+        setRiftAutoMotion(1);
+        window.setTimeout(settleRiftLanding, reducedMotion ? 140 : 420);
         return;
       }
       riftTimeline = gs.to(riftAutoState, {
         t: 1,
-        duration: 4.25,
-        ease: 'power2.inOut',
-        onUpdate: swimPoint,
-        onComplete: unlockRift
+        duration: 6.25,
+        ease: 'power1.inOut',
+        onUpdate: () => setRiftAutoMotion(riftAutoState.t),
+        onComplete: settleRiftLanding
       });
-    };
-
-    const lockRiftScroll = (event) => {
-      event.preventDefault();
-      window.scrollTo(0, riftLockScrollY);
     };
 
     const dismissOnboarding = () => {
@@ -2028,21 +2438,6 @@
       window.addEventListener('pointercancel', releasePull);
     }
 
-    const interpolateBounds = (progress) => {
-      if (progress <= boundaryStops[0].at) return boundaryStops[0];
-      const nextIndex = boundaryStops.findIndex((stop) => progress <= stop.at);
-      const end = boundaryStops[Math.max(1, nextIndex)];
-      const start = boundaryStops[Math.max(0, boundaryStops.indexOf(end) - 1)];
-      const span = Math.max(.0001, end.at - start.at);
-      const t = clamp((progress - start.at) / span, 0, 1);
-      const eased = t * t * (3 - 2 * t);
-      return {
-        left: start.left + (end.left - start.left) * eased,
-        right: start.right + (end.right - start.right) * eased,
-        zone: end.zone
-      };
-    };
-
     const refreshGeometry = () => {
       const rect = world.getBoundingClientRect();
       const swimmerRect = swimmer?.getBoundingClientRect();
@@ -2058,21 +2453,30 @@
     };
 
     const applyBounds = (progress) => {
-      const boundary = interpolateBounds(progress);
+      // The coarse collision map owns the world-space water lane. These are
+      // only viewport safety margins for the rendered sprite itself.
+      worldProjection.refresh();
       const edge = Math.max(18, viewport.halfW * .34);
-      const minX = clamp(boundary.left * viewport.width + viewport.halfW * .3, viewport.halfW + edge, viewport.width - viewport.halfW - edge);
-      const maxX = clamp(boundary.right * viewport.width - viewport.halfW * .3, viewport.halfW + edge, viewport.width - viewport.halfW - edge);
+      const minX = viewport.halfW + edge;
+      const maxX = Math.max(minX, viewport.width - viewport.halfW - edge);
+      const minY = viewport.halfH + 18;
+      const maxY = Math.max(minY, viewport.height - viewport.halfH - 22);
       tracker.setDiveBounds({
         minX,
-        maxX: Math.max(minX, maxX),
-        minY: viewport.halfH + 18,
-        maxY: Math.max(viewport.halfH + 18, viewport.height - viewport.halfH - 22),
-        hardMinY: viewport.halfH + 18,
-        hardMaxY: Math.max(viewport.halfH + 18, viewport.height - viewport.halfH - 22)
+        maxX,
+        minY,
+        maxY,
+        hardMinY: minY,
+        hardMaxY: maxY
       });
-      world.dataset.depthZone = boundary.zone;
+      const screenPointer = {
+        x: worldProjection.getSnapshot().rootRect.left + tracker.getPointerPosition().x,
+        y: worldProjection.getSnapshot().rootRect.top + tracker.getPointerPosition().y
+      };
+      const pointerWorld = worldProjection.screenToWorld(screenPointer);
+      world.dataset.depthZone = swimLaneAt(pointerWorld.y).region.id;
       world.dataset.safeLeft = minX.toFixed(1);
-      world.dataset.safeRight = Math.max(minX, maxX).toFixed(1);
+      world.dataset.safeRight = maxX.toFixed(1);
     };
 
     const render = () => {
@@ -2093,18 +2497,29 @@
       world.style.setProperty('--depth-middle', `${-currentDepth * .9}px`);
       world.style.setProperty('--depth-foreground', `${-currentDepth * 1.08}px`);
       world.style.setProperty('--depth-content', `${-currentDepth}px`);
+      const downstreamState = renderDownstreamVisual(progress, currentDepth);
       applyBounds(progress);
       setLifelineDepth(progress);
       renderRiftVisual(progress);
-      renderDownstreamVisual(progress, currentDepth);
-      if (!riftAutoDive && !riftCompleted && progress > .35 && progress < .66) {
+      renderSwimMapDebug(progress, downstreamState.worldProgress);
+      const riftTriggerStart = riftAutoWindow.triggerStart;
+      const riftTriggerEnd = riftAutoWindow.triggerEnd;
+      const riftTriggerProgress = clamp(targetDepth / Math.max(1, viewport.maxDepth), 0, 1);
+      if (
+        riftAutoMode === RIFT_AUTO_STATES.FREE
+        && !riftAutoDive
+        && !riftCompleted
+        && riftTriggerProgress >= riftTriggerStart
+        && riftTriggerProgress <= riftTriggerEnd
+      ) {
         const diver = tracker.getPosition();
-        const nearRiftOpening = diver.y > viewport.height * .66;
-        const insideRiftLane = diver.x > viewport.width * .29 && diver.x < viewport.width * .72;
+        const nearRiftOpening = diver.y > viewport.height * riftAutoWindow.diverTriggerY;
+        const insideRiftLane = diver.x > viewport.width * riftAutoWindow.diverLaneLeft
+          && diver.x < viewport.width * riftAutoWindow.diverLaneRight;
         if (nearRiftOpening && insideRiftLane) beginRiftAutoDive();
       }
       const maxDepthMeters = 420;
-      const depthMeters = 6 + Math.round(progress * (maxDepthMeters - 6));
+      const depthMeters = 6 + Math.round((downstreamState?.worldProgress ?? progress) * (maxDepthMeters - 6));
       if (depthReadout) depthReadout.textContent = `${String(depthMeters).padStart(3, '0')}m`;
       if (instruction) instruction.style.opacity = String(.92 - progress * .58);
       const fadeStart = viewport.height * .30;
