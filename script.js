@@ -7,17 +7,73 @@
   const gs = window.gsap;
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   // One normalized coordinate system for the continuous Deep Sea camera.
-  // scrollStart/End describe the visitor's scroll progress; worldStart/End
-  // describe the corresponding position inside the accepted master artwork.
-  const DEEP_SEA_WORLD_RANGES = Object.freeze({
-    upperOpenWater: Object.freeze({ scrollStart: 0, scrollEnd: .20, worldStart: 0, worldEnd: .17, pace: 'slow' }),
-    riftApproach: Object.freeze({ scrollStart: .20, scrollEnd: .30, worldStart: .17, worldEnd: .31, pace: 'tighten' }),
-    rift: Object.freeze({ scrollStart: .30, scrollEnd: .40, worldStart: .31, worldEnd: .43, pace: 'direct' }),
-    riftExit: Object.freeze({ scrollStart: .40, scrollEnd: .47, worldStart: .43, worldEnd: .49, pace: 'open' }),
-    greatChamber: Object.freeze({ scrollStart: .47, scrollEnd: .72, worldStart: .49, worldEnd: .72, pace: 'linger' }),
-    deeperOpenSea: Object.freeze({ scrollStart: .72, scrollEnd: 1, worldStart: .72, worldEnd: 1, pace: 'slow' })
+  // The accepted v16 physical anchors are preserved against the new master
+  // height; only the world below the old Deeper Open Sea extends to 1.0.
+  const DEEP_SEA_MASTER = Object.freeze({
+    asset: 'assets/deep-sea-world-master-v36-natural-deepest-no-cave.png',
+    width: 735,
+    height: 3850,
+    previousHeight: 2755
   });
-  const DEEP_SEA_WORLD_RANGE_ENTRIES = Object.values(DEEP_SEA_WORLD_RANGES);
+  const masterWorldY = (physicalY) => physicalY / DEEP_SEA_MASTER.height;
+  const previousMasterWorldY = (normalizedY) => (
+    normalizedY * DEEP_SEA_MASTER.previousHeight / DEEP_SEA_MASTER.height
+  );
+  const DEEP_SEA_WORLD_ANCHORS = Object.freeze({
+    upperOpenWaterEnd: previousMasterWorldY(.17),
+    riftApproachEnd: previousMasterWorldY(.31),
+    riftEnd: previousMasterWorldY(.43),
+    riftExitEnd: previousMasterWorldY(.49),
+    greatChamberEnd: previousMasterWorldY(.72),
+    deeperOpenSeaEnd: masterWorldY(DEEP_SEA_MASTER.height)
+  });
+  const deeperOpenSeaWorldAt = (fraction) => (
+    DEEP_SEA_WORLD_ANCHORS.greatChamberEnd
+    + (DEEP_SEA_WORLD_ANCHORS.deeperOpenSeaEnd - DEEP_SEA_WORLD_ANCHORS.greatChamberEnd)
+      * clamp(fraction, 0, 1)
+  );
+  const remapMasterY = (value, property) => {
+    if (typeof value === 'number' && (property === 'y' || property === 'yStart' || property === 'yEnd')) {
+      return previousMasterWorldY(value);
+    }
+    if (Array.isArray(value)) return value.map((item) => remapMasterY(item));
+    if (!value || typeof value !== 'object') return value;
+    return Object.fromEntries(Object.entries(value).map(([key, nested]) => [key, remapMasterY(nested, key)]));
+  };
+  const createDeepSeaWorldRanges = (viewportWidth = 1280, viewportHeight = 720) => {
+    const previousSceneHeight = viewportWidth * DEEP_SEA_MASTER.previousHeight / DEEP_SEA_MASTER.width;
+    const currentSceneHeight = viewportWidth * DEEP_SEA_MASTER.height / DEEP_SEA_MASTER.width;
+    const previousMaxDepth = Math.max(1, previousSceneHeight - viewportHeight);
+    const currentMaxDepth = Math.max(1, currentSceneHeight - viewportHeight);
+    // Keep the already approved upper journey at its old pixel duration. The
+    // extra scroll distance introduced by the taller master therefore belongs
+    // to the new Deeper Open Sea tail.
+    const preservePreviousScroll = (legacyProgress) => clamp(
+      legacyProgress * previousMaxDepth / currentMaxDepth,
+      0,
+      1
+    );
+    return Object.freeze({
+      upperOpenWater: Object.freeze({ scrollStart: 0, scrollEnd: preservePreviousScroll(.20), worldStart: 0, worldEnd: DEEP_SEA_WORLD_ANCHORS.upperOpenWaterEnd, pace: 'slow' }),
+      riftApproach: Object.freeze({ scrollStart: preservePreviousScroll(.20), scrollEnd: preservePreviousScroll(.30), worldStart: DEEP_SEA_WORLD_ANCHORS.upperOpenWaterEnd, worldEnd: DEEP_SEA_WORLD_ANCHORS.riftApproachEnd, pace: 'tighten' }),
+      rift: Object.freeze({ scrollStart: preservePreviousScroll(.30), scrollEnd: preservePreviousScroll(.40), worldStart: DEEP_SEA_WORLD_ANCHORS.riftApproachEnd, worldEnd: DEEP_SEA_WORLD_ANCHORS.riftEnd, pace: 'direct' }),
+      riftExit: Object.freeze({ scrollStart: preservePreviousScroll(.40), scrollEnd: preservePreviousScroll(.47), worldStart: DEEP_SEA_WORLD_ANCHORS.riftEnd, worldEnd: DEEP_SEA_WORLD_ANCHORS.riftExitEnd, pace: 'open' }),
+      greatChamber: Object.freeze({ scrollStart: preservePreviousScroll(.47), scrollEnd: preservePreviousScroll(.72), worldStart: DEEP_SEA_WORLD_ANCHORS.riftExitEnd, worldEnd: DEEP_SEA_WORLD_ANCHORS.greatChamberEnd, pace: 'linger' }),
+      deeperOpenSea: Object.freeze({ scrollStart: preservePreviousScroll(.72), scrollEnd: 1, worldStart: DEEP_SEA_WORLD_ANCHORS.greatChamberEnd, worldEnd: DEEP_SEA_WORLD_ANCHORS.deeperOpenSeaEnd, pace: 'slow' })
+    });
+  };
+  let DEEP_SEA_WORLD_RANGES = createDeepSeaWorldRanges();
+  let DEEP_SEA_WORLD_RANGE_ENTRIES = Object.values(DEEP_SEA_WORLD_RANGES);
+  let activeLegacyProgressScale = 1;
+  const updateDeepSeaWorldRanges = (viewportWidth, viewportHeight) => {
+    const previousSceneHeight = viewportWidth * DEEP_SEA_MASTER.previousHeight / DEEP_SEA_MASTER.width;
+    const previousMaxDepth = Math.max(1, previousSceneHeight - viewportHeight);
+    const currentSceneHeight = viewportWidth * DEEP_SEA_MASTER.height / DEEP_SEA_MASTER.width;
+    const currentMaxDepth = Math.max(1, currentSceneHeight - viewportHeight);
+    activeLegacyProgressScale = currentMaxDepth / previousMaxDepth;
+    DEEP_SEA_WORLD_RANGES = createDeepSeaWorldRanges(viewportWidth, viewportHeight);
+    DEEP_SEA_WORLD_RANGE_ENTRIES = Object.values(DEEP_SEA_WORLD_RANGES);
+  };
   const RIFT_AUTO_STATES = Object.freeze({
     FREE: 'FREE',
     ENTERING_RIFT: 'ENTERING_RIFT',
@@ -41,11 +97,16 @@
       : smoothstep(local);
     return range.worldStart + (range.worldEnd - range.worldStart) * eased;
   };
-  const DEEP_SEA_SWIM_MAP = Object.freeze({
+  const toLegacyScrollProgress = (scrollProgress) => clamp(
+    scrollProgress * activeLegacyProgressScale,
+    0,
+    1
+  );
+  const DEEP_SEA_SWIM_MAP_LEGACY = Object.freeze({
     version: 'v1',
-    // Each stop describes the central free-water lane in Master coordinates.
-    // The map is deliberately coarse: it blocks the major rock masses while
-    // leaving small geology details to the visual world.
+    // Lanes keep the approach and descent readable. Great Chamber uses the
+    // explicit geometry below so the visible rock masses are not treated as
+    // one oversized left/right corridor.
     regions: Object.freeze([
       Object.freeze({ id: 'upperOpenWater', yStart: 0, yEnd: .17, stops: Object.freeze([
         Object.freeze({ y: 0, left: .31, right: .69 }),
@@ -74,18 +135,265 @@
         Object.freeze({ y: 1, left: .18, right: .82 })
       ]) })
     ]),
+    geometry: Object.freeze({
+      greatChamber: Object.freeze({
+        // A single broad, asymmetric central water body. Its uneven outline
+        // leaves the side caves/terrace as geology rather than menu slots.
+        freeWaterPolygons: Object.freeze([
+          Object.freeze([
+            Object.freeze({ x: .28, y: .49 }),
+            Object.freeze({ x: .72, y: .49 }),
+            Object.freeze({ x: .82, y: .54 }),
+            Object.freeze({ x: .80, y: .59 }),
+            Object.freeze({ x: .74, y: .63 }),
+            Object.freeze({ x: .88, y: .72 }),
+            Object.freeze({ x: .12, y: .72 }),
+            Object.freeze({ x: .26, y: .63 }),
+            Object.freeze({ x: .20, y: .59 }),
+            Object.freeze({ x: .18, y: .54 })
+          ])
+        ]),
+        // These records are also drawn by debug-swim-map. The outer masses
+        // describe the main visual walls; the inner ledges are the large
+        // protrusions that must not be entered by Diver.
+        blockedPolygons: Object.freeze([
+          Object.freeze({
+            id: 'greatChamberLeftMass',
+            kind: 'rock-mass',
+            polygon: Object.freeze([
+              Object.freeze({ x: 0, y: .49 }),
+              Object.freeze({ x: .28, y: .49 }),
+              Object.freeze({ x: .24, y: .54 }),
+              Object.freeze({ x: .27, y: .58 }),
+              Object.freeze({ x: .20, y: .63 }),
+              Object.freeze({ x: .29, y: .67 }),
+              Object.freeze({ x: .25, y: .72 }),
+              Object.freeze({ x: 0, y: .72 })
+            ])
+          }),
+          Object.freeze({
+            id: 'greatChamberRightMass',
+            kind: 'rock-mass',
+            polygon: Object.freeze([
+              Object.freeze({ x: 1, y: .49 }),
+              Object.freeze({ x: .72, y: .49 }),
+              Object.freeze({ x: .76, y: .54 }),
+              Object.freeze({ x: .73, y: .58 }),
+              Object.freeze({ x: .80, y: .63 }),
+              Object.freeze({ x: .71, y: .67 }),
+              Object.freeze({ x: .75, y: .72 }),
+              Object.freeze({ x: 1, y: .72 })
+            ])
+          }),
+          Object.freeze({
+            id: 'greatChamberLeftLedge',
+            kind: 'rock-ledge',
+            polygon: Object.freeze([
+              Object.freeze({ x: .18, y: .56 }),
+              Object.freeze({ x: .39, y: .56 }),
+              Object.freeze({ x: .35, y: .60 }),
+              Object.freeze({ x: .40, y: .64 }),
+              Object.freeze({ x: .27, y: .66 }),
+              Object.freeze({ x: .17, y: .63 })
+            ])
+          }),
+          Object.freeze({
+            id: 'greatChamberRightLedge',
+            kind: 'rock-ledge',
+            polygon: Object.freeze([
+              Object.freeze({ x: .61, y: .56 }),
+              Object.freeze({ x: .82, y: .56 }),
+              Object.freeze({ x: .83, y: .63 }),
+              Object.freeze({ x: .73, y: .66 }),
+              Object.freeze({ x: .60, y: .64 }),
+              Object.freeze({ x: .65, y: .60 })
+            ])
+          })
+        ]),
+        // These are intentionally short entrance-only reservations. They
+        // override the wall polygons only inside their small mouths; no cave
+        // interior is navigable in Swim Map V1.
+        reservedCorridors: Object.freeze([
+          Object.freeze({
+            id: 'ltpoPrimaryCaveApproach',
+            routeId: 'ltpoPrimaryCave',
+            kind: 'future-cave-corridor',
+            polygon: Object.freeze([
+              Object.freeze({ x: .38, y: .575 }),
+              Object.freeze({ x: .33, y: .558 }),
+              Object.freeze({ x: .25, y: .560 }),
+              Object.freeze({ x: .17, y: .575 }),
+              Object.freeze({ x: .14, y: .595 }),
+              Object.freeze({ x: .16, y: .615 }),
+              Object.freeze({ x: .24, y: .625 }),
+              Object.freeze({ x: .33, y: .615 }),
+              Object.freeze({ x: .39, y: .600 })
+            ])
+          }),
+          Object.freeze({
+            id: 'mediaSecondaryCaveApproach',
+            routeId: 'mediaSecondaryCave',
+            kind: 'future-cave-corridor',
+            polygon: Object.freeze([
+              Object.freeze({ x: .62, y: .570 }),
+              Object.freeze({ x: .70, y: .555 }),
+              Object.freeze({ x: .79, y: .555 }),
+              Object.freeze({ x: .85, y: .570 }),
+              Object.freeze({ x: .87, y: .590 }),
+              Object.freeze({ x: .83, y: .615 }),
+              Object.freeze({ x: .76, y: .625 }),
+              Object.freeze({ x: .68, y: .610 }),
+              Object.freeze({ x: .61, y: .595 })
+            ])
+          })
+        ])
+      })
+    }),
     // Reserved route records keep future cave branches in the same coordinate
     // system without making them active collision geometry in V1.
     routes: Object.freeze([
-      Object.freeze({ id: 'ltpoPrimaryCave', type: 'cave-corridor', enabled: false }),
-      Object.freeze({ id: 'mediaSecondaryCave', type: 'cave-corridor', enabled: false }),
-      Object.freeze({ id: 'hundredInchAlcove', type: 'entrance', enabled: false }),
-      Object.freeze({ id: 'beijing2022Terrace', type: 'entrance', enabled: false })
+      Object.freeze({ id: 'ltpoPrimaryCave', type: 'cave-corridor', enabled: false, entrance: Object.freeze({ x: .23, y: .59 }) }),
+      Object.freeze({ id: 'mediaSecondaryCave', type: 'cave-corridor', enabled: false, entrance: Object.freeze({ x: .77, y: .58 }) }),
+      Object.freeze({ id: 'hundredInchAlcove', type: 'entrance', enabled: false, entrance: Object.freeze({ x: .82, y: .66 }) }),
+      Object.freeze({ id: 'beijing2022Terrace', type: 'entrance', enabled: false, entrance: Object.freeze({ x: .26, y: .68 }) })
     ])
   });
+  const DEEP_SEA_SWIM_MAP_REMAP = remapMasterY(DEEP_SEA_SWIM_MAP_LEGACY);
+  const DEEP_SEA_SWIM_MAP = Object.freeze({
+    ...DEEP_SEA_SWIM_MAP_REMAP,
+    geometry: Object.freeze({
+      ...DEEP_SEA_SWIM_MAP_REMAP.geometry,
+      deeperOpenSea: Object.freeze({
+        // The new tail is intentionally coarse: keep the centre open and
+        // only reserve broad edge masses where the extension meets geology.
+        freeWaterPolygons: Object.freeze([
+          Object.freeze([
+            Object.freeze({ x: .12, y: DEEP_SEA_WORLD_ANCHORS.greatChamberEnd }),
+            Object.freeze({ x: .88, y: DEEP_SEA_WORLD_ANCHORS.greatChamberEnd }),
+            Object.freeze({ x: .94, y: deeperOpenSeaWorldAt(.38) }),
+            Object.freeze({ x: .91, y: deeperOpenSeaWorldAt(1) }),
+            Object.freeze({ x: .09, y: deeperOpenSeaWorldAt(1) }),
+            Object.freeze({ x: .06, y: deeperOpenSeaWorldAt(.38) })
+          ])
+        ]),
+        blockedPolygons: Object.freeze([
+          Object.freeze({
+            id: 'deeperOpenSeaLeftEdge',
+            kind: 'edge-rock-mass',
+            polygon: Object.freeze([
+              Object.freeze({ x: 0, y: DEEP_SEA_WORLD_ANCHORS.greatChamberEnd }),
+              Object.freeze({ x: .12, y: DEEP_SEA_WORLD_ANCHORS.greatChamberEnd }),
+              Object.freeze({ x: .09, y: deeperOpenSeaWorldAt(.62) }),
+              Object.freeze({ x: .14, y: deeperOpenSeaWorldAt(1) }),
+              Object.freeze({ x: 0, y: deeperOpenSeaWorldAt(1) })
+            ])
+          }),
+          Object.freeze({
+            id: 'deeperOpenSeaRightEdge',
+            kind: 'edge-rock-mass',
+            polygon: Object.freeze([
+              Object.freeze({ x: 1, y: DEEP_SEA_WORLD_ANCHORS.greatChamberEnd }),
+              Object.freeze({ x: .88, y: DEEP_SEA_WORLD_ANCHORS.greatChamberEnd }),
+              Object.freeze({ x: .91, y: deeperOpenSeaWorldAt(.62) }),
+              Object.freeze({ x: .86, y: deeperOpenSeaWorldAt(1) }),
+              Object.freeze({ x: 1, y: deeperOpenSeaWorldAt(1) })
+            ])
+          })
+        ]),
+        reservedCorridors: Object.freeze([])
+      })
+    })
+  });
+  const DEEP_SEA_CASE_ANCHORS = Object.freeze([
+    Object.freeze({
+      caseId: 'ltpo',
+      label: 'LTPO / K4',
+      spatialType: 'PRIMARY_CAVE',
+      interactionType: 'ENTER',
+      enabled: true,
+      worldAnchor: Object.freeze({ x: .23, y: previousMasterWorldY(.59) }),
+      approachRegion: Object.freeze({
+        id: 'ltpoApproach',
+        label: 'Primary Cave mouth + approach water',
+        kind: 'polygon',
+        polygon: Object.freeze([
+          Object.freeze({ x: .40, y: previousMasterWorldY(.54) }),
+          Object.freeze({ x: .28, y: previousMasterWorldY(.53) }),
+          Object.freeze({ x: .16, y: previousMasterWorldY(.55) }),
+          Object.freeze({ x: .10, y: previousMasterWorldY(.60) }),
+          Object.freeze({ x: .14, y: previousMasterWorldY(.65) }),
+          Object.freeze({ x: .28, y: previousMasterWorldY(.66) }),
+          Object.freeze({ x: .43, y: previousMasterWorldY(.62) })
+        ])
+      })
+    }),
+    Object.freeze({
+      caseId: 'mediaLab',
+      label: '融媒实验室',
+      spatialType: 'SECONDARY_CAVE',
+      interactionType: 'ENTER',
+      enabled: true,
+      worldAnchor: Object.freeze({ x: .77, y: previousMasterWorldY(.58) }),
+      approachRegion: Object.freeze({
+        id: 'mediaLabApproach',
+        label: 'Secondary Cave mouth + approach water',
+        kind: 'polygon',
+        polygon: Object.freeze([
+          Object.freeze({ x: .58, y: previousMasterWorldY(.54) }),
+          Object.freeze({ x: .73, y: previousMasterWorldY(.53) }),
+          Object.freeze({ x: .90, y: previousMasterWorldY(.57) }),
+          Object.freeze({ x: .92, y: previousMasterWorldY(.63) }),
+          Object.freeze({ x: .78, y: previousMasterWorldY(.67) }),
+          Object.freeze({ x: .62, y: previousMasterWorldY(.63) })
+        ])
+      })
+    }),
+    Object.freeze({
+      caseId: 'hundredInch',
+      label: '100-inch',
+      spatialType: 'WALL_ALCOVE',
+      interactionType: 'APPROACH',
+      enabled: true,
+      worldAnchor: Object.freeze({ x: .82, y: previousMasterWorldY(.66) }),
+      approachRegion: Object.freeze({
+        id: 'hundredInchApproach',
+        label: 'wall alcove front water',
+        kind: 'polygon',
+        polygon: Object.freeze([
+          Object.freeze({ x: .58, y: previousMasterWorldY(.63) }),
+          Object.freeze({ x: .76, y: previousMasterWorldY(.62) }),
+          Object.freeze({ x: .94, y: previousMasterWorldY(.65) }),
+          Object.freeze({ x: .93, y: previousMasterWorldY(.71) }),
+          Object.freeze({ x: .74, y: previousMasterWorldY(.71) }),
+          Object.freeze({ x: .57, y: previousMasterWorldY(.69) })
+        ])
+      })
+    }),
+    Object.freeze({
+      caseId: 'beijing2022',
+      label: '北京 2022',
+      spatialType: 'ROCK_TERRACE',
+      interactionType: 'APPROACH',
+      enabled: true,
+      worldAnchor: Object.freeze({ x: .26, y: previousMasterWorldY(.68) }),
+      approachRegion: Object.freeze({
+        id: 'beijing2022Approach',
+        label: 'fractured terrace front water',
+        kind: 'polygon',
+        polygon: Object.freeze([
+          Object.freeze({ x: .08, y: previousMasterWorldY(.64) }),
+          Object.freeze({ x: .29, y: previousMasterWorldY(.62) }),
+          Object.freeze({ x: .47, y: previousMasterWorldY(.66) }),
+          Object.freeze({ x: .46, y: previousMasterWorldY(.71) }),
+          Object.freeze({ x: .26, y: previousMasterWorldY(.71) }),
+          Object.freeze({ x: .08, y: previousMasterWorldY(.70) })
+        ])
+      })
+    })
+  ]);
   const swimRegionAt = (worldY) => {
     const y = clamp(worldY, 0, 1);
-    return DEEP_SEA_SWIM_MAP.regions.find((region) => y <= region.yEnd)
+    return DEEP_SEA_SWIM_MAP.regions.find((region, index) => y < region.yEnd || index === DEEP_SEA_SWIM_MAP.regions.length - 1)
       || DEEP_SEA_SWIM_MAP.regions[DEEP_SEA_SWIM_MAP.regions.length - 1];
   };
   const swimLaneAt = (worldY) => {
@@ -102,14 +410,173 @@
       right: start.right + (end.right - start.right) * t
     };
   };
+  const pointInPolygon = (point, polygon) => {
+    let inside = false;
+    for (let index = 0, previous = polygon.length - 1; index < polygon.length; previous = index++) {
+      const currentPoint = polygon[index];
+      const previousPoint = polygon[previous];
+      const intersects = ((currentPoint.y > point.y) !== (previousPoint.y > point.y))
+        && (point.x < ((previousPoint.x - currentPoint.x) * (point.y - currentPoint.y))
+          / (previousPoint.y - currentPoint.y) + currentPoint.x);
+      if (intersects) inside = !inside;
+    }
+    return inside;
+  };
+  const nearestPointOnSegment = (point, start, end) => {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const lengthSquared = dx * dx + dy * dy;
+    const t = lengthSquared > .000001
+      ? clamp(((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared, 0, 1)
+      : 0;
+    return { x: start.x + dx * t, y: start.y + dy * t };
+  };
+  const nearestPointOnPolygon = (point, polygon) => {
+    let nearest = polygon[0];
+    let nearestDistance = Number.POSITIVE_INFINITY;
+    polygon.forEach((start, index) => {
+      const end = polygon[(index + 1) % polygon.length];
+      const candidate = nearestPointOnSegment(point, start, end);
+      const distance = (candidate.x - point.x) ** 2 + (candidate.y - point.y) ** 2;
+      if (distance < nearestDistance) {
+        nearest = candidate;
+        nearestDistance = distance;
+      }
+    });
+    return nearest;
+  };
+  const swimGeometryAt = (worldY) => {
+    const regionId = swimLaneAt(worldY).region.id;
+    return regionId === 'greatChamber'
+      ? DEEP_SEA_SWIM_MAP.geometry.greatChamber
+      : regionId === 'deeperOpenSea'
+        ? DEEP_SEA_SWIM_MAP.geometry.deeperOpenSea
+        : null;
+  };
+  const reservedCorridorsAt = (point, geometry) => geometry?.reservedCorridors.filter((item) => pointInPolygon(point, item.polygon)) || [];
+  const blockedPolygonsAt = (point, geometry) => geometry?.blockedPolygons.filter((item) => pointInPolygon(point, item.polygon)) || [];
+  const isFreeWaterPoint = (point, geometry) => {
+    if (!geometry) return true;
+    if (reservedCorridorsAt(point, geometry).length) return true;
+    const inFreePolygon = geometry.freeWaterPolygons.some((polygon) => pointInPolygon(point, polygon));
+    return inFreePolygon && blockedPolygonsAt(point, geometry).length === 0;
+  };
+  const horizontalIntervalsForPolygon = (y, polygon) => {
+    const intersections = [];
+    polygon.forEach((start, index) => {
+      const end = polygon[(index + 1) % polygon.length];
+      if (Math.abs(end.y - start.y) < .000001) return;
+      const minY = Math.min(start.y, end.y);
+      const maxY = Math.max(start.y, end.y);
+      if (y < minY || y >= maxY) return;
+      intersections.push(start.x + (y - start.y) * (end.x - start.x) / (end.y - start.y));
+    });
+    intersections.sort((left, right) => left - right);
+    const intervals = [];
+    for (let index = 0; index + 1 < intersections.length; index += 2) {
+      const left = intersections[index];
+      const right = intersections[index + 1];
+      const midpoint = { x: (left + right) / 2, y };
+      if (pointInPolygon(midpoint, polygon)) intervals.push({ left, right });
+    }
+    return intervals;
+  };
+  const freeWaterIntervalsAt = (y, geometry) => {
+    let intervals = geometry.freeWaterPolygons.flatMap((polygon) => horizontalIntervalsForPolygon(y, polygon));
+    geometry.blockedPolygons.forEach((item) => {
+      const blockedIntervals = horizontalIntervalsForPolygon(y, item.polygon);
+      blockedIntervals.forEach((blocked) => {
+        intervals = intervals.flatMap((interval) => {
+          if (blocked.right <= interval.left || blocked.left >= interval.right) return [interval];
+          const remainder = [];
+          if (interval.left < blocked.left) remainder.push({ left: interval.left, right: blocked.left });
+          if (blocked.right < interval.right) remainder.push({ left: blocked.right, right: interval.right });
+          return remainder;
+        });
+      });
+    });
+    // Re-add only the short future-cave approaches after subtracting the
+    // major rock polygons. This keeps the wall blocked outside each mouth.
+    geometry.reservedCorridors.forEach((corridor) => {
+      intervals.push(...horizontalIntervalsForPolygon(y, corridor.polygon));
+    });
+    intervals.sort((left, right) => left.left - right.left);
+    intervals = intervals.reduce((merged, interval) => {
+      const previous = merged[merged.length - 1];
+      if (!previous || interval.left > previous.right) merged.push({ ...interval });
+      else previous.right = Math.max(previous.right, interval.right);
+      return merged;
+    }, []);
+    return intervals.filter((interval) => interval.right - interval.left > .004);
+  };
+  const nudgeTowardWater = (point, rawPoint) => {
+    const direction = rawPoint.x < .5 ? 1 : -1;
+    return { x: clamp(point.x + direction * .0025, 0, 1), y: clamp(point.y, 0, 1) };
+  };
   const projectSwimWorldPoint = (point) => {
+    const rawPoint = { x: clamp(point.x, 0, 1), y: clamp(point.y, 0, 1) };
     const y = clamp(point.y, 0, 1);
     const lane = swimLaneAt(y);
+    const geometry = swimGeometryAt(y);
+    if (geometry) {
+      const reservedCorridors = reservedCorridorsAt(rawPoint, geometry);
+      const blockedPolygons = blockedPolygonsAt(rawPoint, geometry);
+      if (isFreeWaterPoint(rawPoint, geometry)) {
+        return {
+          x: rawPoint.x,
+          y,
+          region: lane.region.id,
+          wasBlocked: false,
+          blockedBy: [],
+          reservedRoute: reservedCorridors[0]?.routeId || null
+        };
+      }
+      const horizontalIntervals = freeWaterIntervalsAt(y, geometry);
+      const horizontalCandidates = horizontalIntervals.flatMap((interval) => [
+        { x: interval.left + .0025, y },
+        { x: interval.right - .0025, y }
+      ]).filter((candidate) => isFreeWaterPoint(candidate, geometry));
+      if (horizontalCandidates.length) {
+        const projected = horizontalCandidates.reduce((nearest, candidate) => {
+          const distance = Math.abs(candidate.x - rawPoint.x);
+          return distance < nearest.distance ? { candidate, distance } : nearest;
+        }, { candidate: horizontalCandidates[0], distance: Number.POSITIVE_INFINITY }).candidate;
+        return {
+          x: projected.x,
+          y,
+          region: lane.region.id,
+          wasBlocked: true,
+          blockedBy: blockedPolygons.map((item) => item.id),
+          reservedRoute: reservedCorridors[0]?.routeId || null
+        };
+      }
+      const candidates = [];
+      geometry.freeWaterPolygons.forEach((polygon) => candidates.push(nearestPointOnPolygon(rawPoint, polygon)));
+      blockedPolygons.forEach((item) => candidates.push(nearestPointOnPolygon(rawPoint, item.polygon)));
+      candidates.push({ x: clamp(rawPoint.x, lane.left, lane.right), y });
+      const legalCandidates = candidates
+        .map((candidate) => nudgeTowardWater(candidate, rawPoint))
+        .filter((candidate) => isFreeWaterPoint(candidate, geometry));
+      const projected = (legalCandidates.length ? legalCandidates : [{ x: .5, y }])
+        .reduce((nearest, candidate) => {
+          const distance = (candidate.x - rawPoint.x) ** 2 + (candidate.y - rawPoint.y) ** 2;
+          return distance < nearest.distance ? { candidate, distance } : nearest;
+        }, { candidate: { x: .5, y }, distance: Number.POSITIVE_INFINITY }).candidate;
+      return {
+        x: projected.x,
+        y: projected.y,
+        region: lane.region.id,
+        wasBlocked: true,
+        blockedBy: blockedPolygons.map((item) => item.id),
+        reservedRoute: reservedCorridors[0]?.routeId || null
+      };
+    }
     return {
-      x: clamp(point.x, lane.left, lane.right),
+      x: clamp(rawPoint.x, lane.left, lane.right),
       y,
       region: lane.region.id,
-      wasBlocked: point.x < lane.left || point.x > lane.right
+      wasBlocked: rawPoint.x < lane.left || rawPoint.x > lane.right,
+      blockedBy: []
     };
   };
   const createMasterWorldProjection = (root, scene) => {
@@ -1832,11 +2299,20 @@
     const swimMapDebugPlot = swimMapDebug?.querySelector('.swim-map-debug-plot');
     const swimMapDebugMaster = swimMapDebug?.querySelector('.swim-map-debug-master');
     const swimMapDebugFree = swimMapDebug?.querySelector('.swim-map-debug-free');
+    const swimMapDebugBlocked = swimMapDebug?.querySelector('.swim-map-debug-blocked');
+    const swimMapDebugReserved = swimMapDebug?.querySelector('.swim-map-debug-reserved');
+    const swimMapDebugApproaches = swimMapDebug?.querySelector('.swim-map-debug-approaches');
+    const swimMapDebugAnchors = swimMapDebug?.querySelector('.swim-map-debug-anchors');
     const swimMapDebugCursor = swimMapDebug?.querySelector('.swim-map-debug-cursor');
     const swimMapDebugDiver = swimMapDebug?.querySelector('.swim-map-debug-diver');
     const swimMapDebugReadout = swimMapDebug?.querySelector('.swim-map-debug-readout');
+    const swimMapDebugCaseList = swimMapDebug?.querySelector('.swim-map-debug-case-list');
     world.classList.toggle('debug-swim-map', debugSwimMap);
     if (swimMapDebug) swimMapDebug.hidden = !debugSwimMap;
+
+    const caseApproachesAt = (point) => DEEP_SEA_CASE_ANCHORS.filter((item) => (
+      pointInPolygon(point, item.approachRegion.polygon)
+    ));
 
     const renderSwimMapDebug = (progress, worldProgress) => {
       if (!debugSwimMap || !swimMapDebugPlot || !swimMapDebugReadout) return;
@@ -1849,15 +2325,81 @@
       swimMapDebugMaster?.setAttribute('y', String(imageRect.top - rootRect.top));
       swimMapDebugMaster?.setAttribute('width', String(imageRect.width));
       swimMapDebugMaster?.setAttribute('height', String(imageRect.height));
-      const samples = Array.from({ length: 48 }, (_, index) => index / 47);
-      const leftPoints = samples.map((y) => toLocalScreen(worldProjection.worldToScreen({ x: swimLaneAt(y).left, y })));
-      const rightPoints = samples.map((y) => toLocalScreen(worldProjection.worldToScreen({ x: swimLaneAt(y).right, y })));
-      const lanePath = [
-        `M ${leftPoints.map((point) => `${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' L ')}`,
-        `L ${rightPoints.reverse().map((point) => `${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' L ')}`,
-        'Z'
-      ].join(' ');
-      swimMapDebugFree?.setAttribute('d', lanePath);
+      const polygonPath = (polygon) => {
+        const points = polygon.map((point) => toLocalScreen(worldProjection.worldToScreen(point)));
+        return `M ${points.map((point) => `${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' L ')} Z`;
+      };
+      const lanePath = (region) => {
+        const samples = Array.from({ length: 16 }, (_, index) => (
+          region.yStart + (region.yEnd - region.yStart) * index / 15
+        ));
+        const leftPoints = samples.map((y) => toLocalScreen(worldProjection.worldToScreen({ x: swimLaneAt(y).left, y })));
+        const rightPoints = samples.map((y) => toLocalScreen(worldProjection.worldToScreen({ x: swimLaneAt(y).right, y })));
+        return [
+          `M ${leftPoints.map((point) => `${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' L ')}`,
+          `L ${rightPoints.reverse().map((point) => `${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' L ')}`,
+          'Z'
+        ].join(' ');
+      };
+      const freeGeometryPath = DEEP_SEA_SWIM_MAP.regions.map((region) => {
+        const geometry = swimGeometryAt((region.yStart + region.yEnd) / 2);
+        return geometry
+          ? geometry.freeWaterPolygons.map(polygonPath).join(' ')
+          : lanePath(region);
+      }).join(' ');
+      swimMapDebugFree?.setAttribute('d', freeGeometryPath);
+      if (swimMapDebugBlocked) {
+        const geometries = [
+          DEEP_SEA_SWIM_MAP.geometry.greatChamber,
+          DEEP_SEA_SWIM_MAP.geometry.deeperOpenSea
+        ];
+        swimMapDebugBlocked.replaceChildren(...geometries.flatMap((geometry) => geometry.blockedPolygons.map((item) => {
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('d', polygonPath(item.polygon));
+          path.dataset.geometryId = item.id;
+          return path;
+        })));
+      }
+      if (swimMapDebugReserved) {
+        const geometry = DEEP_SEA_SWIM_MAP.geometry.greatChamber;
+        swimMapDebugReserved.replaceChildren(...geometry.reservedCorridors.map((corridor) => {
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('d', polygonPath(corridor.polygon));
+          path.dataset.geometryId = corridor.id;
+          path.dataset.routeId = corridor.routeId;
+          return path;
+        }));
+      }
+      if (swimMapDebugApproaches) {
+        swimMapDebugApproaches.replaceChildren(...DEEP_SEA_CASE_ANCHORS.map((item) => {
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('d', polygonPath(item.approachRegion.polygon));
+          path.dataset.caseId = item.caseId;
+          path.dataset.approachId = item.approachRegion.id;
+          return path;
+        }));
+      }
+      if (swimMapDebugAnchors) {
+        swimMapDebugAnchors.replaceChildren(...DEEP_SEA_CASE_ANCHORS.flatMap((item) => {
+          const point = toLocalScreen(worldProjection.worldToScreen(item.worldAnchor));
+          const marker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          marker.setAttribute('cx', String(point.x));
+          marker.setAttribute('cy', String(point.y));
+          marker.setAttribute('r', '8');
+          marker.dataset.caseId = item.caseId;
+          const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          label.setAttribute('x', String(point.x + 12));
+          label.setAttribute('y', String(point.y - 10));
+          label.dataset.caseId = item.caseId;
+          label.textContent = item.label;
+          const type = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          type.setAttribute('x', String(point.x + 12));
+          type.setAttribute('y', String(point.y + 5));
+          type.dataset.caseId = item.caseId;
+          type.textContent = item.spatialType;
+          return [marker, label, type];
+        }));
+      }
       const pointer = tracker.getPointerPosition();
       const pointerScreen = { x: rootRect.left + pointer.x, y: rootRect.top + pointer.y };
       const diver = tracker.getPosition();
@@ -1873,14 +2415,38 @@
       const swimDebug = tracker.getSwimDebugState();
       const rawTargetWorld = swimDebug?.rawWorld || cursorWorld;
       const projectedWorld = swimDebug?.projectedWorld || projectSwimWorldPoint(cursorWorld);
+      const diverApproaches = caseApproachesAt(diverWorld);
+      const cursorApproaches = caseApproachesAt(cursorWorld);
+      if (swimMapDebugCaseList) {
+        swimMapDebugCaseList.replaceChildren(...DEEP_SEA_CASE_ANCHORS.map((item) => {
+          const row = document.createElement('div');
+          row.className = 'swim-map-debug-case-row';
+          const diverIn = diverApproaches.some((candidate) => candidate.caseId === item.caseId);
+          const cursorIn = cursorApproaches.some((candidate) => candidate.caseId === item.caseId);
+          row.dataset.caseId = item.caseId;
+          row.dataset.diverInApproach = String(diverIn);
+          row.dataset.cursorInApproach = String(cursorIn);
+          const title = document.createElement('b');
+          title.textContent = item.label;
+          const details = document.createElement('span');
+          details.textContent = `${item.spatialType}  |  ${item.interactionType}`;
+          const coords = document.createElement('small');
+          coords.textContent = `ANCHOR (${item.worldAnchor.x.toFixed(3)}, ${item.worldAnchor.y.toFixed(3)})  /  ${item.approachRegion.id}`;
+          const state = document.createElement('em');
+          state.textContent = `${diverIn ? 'DIVER IN APPROACH' : 'DIVER OUT'}${cursorIn ? '  ·  CURSOR IN' : ''}`;
+          row.append(title, details, coords, state);
+          return row;
+        }));
+      }
       swimMapDebugReadout.textContent = [
         `SWIM MAP ${DEEP_SEA_SWIM_MAP.version}  |  ${swimLaneAt(cursorWorld.y).region.id}`,
         `master image  x:${imageRect.left.toFixed(1)} y:${imageRect.top.toFixed(1)} w:${imageRect.width.toFixed(1)} h:${imageRect.height.toFixed(1)}`,
         `scroll ${progress.toFixed(3)}  world ${worldProgress.toFixed(3)}`,
         `cursor screen (${pointer.x.toFixed(1)}, ${pointer.y.toFixed(1)})  world (${cursorWorld.x.toFixed(3)}, ${cursorWorld.y.toFixed(3)})`,
         `diver  screen (${diver.x.toFixed(1)}, ${diver.y.toFixed(1)})  world (${diverWorld.x.toFixed(3)}, ${diverWorld.y.toFixed(3)})`,
-        `target raw (${rawTargetWorld.x.toFixed(3)}, ${rawTargetWorld.y.toFixed(3)})  projected (${projectedWorld.x.toFixed(3)}, ${projectedWorld.y.toFixed(3)})${projectedWorld.wasBlocked ? '  [BLOCKED → FREE_WATER]' : '  [FREE_WATER]'}`,
-        `projection: worldToScreen / screenToWorld  | routes reserved: ${DEEP_SEA_SWIM_MAP.routes.length}`
+        `target raw (${rawTargetWorld.x.toFixed(3)}, ${rawTargetWorld.y.toFixed(3)})  projected (${projectedWorld.x.toFixed(3)}, ${projectedWorld.y.toFixed(3)})${projectedWorld.reservedRoute ? `  [RESERVED_APPROACH: ${projectedWorld.reservedRoute}]` : projectedWorld.wasBlocked ? `  [BLOCKED → FREE_WATER${projectedWorld.blockedBy?.length ? `: ${projectedWorld.blockedBy.join(', ')}` : ''}]` : '  [FREE_WATER]'}`,
+        `case approach: ${diverApproaches.map((item) => item.label).join(', ') || 'none'}  | cursor: ${cursorApproaches.map((item) => item.label).join(', ') || 'none'}`,
+        `geometry: ${swimGeometryAt(cursorWorld.y) ? `${swimLaneAt(cursorWorld.y).region.id} polygon + rock boundaries` : 'coarse lane'}  | routes reserved: ${DEEP_SEA_SWIM_MAP.routes.length}`
       ].join('\n');
     };
     let riftAutoDive = false;
@@ -1911,19 +2477,20 @@
     const renderRiftVisual = (progress) => {
       // The reset world is downstream-only: terrain stays dormant until the
       // confirmed Profile / Experience / Education field has left the frame.
-      const dropoff = clamp((progress - .34) / .12, 0, 1);
-      const dropIn = clamp((progress - .34) / .16, 0, 1);
-      const dropOut = clamp((.72 - progress) / .17, 0, 1);
+      const legacyProgress = toLegacyScrollProgress(progress);
+      const dropoff = clamp((legacyProgress - .34) / .12, 0, 1);
+      const dropIn = clamp((legacyProgress - .34) / .16, 0, 1);
+      const dropOut = clamp((.72 - legacyProgress) / .17, 0, 1);
       const auto = riftAutoDive ? riftAutoState.t : 0;
       const visibility = Math.max(riftCompleted ? .72 : 0, dropIn * dropOut);
-      const restriction = Math.max(clamp((progress - .36) / .22, 0, 1), auto);
-      const chamber = clamp((progress - .62) / .2, 0, 1);
-      const openBelow = clamp((progress - .78) / .2, 0, 1);
+      const restriction = Math.max(clamp((legacyProgress - .36) / .22, 0, 1), auto);
+      const chamber = clamp((legacyProgress - .62) / .2, 0, 1);
+      const openBelow = clamp((legacyProgress - .78) / .2, 0, 1);
       const exit = riftAutoDive
         ? .22 + auto * .68
         : riftCompleted
           ? .82
-          : clamp((progress - .58) / .12, 0, 1) * .58;
+          : clamp((legacyProgress - .58) / .12, 0, 1) * .58;
       world.style.setProperty('--rift-visibility', visibility.toFixed(3));
       world.style.setProperty('--rift-exit-opacity', exit.toFixed(3));
       world.style.setProperty('--rift-left-width', `${(29 + restriction * 14).toFixed(2)}%`);
@@ -1938,11 +2505,12 @@
 
     const renderDownstreamVisual = (progress, depth) => {
       const worldProgress = mapScrollToWorldProgress(progress);
+      const legacyProgress = toLegacyScrollProgress(progress);
       if (!downstreamScene) return { worldProgress };
-      const sceneReveal = clamp((progress - .16) / .14, 0, 1);
-      const lightFade = clamp((progress - .22) / .34, 0, 1);
+      const sceneReveal = clamp((legacyProgress - .16) / .14, 0, 1);
+      const lightFade = clamp((legacyProgress - .22) / .34, 0, 1);
       const lightFalloff = lightFade * lightFade * (3 - 2 * lightFade);
-      const oldLayerFade = clamp((progress - .22) / .28, 0, 1);
+      const oldLayerFade = clamp((legacyProgress - .22) / .28, 0, 1);
       const oldLayerFalloff = oldLayerFade * oldLayerFade * (3 - 2 * oldLayerFade);
       const sceneTravel = Math.max(0, downstreamScene.offsetHeight - viewport.height);
       const worldDepth = worldProgress * sceneTravel;
@@ -2443,9 +3011,14 @@
       const swimmerRect = swimmer?.getBoundingClientRect();
       viewport.width = rect.width;
       viewport.height = rect.height;
+      updateDeepSeaWorldRanges(viewport.width, viewport.height);
       viewport.halfW = (swimmerRect?.width || 132) / 2;
       viewport.halfH = (swimmerRect?.height || 94) / 2;
       viewport.maxDepth = Math.max(1, (scrollSpacer?.offsetHeight || document.documentElement.scrollHeight) - viewport.height);
+      riftAutoWindow.triggerStart = DEEP_SEA_WORLD_RANGES.riftApproach.scrollStart;
+      riftAutoWindow.triggerEnd = DEEP_SEA_WORLD_RANGES.rift.scrollEnd;
+      riftAutoWindow.exitStart = DEEP_SEA_WORLD_RANGES.riftExit.scrollStart;
+      riftAutoWindow.chamberStart = DEEP_SEA_WORLD_RANGES.greatChamber.scrollStart;
       targetDepth = clamp(window.scrollY, 0, viewport.maxDepth);
       currentDepth = clamp(currentDepth, 0, viewport.maxDepth);
       tracker.refreshBox();
@@ -2490,8 +3063,13 @@
       currentDepth += reducedMotion ? delta : delta * .105;
       if (Math.abs(targetDepth - currentDepth) < .08) currentDepth = targetDepth;
       const progress = clamp(currentDepth / viewport.maxDepth, 0, 1);
-      world.classList.toggle('is-rift-passage', progress > .21 && progress < .72);
-      world.style.setProperty('--depth-light-loss', (Math.pow(progress, .72) * .52).toFixed(3));
+      const legacyProgress = toLegacyScrollProgress(progress);
+      world.classList.toggle(
+        'is-rift-passage',
+        progress > DEEP_SEA_WORLD_RANGES.riftApproach.scrollStart
+        && progress < DEEP_SEA_WORLD_RANGES.greatChamber.scrollEnd
+      );
+      world.style.setProperty('--depth-light-loss', (Math.pow(legacyProgress, .72) * .52).toFixed(3));
       world.style.setProperty('--descent-depth', `${-currentDepth}px`);
       world.style.setProperty('--depth-distant', `${-currentDepth * .42}px`);
       world.style.setProperty('--depth-middle', `${-currentDepth * .9}px`);
@@ -2499,7 +3077,7 @@
       world.style.setProperty('--depth-content', `${-currentDepth}px`);
       const downstreamState = renderDownstreamVisual(progress, currentDepth);
       applyBounds(progress);
-      setLifelineDepth(progress);
+      setLifelineDepth(legacyProgress);
       renderRiftVisual(progress);
       renderSwimMapDebug(progress, downstreamState.worldProgress);
       const riftTriggerStart = riftAutoWindow.triggerStart;
@@ -2521,7 +3099,7 @@
       const maxDepthMeters = 420;
       const depthMeters = 6 + Math.round((downstreamState?.worldProgress ?? progress) * (maxDepthMeters - 6));
       if (depthReadout) depthReadout.textContent = `${String(depthMeters).padStart(3, '0')}m`;
-      if (instruction) instruction.style.opacity = String(.92 - progress * .58);
+      if (instruction) instruction.style.opacity = String(.92 - legacyProgress * .58);
       const fadeStart = viewport.height * .30;
       const fadeEnd = viewport.height * .07;
       informationNodes.forEach((node) => {

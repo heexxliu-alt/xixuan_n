@@ -272,12 +272,12 @@ html:has(.descent-body){background:#15163d}
 /* The lower master stays at its native aspect ratio.  Give it enough actual
    scroll distance to pass through the viewport instead of compressing its
    journey into the old prototype length. */
-.descent-body{min-height:374.83vw;background:#15163d;overflow-x:hidden;scrollbar-width:none}
+.descent-body{--deep-sea-master-height:523.8095238vw;min-height:var(--deep-sea-master-height);background:#15163d;overflow-x:hidden;scrollbar-width:none}
 .descent-body::-webkit-scrollbar{width:0;height:0}
 .dive-world.dive-descent{--descent-depth:0px;--depth-distant:0px;--depth-middle:0px;--depth-foreground:0px;--depth-content:0px;position:fixed!important;inset:0!important;width:100vw!important;height:100svh!important;min-height:0!important;aspect-ratio:auto!important;margin:0!important;background:radial-gradient(ellipse at 50% -8%,#cef5f4 0%,#77bcdc 23%,#384e98 64%,#191a4c 100%);overflow:hidden;isolation:isolate}
 .dive-descent::before{z-index:30;opacity:.14;background:repeating-linear-gradient(104deg,rgba(210,239,255,.12) 0 1px,transparent 1px 8px),repeating-linear-gradient(15deg,rgba(45,39,103,.2) 0 1px,transparent 1px 10px)}
 .dive-descent::after{z-index:31;background:radial-gradient(ellipse at var(--focus-x,50%) var(--focus-y,52%),transparent 0 10%,rgba(19,25,77,.05) 36%,rgba(10,14,54,.32) 100%);mix-blend-mode:multiply}
-.descent-scroll-spacer{height:374.83vw;pointer-events:none}
+.descent-scroll-spacer{height:var(--deep-sea-master-height);pointer-events:none}
 .descent-stage{position:absolute;inset:0;z-index:1;overflow:hidden;isolation:isolate}
 .descent-layer{position:absolute;left:0;top:0;width:100%;height:455vh;pointer-events:none;will-change:transform}
 .descent-layer-distant{z-index:1;transform:translate3d(0,var(--depth-distant),0)}
@@ -408,7 +408,7 @@ body.is-ascent-active .descent-onboarding{opacity:0!important}
 /* Surface Dive remains in the same location and behavior; only the visual cue is more compact and legible by default. */
 .surface-hero .dive-vortex{top:28px;width:330px;height:86px;opacity:.9}.surface-hero .dive-vortex-ring-a{width:228px;height:63px}.surface-hero .dive-vortex-ring-b{width:178px;height:49px}.surface-hero .dive-vortex-ring-c{width:132px;height:37px}.surface-hero .dive-vortex-core{width:48px;height:22px;opacity:.7}.surface-hero .dive-cta-region:hover .dive-vortex,.surface-hero .dive-cta-region:focus-within .dive-vortex{opacity:1}.surface-hero .dive-trigger{color:rgba(71,58,107,.91);opacity:.96;text-shadow:0 1px 9px rgba(239,249,243,.42)}.surface-hero .dive-trigger-hint{color:rgba(76,66,112,.92);opacity:.96;text-shadow:0 1px 7px rgba(239,249,243,.36)}
 @media(max-width:700px){.quiet-professional{left:44%;width:48vw}.experience-coordinate{max-width:42vw;font-size:8px;letter-spacing:.06em}.experience-coordinate-kuaishou{left:12%}.experience-coordinate-boe{right:11%}.chamber-project{width:43vw}.case-ltpo{left:10%}.case-media{right:9%}.case-hundred{left:14%}.case-beijing{right:10%}.chamber-project h2{font-size:16px}.case-ltpo h2{font-size:22px}}
-@media(max-width:700px){.descent-body{min-height:390vh}.descent-scroll-spacer{height:390vh}.dive-descent .dive-nav{font-size:8px}.dive-descent .dive-nav span:last-child{max-width:56vw;white-space:normal}.prototype-node{font-size:9px}.node-work{transform:scale(.86)}.node-writing{transform:scale(.82)}.node-side{transform:scale(.82)}.dive-descent .descent-diver{width:105px}.descent-depth{left:18px;bottom:18px}}
+@media(max-width:700px){.descent-body{--deep-sea-master-height:523.8095238vw;min-height:var(--deep-sea-master-height)}.descent-scroll-spacer{height:var(--deep-sea-master-height)}.dive-descent .dive-nav{font-size:8px}.dive-descent .dive-nav span:last-child{max-width:56vw;white-space:normal}.prototype-node{font-size:9px}.node-work{transform:scale(.86)}.node-writing{transform:scale(.82)}.node-side{transform:scale(.82)}.dive-descent .descent-diver{width:105px}.descent-depth{left:18px;bottom:18px}}
 @media(prefers-reduced-motion:reduce){.dive-descent .descent-layer{will-change:auto}.prototype-node{backdrop-filter:none;-webkit-backdrop-filter:none}.dive-descent .cursor-layer,.dive-descent .descent-diver{transition:none!important}}
 
 /* Deep Sea first view: one opaque open-water plate, with atmosphere kept as
@@ -490,9 +490,28 @@ body.is-ascent-active .descent-onboarding{opacity:0!important}
 .swim-map-debug-plot{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 .swim-map-debug-master{fill:none;stroke:rgba(255,255,255,.56);stroke-width:2;stroke-dasharray:8 7}
 .swim-map-debug-free{fill:rgba(94,228,205,.13);stroke:rgba(104,244,215,.86);stroke-width:2;vector-effect:non-scaling-stroke}
+.swim-map-debug-blocked{pointer-events:none}
+.swim-map-debug-blocked path{fill:rgba(244,116,112,.16);stroke:rgba(255,142,132,.84);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.swim-map-debug-reserved{pointer-events:none}
+.swim-map-debug-reserved path{fill:rgba(255,219,121,.16);stroke:rgba(255,226,142,.94);stroke-width:2;stroke-dasharray:6 5;vector-effect:non-scaling-stroke}
 .swim-map-debug-cursor{fill:#fff1bd;stroke:#fff;stroke-width:2;vector-effect:non-scaling-stroke}
 .swim-map-debug-diver{fill:#ff9e92;stroke:#fff;stroke-width:2;vector-effect:non-scaling-stroke}
 .swim-map-debug-readout{position:absolute;left:18px;bottom:18px;margin:0;padding:12px 14px;min-width:330px;color:rgba(233,255,248,.92);background:rgba(2,10,28,.76);border:1px solid rgba(146,224,211,.32);box-shadow:0 12px 30px rgba(0,0,0,.24);white-space:pre-wrap}
+.swim-map-debug-approaches{pointer-events:none}
+.swim-map-debug-approaches path{fill:rgba(178,145,255,.08);stroke:rgba(210,184,255,.78);stroke-width:1.5;stroke-dasharray:3 5;vector-effect:non-scaling-stroke}
+.swim-map-debug-anchors{pointer-events:none}
+.swim-map-debug-anchors circle{fill:rgba(255,225,133,.96);stroke:#fff9dd;stroke-width:2;vector-effect:non-scaling-stroke}
+.swim-map-debug-anchors text{fill:rgba(255,246,207,.96);font:700 12px/1.2 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.04em;paint-order:stroke;stroke:rgba(2,10,28,.92);stroke-width:4px;stroke-linejoin:round}
+.swim-map-debug-anchors text+text{fill:rgba(210,235,255,.86);font-size:9px;font-weight:500;letter-spacing:.08em}
+.swim-map-debug-case-list{display:none}
+.dive-descent.debug-swim-map .swim-map-debug-case-list{position:absolute;top:18px;right:18px;z-index:2;display:grid;gap:8px;width:min(360px,calc(100vw - 36px));max-height:calc(100vh - 36px);overflow:auto;padding:12px;color:rgba(235,247,255,.94);background:rgba(2,10,28,.82);border:1px solid rgba(181,205,255,.36);box-shadow:0 12px 30px rgba(0,0,0,.26);font:10px/1.35 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.03em}
+.swim-map-debug-case-row{display:grid;gap:2px;padding:8px 0;border-bottom:1px solid rgba(183,208,255,.18)}
+.swim-map-debug-case-row:last-child{border-bottom:0}
+.swim-map-debug-case-row b{color:rgba(255,235,177,.98);font-size:12px;letter-spacing:.08em}
+.swim-map-debug-case-row span{color:rgba(214,232,255,.9)}
+.swim-map-debug-case-row small{color:rgba(189,214,233,.76);font-size:9px}
+.swim-map-debug-case-row em{color:rgba(135,250,214,.9);font-style:normal;font-size:9px;letter-spacing:.06em}
+.swim-map-debug-case-row[data-diver-in-approach="false"] em{color:rgba(188,201,218,.68)}
 
 /* Surface Lifebuoy entry: keep the shared pastel details legible and let the
    two-line invitation sit directly above the object. */
@@ -555,7 +574,7 @@ body.is-ascent-active .descent-onboarding{opacity:0!important}
 /* One full-bleed lower-world scene. The image holds all geology; moving water
    atmospheres are the only separate layers, so no duplicate rocks or page seams
    can appear as the visitor descends. */
-.dive-descent .downstream-world-scene{--scene-shift:0px;--scene-opacity:0;--scene-water-shift:0px;--scene-depth-shift:0px;position:absolute;left:0;top:0;width:100%;height:374.83vw;z-index:0;overflow:visible;pointer-events:none;background:#07162c;transform:translate3d(0,var(--scene-shift),0);will-change:transform}
+.dive-descent .downstream-world-scene{--scene-shift:0px;--scene-opacity:0;--scene-water-shift:0px;--scene-depth-shift:0px;position:absolute;left:0;top:0;width:100%;height:var(--deep-sea-master-height);z-index:0;overflow:visible;pointer-events:none;background:#07162c;transform:translate3d(0,var(--scene-shift),0);will-change:transform}
 .dive-descent .downstream-world-master{position:absolute;left:50%;top:0;display:block;width:100vw;height:auto;max-width:none;transform:translateX(-50%);opacity:1;will-change:transform}
 .dive-descent .downstream-water-atmosphere,
 .dive-descent .downstream-depth-atmosphere{position:absolute;inset:0;display:block!important;pointer-events:none;will-change:transform,opacity}
@@ -907,3 +926,16 @@ body.is-ascent-active .descent-onboarding{opacity:0!important}
    a second join or a new light source. */
 .dive-descent .sea-light-beam{opacity:var(--long-world-light,.84)!important}
 .dive-descent .sea-light-beam-b{opacity:calc(var(--long-world-light,.84) * .5714)!important}
+
+/* The two legacy beam layers create the unwanted horizontal light bands.
+   Remove only these overlays; the master image and all other water/interaction
+   layers remain unchanged. */
+.dive-descent .sea-foundation > .sea-light-beam-a,
+.dive-descent .sea-foundation > .sea-light-beam-b{display:none!important;opacity:0!important}
+
+/* Remove the repeated radial stripe component that was still reading as a
+   second pair of horizontal light bands. Keep the two soft atmospheric
+   gradients from this motion layer intact. */
+.dive-descent .deep-water-motion::after{background:
+  radial-gradient(ellipse 60% 34% at 68% 20%,rgba(226,235,244,.18) 0%,rgba(194,213,233,.06) 48%,transparent 82%),
+  radial-gradient(ellipse 64% 38% at 20% 62%,rgba(184,204,229,.1) 0%,transparent 78%)!important}
