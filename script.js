@@ -307,23 +307,33 @@
   const DEEP_SEA_CASE_ANCHORS = Object.freeze([
     Object.freeze({
       caseId: 'ltpo',
-      label: 'LTPO / K4',
+      label: 'LTPO',
       spatialType: 'PRIMARY_CAVE',
       interactionType: 'ENTER',
+      status: 'CONFIRMED',
       enabled: true,
-      worldAnchor: Object.freeze({ x: .23, y: previousMasterWorldY(.59) }),
+      // Calibrated to the visible blue Primary Cave on the far left of the
+      // current Master, rather than to the old centre-lane estimate.
+      worldAnchor: Object.freeze({ x: .105, y: masterWorldY(1325) }),
       approachRegion: Object.freeze({
         id: 'ltpoApproach',
         label: 'Primary Cave mouth + approach water',
         kind: 'polygon',
         polygon: Object.freeze([
-          Object.freeze({ x: .40, y: previousMasterWorldY(.54) }),
-          Object.freeze({ x: .28, y: previousMasterWorldY(.53) }),
-          Object.freeze({ x: .16, y: previousMasterWorldY(.55) }),
-          Object.freeze({ x: .10, y: previousMasterWorldY(.60) }),
-          Object.freeze({ x: .14, y: previousMasterWorldY(.65) }),
-          Object.freeze({ x: .28, y: previousMasterWorldY(.66) }),
-          Object.freeze({ x: .43, y: previousMasterWorldY(.62) })
+          // The full left cave volume plus its approach water. Keep the
+          // inner edge left of the central neutral water so discovery is
+          // generous without making the two caves overlap in the chamber.
+          Object.freeze({ x: .35, y: masterWorldY(1185) }),
+          Object.freeze({ x: .24, y: masterWorldY(1165) }),
+          Object.freeze({ x: .13, y: masterWorldY(1205) }),
+          Object.freeze({ x: .045, y: masterWorldY(1305) }),
+          Object.freeze({ x: .025, y: masterWorldY(1485) }),
+          Object.freeze({ x: .075, y: masterWorldY(1645) }),
+          Object.freeze({ x: .17, y: masterWorldY(1715) }),
+          Object.freeze({ x: .29, y: masterWorldY(1740) }),
+          Object.freeze({ x: .36, y: masterWorldY(1665) }),
+          Object.freeze({ x: .35, y: masterWorldY(1450) }),
+          Object.freeze({ x: .31, y: masterWorldY(1295) })
         ])
       })
     }),
@@ -332,40 +342,52 @@
       label: '融媒实验室',
       spatialType: 'SECONDARY_CAVE',
       interactionType: 'ENTER',
+      status: 'CONFIRMED',
       enabled: true,
-      worldAnchor: Object.freeze({ x: .77, y: previousMasterWorldY(.58) }),
+      // Calibrated to the visible elliptical blue Secondary Cave on the far
+      // right of the current Master.
+      worldAnchor: Object.freeze({ x: .875, y: masterWorldY(1265) }),
       approachRegion: Object.freeze({
         id: 'mediaLabApproach',
         label: 'Secondary Cave mouth + approach water',
         kind: 'polygon',
         polygon: Object.freeze([
-          Object.freeze({ x: .58, y: previousMasterWorldY(.54) }),
-          Object.freeze({ x: .73, y: previousMasterWorldY(.53) }),
-          Object.freeze({ x: .90, y: previousMasterWorldY(.57) }),
-          Object.freeze({ x: .92, y: previousMasterWorldY(.63) }),
-          Object.freeze({ x: .78, y: previousMasterWorldY(.67) }),
-          Object.freeze({ x: .62, y: previousMasterWorldY(.63) })
+          // Match the broad right cave silhouette and its front water while
+          // preserving a neutral central lane between the two discoveries.
+          Object.freeze({ x: .65, y: masterWorldY(1165) }),
+          Object.freeze({ x: .76, y: masterWorldY(1145) }),
+          Object.freeze({ x: .90, y: masterWorldY(1185) }),
+          Object.freeze({ x: .975, y: masterWorldY(1305) }),
+          Object.freeze({ x: .99, y: masterWorldY(1490) }),
+          Object.freeze({ x: .93, y: masterWorldY(1655) }),
+          Object.freeze({ x: .83, y: masterWorldY(1720) }),
+          Object.freeze({ x: .71, y: masterWorldY(1735) }),
+          Object.freeze({ x: .65, y: masterWorldY(1655) }),
+          Object.freeze({ x: .65, y: masterWorldY(1440) }),
+          Object.freeze({ x: .69, y: masterWorldY(1285) })
         ])
       })
     }),
     Object.freeze({
       caseId: 'hundredInch',
       label: '100-inch',
-      spatialType: 'WALL_ALCOVE',
+      spatialType: 'ROCK_PLATFORM',
       interactionType: 'APPROACH',
+      status: 'CONFIRMED',
       enabled: true,
-      worldAnchor: Object.freeze({ x: .82, y: previousMasterWorldY(.66) }),
+      // The lower left projecting platform beneath the Primary Cave.
+      worldAnchor: Object.freeze({ x: .22, y: masterWorldY(1735) }),
       approachRegion: Object.freeze({
         id: 'hundredInchApproach',
-        label: 'wall alcove front water',
+        label: 'lower left platform front water',
         kind: 'polygon',
         polygon: Object.freeze([
-          Object.freeze({ x: .58, y: previousMasterWorldY(.63) }),
-          Object.freeze({ x: .76, y: previousMasterWorldY(.62) }),
-          Object.freeze({ x: .94, y: previousMasterWorldY(.65) }),
-          Object.freeze({ x: .93, y: previousMasterWorldY(.71) }),
-          Object.freeze({ x: .74, y: previousMasterWorldY(.71) }),
-          Object.freeze({ x: .57, y: previousMasterWorldY(.69) })
+          Object.freeze({ x: .26, y: masterWorldY(1660) }),
+          Object.freeze({ x: .39, y: masterWorldY(1690) }),
+          Object.freeze({ x: .47, y: masterWorldY(1760) }),
+          Object.freeze({ x: .45, y: masterWorldY(1840) }),
+          Object.freeze({ x: .30, y: masterWorldY(1825) }),
+          Object.freeze({ x: .21, y: masterWorldY(1755) })
         ])
       })
     }),
@@ -374,19 +396,21 @@
       label: '北京 2022',
       spatialType: 'ROCK_TERRACE',
       interactionType: 'APPROACH',
+      status: 'CONFIRMED',
       enabled: true,
-      worldAnchor: Object.freeze({ x: .26, y: previousMasterWorldY(.68) }),
+      // The lower right projecting platform beneath the Secondary Cave.
+      worldAnchor: Object.freeze({ x: .72, y: masterWorldY(1860) }),
       approachRegion: Object.freeze({
         id: 'beijing2022Approach',
-        label: 'fractured terrace front water',
+        label: 'lower right platform front water',
         kind: 'polygon',
         polygon: Object.freeze([
-          Object.freeze({ x: .08, y: previousMasterWorldY(.64) }),
-          Object.freeze({ x: .29, y: previousMasterWorldY(.62) }),
-          Object.freeze({ x: .47, y: previousMasterWorldY(.66) }),
-          Object.freeze({ x: .46, y: previousMasterWorldY(.71) }),
-          Object.freeze({ x: .26, y: previousMasterWorldY(.71) }),
-          Object.freeze({ x: .08, y: previousMasterWorldY(.70) })
+          Object.freeze({ x: .53, y: masterWorldY(1760) }),
+          Object.freeze({ x: .64, y: masterWorldY(1725) }),
+          Object.freeze({ x: .79, y: masterWorldY(1780) }),
+          Object.freeze({ x: .81, y: masterWorldY(1890) }),
+          Object.freeze({ x: .68, y: masterWorldY(1945) }),
+          Object.freeze({ x: .55, y: masterWorldY(1895) })
         ])
       })
     })
@@ -2310,9 +2334,226 @@
     world.classList.toggle('debug-swim-map', debugSwimMap);
     if (swimMapDebug) swimMapDebug.hidden = !debugSwimMap;
 
-    const caseApproachesAt = (point) => DEEP_SEA_CASE_ANCHORS.filter((item) => (
+    const placedCaseAnchors = () => DEEP_SEA_CASE_ANCHORS.filter((item) => (
+      item.status === 'CONFIRMED'
+      && item.enabled
+      && item.worldAnchor
+      && item.approachRegion?.polygon
+    ));
+    const caseApproachesAt = (point) => placedCaseAnchors().filter((item) => (
       pointInPolygon(point, item.approachRegion.polygon)
     ));
+
+    // Case Entry Skeleton V1 deliberately exposes only the two confirmed
+    // enterable caves. The other confirmed anchors remain available to the
+    // shared data model, but do not receive a production entry affordance yet.
+    const CASE_ENTRY_STATES = Object.freeze({
+      FREE: 'FREE',
+      PROXIMITY: 'PROXIMITY',
+      READING: 'READING'
+    });
+    const CASE_ENTRY_CONFIG = Object.freeze({
+      ltpo: Object.freeze({ label: 'LTPO', spatialType: 'PRIMARY CAVE' }),
+      mediaLab: Object.freeze({ label: '融媒实验室', spatialType: 'SECONDARY CAVE' })
+    });
+    const caseDiscoveryLayer = world.querySelector('.case-discovery-layer');
+    const caseReadingLayer = world.querySelector('.case-reading-layer');
+    const caseReadingTitle = caseReadingLayer?.querySelector('#case-reading-title');
+    const caseReadingReturns = [...(caseReadingLayer?.querySelectorAll('.case-reading-return') || [])];
+    const caseReadingViews = new Map(
+      [...(caseReadingLayer?.querySelectorAll('[data-reading-view]') || [])]
+        .map((view) => [view.dataset.readingView, view])
+    );
+    const ltpoReading = caseReadingViews.get('ltpo');
+    const ltpoReadingSections = [...(ltpoReading?.querySelectorAll('[data-reading-step]') || [])];
+    const caseDiscoveryButtons = new Map(
+      [...(caseDiscoveryLayer?.querySelectorAll('[data-case-id]') || [])]
+        .map((button) => [button.dataset.caseId, button])
+    );
+    let caseEntryState = CASE_ENTRY_STATES.FREE;
+    let activeCaseId = null;
+    let caseSnapshot = null;
+
+    const renderLTPOReadingProgress = () => {
+      if (!caseReadingLayer || !ltpoReading || caseEntryState !== CASE_ENTRY_STATES.READING || activeCaseId !== 'ltpo') return;
+      const rootRect = caseReadingLayer.getBoundingClientRect();
+      const viewportHeight = Math.max(1, caseReadingLayer.clientHeight);
+      const focusLine = viewportHeight * .46;
+      ltpoReadingSections.forEach((section) => {
+        const rect = section.getBoundingClientRect();
+        const sectionCenter = rect.top - rootRect.top + rect.height * .5;
+        const focus = clamp(1 - Math.abs(sectionCenter - focusLine) / (viewportHeight * .92), 0, 1);
+        section.style.setProperty('--reading-focus', focus.toFixed(3));
+        section.classList.toggle('is-reading-focus', focus > .42);
+      });
+      const progress = clamp(
+        caseReadingLayer.scrollTop / Math.max(1, caseReadingLayer.scrollHeight - caseReadingLayer.clientHeight),
+        0,
+        1
+      );
+      ltpoReading.style.setProperty('--reading-progress', progress.toFixed(3));
+    };
+
+    const setReadingView = (caseId = null) => {
+      const activeView = caseId === 'ltpo' ? 'ltpo' : 'placeholder';
+      caseReadingViews.forEach((view, viewName) => {
+        view.hidden = viewName !== activeView;
+      });
+      caseReadingLayer?.setAttribute('data-reading-mode', activeView);
+      if (activeView === 'ltpo' && ltpoReading) {
+        caseReadingLayer.scrollTop = 0;
+        window.requestAnimationFrame(renderLTPOReadingProgress);
+      }
+    };
+    setReadingView();
+    caseReadingLayer?.addEventListener('scroll', renderLTPOReadingProgress, { passive: true });
+
+    const setCaseEntryState = (state, caseId = null) => {
+      caseEntryState = state;
+      activeCaseId = caseId;
+      world.dataset.caseEntryState = state;
+      if (caseId) world.dataset.caseEntryCase = caseId;
+      else delete world.dataset.caseEntryCase;
+    };
+    setCaseEntryState(CASE_ENTRY_STATES.FREE);
+
+    const clearCaseDiscovery = () => {
+      caseDiscoveryButtons.forEach((button) => {
+        button.hidden = true;
+        button.classList.remove('is-visible');
+        button.removeAttribute('aria-hidden');
+      });
+    };
+
+    const renderCaseDiscovery = () => {
+      if (!caseDiscoveryLayer || caseEntryState === CASE_ENTRY_STATES.READING) return;
+      const snapshot = worldProjection.refresh();
+      const rootRect = snapshot.rootRect;
+      const diver = tracker.getPosition();
+      const diverScreen = { x: rootRect.left + diver.x, y: rootRect.top + diver.y };
+      const diverWorld = worldProjection.screenToWorld(diverScreen);
+      const nearby = new Map(
+        caseApproachesAt(diverWorld)
+          .filter((item) => CASE_ENTRY_CONFIG[item.caseId])
+          .map((item) => [item.caseId, item])
+      );
+      const nextState = nearby.size ? CASE_ENTRY_STATES.PROXIMITY : CASE_ENTRY_STATES.FREE;
+      if (caseEntryState !== nextState) setCaseEntryState(nextState);
+      caseDiscoveryButtons.forEach((button, caseId) => {
+        const item = nearby.get(caseId);
+        if (!item) {
+          button.hidden = true;
+          button.classList.remove('is-visible');
+          return;
+        }
+        const anchor = worldProjection.worldToScreen(item.worldAnchor);
+        button.style.setProperty('--case-screen-x', `${(anchor.x - rootRect.left).toFixed(1)}px`);
+        button.style.setProperty('--case-screen-y', `${(anchor.y - rootRect.top).toFixed(1)}px`);
+        button.hidden = false;
+        button.classList.add('is-visible');
+        button.dataset.caseState = CASE_ENTRY_STATES.PROXIMITY;
+        button.setAttribute('aria-label', `进入 ${CASE_ENTRY_CONFIG[caseId].label}`);
+      });
+    };
+
+    const captureCaseSnapshot = () => ({
+      scrollY: window.scrollY,
+      position: tracker.getPosition(),
+      previous: { ...tracker.previous },
+      pointerPosition: tracker.getPointerPosition(),
+      diverTarget: tracker.getDiverTargetPosition(),
+      heading: tracker.heading,
+      poseAngle: tracker.poseAngle,
+      targetPoseAngle: tracker.targetPoseAngle,
+      facingScale: tracker.facingScale,
+      targetFacingScale: tracker.targetFacingScale,
+      facing: tracker.facing,
+      facingTarget: tracker.facingTarget,
+      pointerFollowEnabled: tracker.pointerFollowEnabled
+    });
+
+    const restoreCaseSnapshot = (snapshot) => {
+      if (!snapshot) return;
+      tracker.position = { ...snapshot.position };
+      tracker.previous = { ...snapshot.previous };
+      tracker.pointerPosition = { ...snapshot.pointerPosition };
+      tracker.diverTarget = { ...snapshot.diverTarget };
+      tracker.heading = snapshot.heading;
+      tracker.poseAngle = snapshot.poseAngle;
+      tracker.targetPoseAngle = snapshot.targetPoseAngle;
+      tracker.facingScale = snapshot.facingScale;
+      tracker.targetFacingScale = snapshot.targetFacingScale;
+      tracker.facing = snapshot.facing;
+      tracker.facingTarget = snapshot.facingTarget;
+      tracker.setPointerFollowEnabled(snapshot.pointerFollowEnabled !== false);
+      tracker.holdPointerFollowAtCurrentPosition();
+      tracker.renderPosition(snapshot.pointerPosition.x, snapshot.pointerPosition.y);
+      tracker.renderDiver();
+    };
+
+    const openCaseLanding = (caseId) => {
+      if (caseEntryState !== CASE_ENTRY_STATES.PROXIMITY || !CASE_ENTRY_CONFIG[caseId] || !caseReadingLayer) return;
+      const item = DEEP_SEA_CASE_ANCHORS.find((candidate) => candidate.caseId === caseId);
+      if (!item || item.status !== 'CONFIRMED' || !item.enabled) return;
+      caseSnapshot = captureCaseSnapshot();
+      setCaseEntryState(CASE_ENTRY_STATES.READING, caseId);
+      clearCaseDiscovery();
+      world.classList.add('is-case-reading');
+      document.body.classList.add('is-case-reading');
+      caseReadingLayer.hidden = false;
+      caseReadingLayer.dataset.caseId = caseId;
+      if (caseReadingTitle) caseReadingTitle.textContent = CASE_ENTRY_CONFIG[caseId].label;
+      setReadingView(caseId);
+      tracker.setPointerFollowEnabled(false);
+      tracker.holdPointerFollowAtCurrentPosition();
+      if (caseId === 'ltpo') {
+        // Focus the scroll container, not the final return button. Focusing a
+        // button several viewports below can pull the fresh reading state away
+        // from its landing composition in some browsers.
+        caseReadingLayer.focus({ preventScroll: true });
+        caseReadingLayer.scrollTop = 0;
+        window.requestAnimationFrame(() => {
+          caseReadingLayer.scrollTop = 0;
+          renderLTPOReadingProgress();
+        });
+      } else {
+        caseReadingReturns.find((button) => (
+          button.closest('[data-reading-view]')?.dataset.readingView === 'placeholder'
+        ))?.focus({ preventScroll: true });
+      }
+    };
+
+    const closeCaseLanding = () => {
+      if (caseEntryState !== CASE_ENTRY_STATES.READING) return;
+      const snapshot = caseSnapshot;
+      caseSnapshot = null;
+      caseReadingLayer.hidden = true;
+      caseReadingLayer.removeAttribute('data-case-id');
+      setReadingView();
+      world.classList.remove('is-case-reading');
+      document.body.classList.remove('is-case-reading');
+      setCaseEntryState(CASE_ENTRY_STATES.FREE);
+      if (snapshot) window.scrollTo(0, snapshot.scrollY);
+      restoreCaseSnapshot(snapshot);
+      dirty = true;
+      renderCaseDiscovery();
+    };
+
+    caseDiscoveryButtons.forEach((button, caseId) => {
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        openCaseLanding(caseId);
+      });
+    });
+    caseReadingReturns.forEach((button) => button.addEventListener('click', closeCaseLanding));
+    const lockCaseReadingScroll = (event) => {
+      if (caseEntryState === CASE_ENTRY_STATES.READING && !caseReadingLayer?.contains(event.target)) {
+        event.preventDefault();
+      }
+    };
+    window.addEventListener('wheel', lockCaseReadingScroll, { passive: false });
+    window.addEventListener('touchmove', lockCaseReadingScroll, { passive: false });
 
     const renderSwimMapDebug = (progress, worldProgress) => {
       if (!debugSwimMap || !swimMapDebugPlot || !swimMapDebugReadout) return;
@@ -2371,7 +2612,7 @@
         }));
       }
       if (swimMapDebugApproaches) {
-        swimMapDebugApproaches.replaceChildren(...DEEP_SEA_CASE_ANCHORS.map((item) => {
+        swimMapDebugApproaches.replaceChildren(...placedCaseAnchors().map((item) => {
           const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
           path.setAttribute('d', polygonPath(item.approachRegion.polygon));
           path.dataset.caseId = item.caseId;
@@ -2380,7 +2621,7 @@
         }));
       }
       if (swimMapDebugAnchors) {
-        swimMapDebugAnchors.replaceChildren(...DEEP_SEA_CASE_ANCHORS.flatMap((item) => {
+        swimMapDebugAnchors.replaceChildren(...placedCaseAnchors().flatMap((item) => {
           const point = toLocalScreen(worldProjection.worldToScreen(item.worldAnchor));
           const marker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
           marker.setAttribute('cx', String(point.x));
@@ -2421,19 +2662,26 @@
         swimMapDebugCaseList.replaceChildren(...DEEP_SEA_CASE_ANCHORS.map((item) => {
           const row = document.createElement('div');
           row.className = 'swim-map-debug-case-row';
-          const diverIn = diverApproaches.some((candidate) => candidate.caseId === item.caseId);
-          const cursorIn = cursorApproaches.some((candidate) => candidate.caseId === item.caseId);
+          const placed = item.status === 'CONFIRMED' && item.enabled && item.worldAnchor && item.approachRegion?.polygon;
+          const diverIn = placed && diverApproaches.some((candidate) => candidate.caseId === item.caseId);
+          const cursorIn = placed && cursorApproaches.some((candidate) => candidate.caseId === item.caseId);
           row.dataset.caseId = item.caseId;
           row.dataset.diverInApproach = String(diverIn);
           row.dataset.cursorInApproach = String(cursorIn);
           const title = document.createElement('b');
           title.textContent = item.label;
           const details = document.createElement('span');
-          details.textContent = `${item.spatialType}  |  ${item.interactionType}`;
+          details.textContent = placed
+            ? `${item.spatialType}  |  ${item.interactionType}`
+            : 'PENDING  |  UNPLACED';
           const coords = document.createElement('small');
-          coords.textContent = `ANCHOR (${item.worldAnchor.x.toFixed(3)}, ${item.worldAnchor.y.toFixed(3)})  /  ${item.approachRegion.id}`;
+          coords.textContent = placed
+            ? `ANCHOR (${item.worldAnchor.x.toFixed(3)}, ${item.worldAnchor.y.toFixed(3)})  |  APPROACH REGION ${item.approachRegion.id}`
+            : 'ANCHOR —  |  APPROACH REGION —  |  EXCLUDED';
           const state = document.createElement('em');
-          state.textContent = `${diverIn ? 'DIVER IN APPROACH' : 'DIVER OUT'}${cursorIn ? '  ·  CURSOR IN' : ''}`;
+          state.textContent = placed
+            ? `${diverIn ? 'DIVER IN APPROACH' : 'DIVER OUT'}${cursorIn ? '  ·  CURSOR IN' : ''}`
+            : 'PENDING / UNPLACED';
           row.append(title, details, coords, state);
           return row;
         }));
@@ -2672,8 +2920,14 @@
         // walls and the Primary Cave mouth.
         arrivalHeading: 42,
         centerX: clamp(.5 + (originX - .5) * .2, .39, .61),
-        arrivalX: .47,
-        destinationY: .75,
+        // Land in the open water immediately in front of the LTPO Primary
+        // Cave. This normalized screen position maps into the existing
+        // ltpoApproach polygon at the chamber handoff without moving its
+        // anchor or changing any collision geometry.
+        arrivalX: .29,
+        // Lift the first-arrival pose slightly in the chamber viewport while
+        // keeping the landing inside the existing LTPO approach polygon.
+        destinationY: .68,
         drift: .010
       };
       setRiftAutoMotion(riftAutoState.t);
@@ -3080,6 +3334,7 @@
       setLifelineDepth(legacyProgress);
       renderRiftVisual(progress);
       renderSwimMapDebug(progress, downstreamState.worldProgress);
+      renderCaseDiscovery();
       const riftTriggerStart = riftAutoWindow.triggerStart;
       const riftTriggerEnd = riftAutoWindow.triggerEnd;
       const riftTriggerProgress = clamp(targetDepth / Math.max(1, viewport.maxDepth), 0, 1);
