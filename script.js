@@ -2370,43 +2370,579 @@
       [...(caseDiscoveryLayer?.querySelectorAll('[data-case-id]') || [])]
         .map((button) => [button.dataset.caseId, button])
     );
+    const readingChrome = [
+      world.querySelector('.dive-nav'),
+      lifeline,
+      world.querySelector('.descent-depth'),
+      world.querySelector('.descent-onboarding'),
+      world.querySelector('.cursor-layer'),
+      world.querySelector('.ascent-light'),
+      ascentBubbles,
+      caseDiscoveryLayer,
+      swimMapDebug
+    ].filter(Boolean);
     let caseEntryState = CASE_ENTRY_STATES.FREE;
     let activeCaseId = null;
     let caseSnapshot = null;
 
-    const renderLTPOReadingProgress = () => {
+    const ltpoReadingOverview = ltpoReading?.querySelector('.ltpo-reading-overview');
+    const ltpoReadingHero = ltpoReading?.querySelector('.ltpo-reading-hero');
+    const ltpoReadingStrategy = ltpoReading?.querySelector('.ltpo-reading-strategy');
+    const ltpoReadingChallenge = ltpoReading?.querySelector('.ltpo-reading-challenge');
+    const ltpoReadingPhases = [...(ltpoReading?.querySelectorAll('.ltpo-reading-phase') || [])];
+    const ltpoEpisodeItems = [...(ltpoReading?.querySelectorAll('.ltpo-episode') || [])];
+    const ltpoEpisodeVideos = ltpoEpisodeItems.map((item) => item.querySelector('video')).filter(Boolean);
+    const ltpoEpisodeStage = ltpoReading?.querySelector('.ltpo-episode-stage');
+    const ltpoEpisodeSelects = [...(ltpoReading?.querySelectorAll('[data-episode-select]') || [])];
+    const ltpoReadingResult = ltpoReading?.querySelector('.ltpo-reading-result');
+    const ltpoReadingValueItems = [...(ltpoReading?.querySelectorAll('.ltpo-reading-values span') || [])];
+    const ltpoReadingValues = ltpoReading?.querySelector('.ltpo-reading-values');
+    const ltpoReadingRail = ltpoReading?.querySelector('.ltpo-reading-rail');
+    const ltpoReadingRailProgress = ltpoReading?.querySelector('.ltpo-reading-rail-progress');
+    const ltpoReadingRailSections = [...(ltpoReading?.querySelectorAll('[data-reading-target]') || [])];
+    const ltpoReadingRailCurrent = ltpoReading?.querySelector('.ltpo-reading-rail-current');
+    const ltpoReadingCursor = ltpoReading?.querySelector('.ltpo-reading-cursor');
+    const ltpoReadingChallengeTerms = [...(ltpoReading?.querySelectorAll('.ltpo-reading-challenge-copy small b') || [])];
+    const ltpoReadingLightTargets = [...(ltpoReading?.querySelectorAll('.ltpo-reading-light-target') || [])];
+    const ltpoReadingTextTargets = [...(ltpoReading?.querySelectorAll([
+      '.ltpo-reading-overview-intro p',
+      '.ltpo-reading-challenge-intro p',
+      '.ltpo-reading-challenge-copy p',
+      '.ltpo-reading-challenge-copy small b',
+      '.ltpo-reading-phase-lead',
+      '.ltpo-reading-phase-action b',
+      '.ltpo-reading-method-explanation',
+      '.ltpo-reading-ownership li'
+    ].join(', ')) || [])];
+    const ltpoReadingSectionNames = new Map([
+      ['project', '项目概述'],
+      ['overview', '项目概述'],
+      ['challenge', '项目挑战'],
+      ['strategy', '传播策略'],
+      ['result', '项目结果']
+    ]);
+    let ltpoReadingFrame = 0;
+    let strategyProgressTarget = 0;
+    let strategyProgressVisual = 0;
+    let strategyProgressLastTime = 0;
+    let ltpoReadingHeroStart = 0;
+    const STRATEGY_SCRUB_SECONDS = .22;
+    const smoothStep = (value) => value * value * (3 - 2 * value);
+    const rangeProgress = (value, start, end) => smoothStep(clamp((value - start) / Math.max(.0001, end - start), 0, 1));
+    const scrubRangeProgress = (value, start, end) => clamp(
+      (value - start) / Math.max(.0001, end - start),
+      0,
+      1
+    );
+    let ltpoEpisodeActiveIndex = 0;
+    let ltpoEpisodeDragOffset = 0;
+    let ltpoEpisodePointerId = null;
+    let ltpoEpisodePointerStartX = 0;
+    let ltpoEpisodePointerStartY = 0;
+    let ltpoEpisodePointerStartTime = 0;
+    let ltpoEpisodeDragMoved = false;
+    let ltpoEpisodeWheelDelta = 0;
+    let ltpoMediaAffordancePlayed = false;
+    let ltpoMediaAffordanceTimer = null;
+    let readingCursorTargetX = 0;
+    let readingCursorTargetY = 0;
+    let readingCursorX = 0;
+    let readingCursorY = 0;
+    let readingCursorLastX = 0;
+    let readingCursorLastY = 0;
+    let readingCursorAngle = 0;
+    let readingCursorRaf = 0;
+    let readingCursorVisible = false;
+    let ltpoReadingIlluminationTargets = [];
+    let ltpoReadingBenefitIndex = 0;
+    let ltpoReadingBenefitTimer = null;
+    const setupLTPOReadingTextIllumination = () => {
+      ltpoReadingIlluminationTargets = ltpoReadingTextTargets.map((target) => {
+        target.classList.add('ltpo-reading-text-light-target');
+        const copy = target.cloneNode(true);
+        copy.classList.remove('ltpo-reading-text-light-target');
+        copy.classList.add('ltpo-reading-text-light-copy');
+        copy.removeAttribute('id');
+        copy.setAttribute('aria-hidden', 'true');
+        target.appendChild(copy);
+        return { target, copy };
+      });
+    };
+    setupLTPOReadingTextIllumination();
+    const pauseLTPOEpisodeVideos = () => {
+      ltpoEpisodeVideos.forEach((video) => video.pause());
+    };
+    const playLTPOEpisode = (index = ltpoEpisodeActiveIndex) => {
+      const video = ltpoEpisodeVideos[index];
+      const stageRect = ltpoEpisodeStage?.getBoundingClientRect();
+      const rootRect = caseReadingLayer?.getBoundingClientRect();
+      if (!video || !stageRect || !rootRect || stageRect.height <= 0 || rootRect.height <= 0) return;
+      const isVisible = stageRect.bottom > rootRect.top && stageRect.top < rootRect.bottom;
+      if (!isVisible) return;
+      video.muted = true;
+      video.loop = true;
+      video.play().catch(() => {});
+    };
+    const syncLTPOEpisodeVisuals = () => {
+      if (!ltpoEpisodeItems.length) return;
+      const step = Math.max(180, (ltpoEpisodeStage?.clientWidth || 620) * .46);
+      ltpoEpisodeItems.forEach((episode, index) => {
+        const distance = index - ltpoEpisodeActiveIndex;
+        const draggedDistance = distance + ltpoEpisodeDragOffset / step;
+        const proximity = clamp(1 - Math.abs(draggedDistance), 0, 1);
+        const opacity = distance === 0
+          ? 1
+          : Math.abs(distance) === 1
+            ? .34 + proximity * .3
+            : .03;
+        episode.style.setProperty('--episode-x', `${(distance * step + ltpoEpisodeDragOffset).toFixed(2)}px`);
+        episode.style.setProperty('inset', 'auto', 'important');
+        episode.style.setProperty('left', '50%', 'important');
+        episode.style.setProperty('top', '50%', 'important');
+        episode.style.setProperty('--episode-scale', (distance === 0 ? 1 : .82 + proximity * .08).toFixed(3));
+        episode.style.setProperty('--episode-opacity', opacity.toFixed(3));
+        episode.style.setProperty('--episode-z', `${Math.round(20 - Math.abs(distance))}`);
+        episode.classList.toggle('is-current', distance === 0);
+        episode.setAttribute('aria-hidden', distance === 0 || Math.abs(distance) === 1 ? 'false' : 'true');
+      });
+      ltpoEpisodeSelects.forEach((button, index) => {
+        button.setAttribute('aria-pressed', String(index === ltpoEpisodeActiveIndex));
+      });
+      ltpoReading?.setAttribute('data-active-episode', ltpoEpisodeItems[ltpoEpisodeActiveIndex]?.dataset.episode || '01');
+    };
+    const triggerLTPOMediaAffordance = () => {
+      if (ltpoMediaAffordancePlayed || !ltpoEpisodeStage) return;
+      ltpoMediaAffordancePlayed = true;
+      ltpoEpisodeStage.classList.add('is-affordance-nudge');
+      window.requestAnimationFrame(() => ltpoEpisodeStage.classList.add('is-affordance-nudge-active'));
+      ltpoMediaAffordanceTimer = window.setTimeout(() => {
+        ltpoEpisodeStage.classList.remove('is-affordance-nudge', 'is-affordance-nudge-active');
+        ltpoMediaAffordanceTimer = null;
+      }, 980);
+    };
+    const selectLTPOEpisode = (index) => {
+      if (!ltpoEpisodeItems.length) return;
+      ltpoEpisodeActiveIndex = clamp(index, 0, ltpoEpisodeItems.length - 1);
+      ltpoEpisodeDragOffset = 0;
+      pauseLTPOEpisodeVideos();
+      syncLTPOEpisodeVisuals();
+      playLTPOEpisode();
+    };
+    const onLTPOEpisodePointerDown = (event) => {
+      if (!ltpoEpisodeStage || (event.pointerType === 'mouse' && event.button !== 0)) return;
+      ltpoEpisodePointerId = event.pointerId;
+      ltpoEpisodePointerStartX = event.clientX;
+      ltpoEpisodePointerStartY = event.clientY;
+      ltpoEpisodePointerStartTime = performance.now();
+      ltpoEpisodeDragMoved = false;
+      ltpoEpisodeDragOffset = 0;
+      ltpoEpisodeStage.classList.add('is-pressed');
+      if (ltpoReadingCursor) ltpoReadingCursor.dataset.cursorKind = 'media-drag';
+    };
+    const onLTPOEpisodePointerMove = (event) => {
+      if (event.pointerId !== ltpoEpisodePointerId) return;
+      const dx = event.clientX - ltpoEpisodePointerStartX;
+      const dy = event.clientY - ltpoEpisodePointerStartY;
+      if (!ltpoEpisodeDragMoved) {
+        if (Math.abs(dx) < 8 || Math.abs(dx) <= Math.abs(dy)) return;
+        ltpoEpisodeDragMoved = true;
+        ltpoEpisodeStage.classList.add('is-dragging');
+        ltpoEpisodeStage.setPointerCapture?.(event.pointerId);
+      }
+      event.preventDefault();
+      const atStart = ltpoEpisodeActiveIndex === 0 && dx > 0;
+      const atEnd = ltpoEpisodeActiveIndex === ltpoEpisodeItems.length - 1 && dx < 0;
+      ltpoEpisodeDragOffset = (atStart || atEnd) ? dx * .24 : dx;
+      syncLTPOEpisodeVisuals();
+    };
+    const onLTPOEpisodePointerUp = (event) => {
+      if (event.pointerId !== ltpoEpisodePointerId) return;
+      const dx = event.clientX - ltpoEpisodePointerStartX;
+      const elapsed = Math.max(16, performance.now() - ltpoEpisodePointerStartTime);
+      const velocity = Math.abs(dx) / elapsed;
+      const moved = ltpoEpisodeDragMoved;
+      ltpoEpisodeStage.classList.remove('is-pressed', 'is-dragging');
+      if (ltpoReadingCursor) ltpoReadingCursor.dataset.cursorKind = 'media';
+      if (moved) ltpoEpisodeStage.releasePointerCapture?.(event.pointerId);
+      if (moved && (Math.abs(dx) > 34 || velocity > .42)) {
+        selectLTPOEpisode(ltpoEpisodeActiveIndex + (dx < 0 ? 1 : -1));
+      } else {
+        ltpoEpisodeDragOffset = 0;
+        syncLTPOEpisodeVisuals();
+      }
+      ltpoEpisodePointerId = null;
+      ltpoEpisodePointerStartTime = 0;
+      ltpoEpisodeDragMoved = false;
+    };
+    const onLTPOEpisodePointerCancel = (event) => {
+      if (event.pointerId !== ltpoEpisodePointerId) return;
+      ltpoEpisodeDragOffset = 0;
+      syncLTPOEpisodeVisuals();
+      ltpoEpisodeStage.classList.remove('is-pressed', 'is-dragging');
+      if (ltpoReadingCursor) ltpoReadingCursor.dataset.cursorKind = 'media';
+      if (ltpoEpisodeDragMoved) ltpoEpisodeStage.releasePointerCapture?.(event.pointerId);
+      ltpoEpisodePointerId = null;
+      ltpoEpisodePointerStartTime = 0;
+      ltpoEpisodeDragMoved = false;
+    };
+    const onLTPOEpisodeWheel = (event) => {
+      if (Math.abs(event.deltaX) <= Math.abs(event.deltaY) || Math.abs(event.deltaX) < 2) return;
+      event.preventDefault();
+      ltpoEpisodeWheelDelta += event.deltaX;
+      if (Math.abs(ltpoEpisodeWheelDelta) < 34) return;
+      selectLTPOEpisode(ltpoEpisodeActiveIndex + (ltpoEpisodeWheelDelta > 0 ? 1 : -1));
+      ltpoEpisodeWheelDelta = 0;
+    };
+    const setLTPOBenefitState = (index = 0) => {
+      if (!ltpoReadingValueItems.length) return;
+      ltpoReadingBenefitIndex = clamp(index, 0, ltpoReadingValueItems.length - 1);
+      ltpoReadingValueItems.forEach((item, itemIndex) => {
+        const isActive = itemIndex === ltpoReadingBenefitIndex;
+        const distance = itemIndex < ltpoReadingBenefitIndex ? -1 : 1;
+        item.style.setProperty('--benefit-y', isActive ? '0px' : `${distance * 14}px`);
+        item.style.setProperty('--benefit-blur', isActive ? '0px' : '2.6px');
+        item.style.setProperty('--benefit-opacity', isActive ? '1' : '.12');
+        item.style.setProperty('--benefit-tracking', isActive ? '.025em' : '.08em');
+        item.style.setProperty('--benefit-weight', isActive ? '1' : '0');
+      });
+      ltpoReading?.setAttribute('data-benefit-active', String(ltpoReadingBenefitIndex + 1).padStart(2, '0'));
+    };
+    const stopLTPOBenefitLoop = () => {
+      if (ltpoReadingBenefitTimer) window.clearInterval(ltpoReadingBenefitTimer);
+      ltpoReadingBenefitTimer = null;
+    };
+    const startLTPOBenefitLoop = () => {
+      if (ltpoReadingBenefitTimer || ltpoReadingValueItems.length < 2) return;
+      setLTPOBenefitState(ltpoReadingBenefitIndex);
+      ltpoReadingBenefitTimer = window.setInterval(() => {
+        setLTPOBenefitState((ltpoReadingBenefitIndex + 1) % ltpoReadingValueItems.length);
+      }, 2800);
+    };
+    const setLTPOChallengeTerms = (progress) => {
+      const relationProgress = clamp(progress, 0, 1);
+      ltpoReadingChallengeTerms.forEach((term, index) => {
+        const reveal = clamp(relationProgress * 1.35 - index * .27, 0, 1);
+        term.style.setProperty('--term-reveal', reveal.toFixed(3));
+        term.style.setProperty('--term-y', `${((1 - reveal) * 10).toFixed(2)}px`);
+        term.style.setProperty('--term-scale', (0.94 + reveal * .06).toFixed(3));
+      });
+    };
+    const updateLTPOReadingRail = (progress, rootRect, viewportHeight, strategyProgress) => {
+      if (!ltpoReadingRail) return;
+      ltpoReadingRail.style.setProperty('--reading-progress', progress.toFixed(3));
+      ltpoReadingRailProgress?.style.setProperty('--reading-progress', progress.toFixed(3));
+      const sectionEntries = ltpoReadingSections
+        .map((section) => ({
+          section,
+          step: section.dataset.readingStep,
+          offset: section.getBoundingClientRect().top - rootRect.top
+        }))
+        .filter(({step}) => step !== 'project');
+      const currentEntry = sectionEntries.reduce((current, entry) => {
+        if (entry.offset <= viewportHeight * .54) return entry;
+        return current;
+      }, sectionEntries[0]);
+      const currentStep = currentEntry?.step || 'overview';
+      const currentName = ltpoReadingSectionNames.get(currentStep) || '项目概述';
+      ltpoReadingRailCurrent && (ltpoReadingRailCurrent.textContent = currentName);
+      ltpoReadingRailSections.forEach((button) => {
+        const isCurrent = button.dataset.readingTarget === currentStep;
+        button.classList.toggle('is-current', isCurrent);
+        if (isCurrent) button.setAttribute('aria-current', 'step');
+        else button.removeAttribute('aria-current');
+      });
+    };
+    const readingCursorLoop = () => {
+      readingCursorRaf = 0;
+      if (!ltpoReadingCursor) return;
+      const dx = readingCursorTargetX - readingCursorLastX;
+      const dy = readingCursorTargetY - readingCursorLastY;
+      const speed = Math.min(1, Math.hypot(dx, dy) / 28);
+      if (Math.abs(dx) + Math.abs(dy) > .1) readingCursorAngle += (Math.atan2(dy, dx) * 180 / Math.PI - readingCursorAngle) * .12;
+      readingCursorX += (readingCursorTargetX - readingCursorX) * .62;
+      readingCursorY += (readingCursorTargetY - readingCursorY) * .62;
+      readingCursorLastX += (readingCursorTargetX - readingCursorLastX) * .52;
+      readingCursorLastY += (readingCursorTargetY - readingCursorLastY) * .52;
+      ltpoReadingCursor.style.transform = `translate3d(${readingCursorX}px,${readingCursorY}px,0) translate(-50%,-50%) rotate(${readingCursorAngle.toFixed(2)}deg) scaleX(${(1 + speed * .1).toFixed(3)})`;
+      ltpoReadingCursor.style.setProperty('--cursor-speed', speed.toFixed(3));
+      if (readingCursorVisible || Math.abs(readingCursorTargetX - readingCursorX) + Math.abs(readingCursorTargetY - readingCursorY) > .5) {
+        readingCursorRaf = window.requestAnimationFrame(readingCursorLoop);
+      }
+    };
+    const onLTPOReadingPointerMove = (event) => {
+      if (!ltpoReadingCursor || event.pointerType === 'touch' || caseEntryState !== CASE_ENTRY_STATES.READING || activeCaseId !== 'ltpo') return;
+      readingCursorTargetX = event.clientX;
+      readingCursorTargetY = event.clientY;
+      const target = event.target?.closest?.('.ltpo-reading-rail, .ltpo-episode-stage, .case-reading-return, .ltpo-reading-values span, .ltpo-reading-challenge-copy small b, .ltpo-reading-method-lockup, .ltpo-reading-hero-mark');
+      const kind = target?.closest?.('.ltpo-reading-rail') ? 'rail'
+        : target?.closest?.('.ltpo-episode-stage') ? 'media'
+          : target?.closest?.('.case-reading-return') ? 'link'
+            : target ? 'keyword' : 'body';
+      ltpoReadingCursor.dataset.cursorKind = kind;
+      const lightTarget = event.target?.closest?.('.ltpo-reading-light-target');
+      ltpoReadingLightTargets.forEach((candidate) => {
+        const rect = candidate.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const near = x >= -96 && x <= rect.width + 96 && y >= -86 && y <= rect.height + 86;
+        candidate.style.setProperty('--light-x', `${x.toFixed(1)}px`);
+        candidate.style.setProperty('--light-y', `${y.toFixed(1)}px`);
+        candidate.style.setProperty('--light-opacity', near ? (candidate === lightTarget ? '1' : '.32') : '0');
+      });
+      const textTarget = event.target?.closest?.('.ltpo-reading-text-light-target');
+      ltpoReadingIlluminationTargets.forEach(({target: candidate, copy}) => {
+        const rect = candidate.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const near = x >= -72 && x <= rect.width + 72 && y >= -72 && y <= rect.height + 72;
+        candidate.style.setProperty('--text-light-x', `${x.toFixed(1)}px`);
+        candidate.style.setProperty('--text-light-y', `${y.toFixed(1)}px`);
+        candidate.style.setProperty('--text-light-opacity', near ? (candidate === textTarget ? '1' : '.28') : '0');
+        copy.style.setProperty('--text-light-x', `${x.toFixed(1)}px`);
+        copy.style.setProperty('--text-light-y', `${y.toFixed(1)}px`);
+      });
+      readingCursorVisible = true;
+      ltpoReadingCursor.style.opacity = '1';
+      if (!readingCursorRaf) readingCursorRaf = window.requestAnimationFrame(readingCursorLoop);
+    };
+    const onLTPOReadingPointerLeave = () => {
+      readingCursorVisible = false;
+      if (ltpoReadingCursor) ltpoReadingCursor.style.opacity = '0';
+      ltpoReadingLightTargets.forEach((target) => target.style.setProperty('--light-opacity', '0'));
+      ltpoReadingIlluminationTargets.forEach(({target}) => target.style.setProperty('--text-light-opacity', '0'));
+    };
+    ltpoReadingRailSections.forEach((button) => {
+      button.addEventListener('click', () => {
+        const section = ltpoReading?.querySelector(`[data-reading-step="${button.dataset.readingTarget}"]`);
+        if (!section || !caseReadingLayer) return;
+        const rootRect = caseReadingLayer.getBoundingClientRect();
+        const offset = section.getBoundingClientRect().top - rootRect.top + caseReadingLayer.scrollTop - caseReadingLayer.clientHeight * .08;
+        caseReadingLayer.scrollTo({top: Math.max(0, offset), behavior: 'smooth'});
+      });
+    });
+    caseReadingLayer?.addEventListener('pointermove', onLTPOReadingPointerMove, {passive: true});
+    caseReadingLayer?.addEventListener('pointerleave', onLTPOReadingPointerLeave, {passive: true});
+    syncLTPOEpisodeVisuals();
+    const sectionProgress = (section, rootRect, viewportHeight, enter = .86, settle = .16) => {
+      if (!section) return 0;
+      const offset = section.getBoundingClientRect().top - rootRect.top;
+      return clamp((viewportHeight * enter - offset) / Math.max(1, viewportHeight * (enter - settle)), 0, 1);
+    };
+
+    const renderLTPOReadingProgress = (now = performance.now()) => {
+      ltpoReadingFrame = 0;
       if (!caseReadingLayer || !ltpoReading || caseEntryState !== CASE_ENTRY_STATES.READING || activeCaseId !== 'ltpo') return;
       const rootRect = caseReadingLayer.getBoundingClientRect();
       const viewportHeight = Math.max(1, caseReadingLayer.clientHeight);
       const focusLine = viewportHeight * .46;
-      ltpoReadingSections.forEach((section) => {
-        const rect = section.getBoundingClientRect();
-        const sectionCenter = rect.top - rootRect.top + rect.height * .5;
-        const focus = clamp(1 - Math.abs(sectionCenter - focusLine) / (viewportHeight * .92), 0, 1);
-        section.style.setProperty('--reading-focus', focus.toFixed(3));
-        section.classList.toggle('is-reading-focus', focus > .42);
-      });
       const progress = clamp(
         caseReadingLayer.scrollTop / Math.max(1, caseReadingLayer.scrollHeight - caseReadingLayer.clientHeight),
         0,
         1
       );
+      const heroTravel = Math.max(1, (ltpoReadingHero?.offsetHeight || viewportHeight) - viewportHeight);
+      const heroStart = ltpoReadingHeroStart;
+      const heroProgress = clamp((caseReadingLayer.scrollTop - heroStart) / heroTravel, 0, 1);
+      const projectHandoff = rangeProgress(heroProgress, .02, .58);
+      const projectExit = rangeProgress(heroProgress, .76, 1);
+      const overviewProgress = sectionProgress(ltpoReadingOverview, rootRect, viewportHeight, .9, .18);
+      const challengeProgress = sectionProgress(ltpoReadingChallenge, rootRect, viewportHeight, .9, .18);
+      const valuesOffset = ltpoReadingValues
+        ? ltpoReadingValues.getBoundingClientRect().top - rootRect.top
+        : viewportHeight;
+      const benefitProgress = clamp(
+        (viewportHeight * .86 - valuesOffset) / Math.max(1, viewportHeight * 1.1),
+        0,
+        1
+      );
+      const challengeTakeover = rangeProgress(challengeProgress, .08, .68);
+      const challengeRelation = rangeProgress(challengeProgress, .28, .78);
+      const strategyOffset = ltpoReadingStrategy
+        ? ltpoReadingStrategy.getBoundingClientRect().top - rootRect.top
+        : viewportHeight;
+      const strategyHeight = Math.max(viewportHeight, ltpoReadingStrategy?.offsetHeight || viewportHeight);
+      // The outer Strategy section owns the long scroll distance; its inner
+      // stage is sticky, so this progress is a local scrub timeline rather
+      // than a one-shot enter animation.
+      strategyProgressTarget = clamp((viewportHeight - strategyOffset) / strategyHeight, 0, 1);
+      if (!strategyProgressLastTime) {
+        strategyProgressVisual = strategyProgressTarget;
+      } else {
+        const elapsed = clamp((now - strategyProgressLastTime) / 1000, .001, .08);
+        const follow = 1 - Math.exp(-elapsed / STRATEGY_SCRUB_SECONDS);
+        strategyProgressVisual += (strategyProgressTarget - strategyProgressVisual) * follow;
+      }
+      strategyProgressLastTime = now;
+      if (Math.abs(strategyProgressTarget - strategyProgressVisual) < .0005) {
+        strategyProgressVisual = strategyProgressTarget;
+      }
+      const strategyProgress = strategyProgressVisual;
+      const strategyFoundation = strategyProgress < .18
+        ? 0
+        : strategyProgress < .28
+          ? scrubRangeProgress(strategyProgress, .18, .28)
+          : strategyProgress < .54
+            ? 1
+            : strategyProgress < .64
+              ? 1 - scrubRangeProgress(strategyProgress, .54, .64) * .92
+              : 0;
+      const strategyAmplification = strategyProgress < .64
+        ? 0
+        : strategyProgress < .72
+          ? scrubRangeProgress(strategyProgress, .64, .72) * .92
+          : strategyProgress < .92
+            ? 1
+            : 1 - scrubRangeProgress(strategyProgress, .92, 1) * .72;
+      const strategyIntro = 1 - rangeProgress(strategyProgress, .16, .28);
+      const evidenceReveal = rangeProgress(strategyProgress, .28, .36);
+      const evidenceExit = rangeProgress(strategyProgress, .54, .64);
+      const foundationExit = rangeProgress(strategyProgress, .54, .64);
+      const mediaProgress = scrubRangeProgress(strategyProgress, .72, .86);
+      const ownershipProgress = rangeProgress(strategyProgress, .86, .96);
+      const resultProgress = sectionProgress(ltpoReadingResult, rootRect, viewportHeight, .92, .2);
+      setLTPOChallengeTerms(challengeRelation);
+      updateLTPOReadingRail(progress, rootRect, viewportHeight, strategyProgress);
+      const focusValues = new Map();
+      ltpoReadingSections.forEach((section) => {
+        const rect = section.getBoundingClientRect();
+        const sectionCenter = rect.top - rootRect.top + rect.height * .5;
+        focusValues.set(section, clamp(1 - Math.abs(sectionCenter - focusLine) / (viewportHeight * .92), 0, 1));
+      });
+
       ltpoReading.style.setProperty('--reading-progress', progress.toFixed(3));
+      ltpoReading.style.setProperty('--project-handoff', projectHandoff.toFixed(3));
+      ltpoReading.style.setProperty('--project-exit', projectExit.toFixed(3));
+      ltpoReading.style.setProperty('--what-progress', overviewProgress.toFixed(3));
+      ltpoReading.style.setProperty('--overview-progress', overviewProgress.toFixed(3));
+      ltpoReading.style.setProperty('--benefit-progress', overviewProgress.toFixed(3));
+      ltpoReading.style.setProperty('--challenge-progress', challengeProgress.toFixed(3));
+      ltpoReading.style.setProperty('--challenge-takeover', challengeTakeover.toFixed(3));
+      ltpoReading.style.setProperty('--challenge-relation', challengeRelation.toFixed(3));
+      ltpoReading.style.setProperty('--strategy-progress', strategyProgress.toFixed(3));
+      ltpoReading.style.setProperty('--strategy-foundation', strategyFoundation.toFixed(3));
+      ltpoReading.style.setProperty('--strategy-amplification', strategyAmplification.toFixed(3));
+      ltpoReading.style.setProperty('--strategy-intro', strategyIntro.toFixed(3));
+      ltpoReading.style.setProperty('--strategy-evidence', evidenceReveal.toFixed(3));
+      ltpoReading.style.setProperty('--strategy-evidence-exit', evidenceExit.toFixed(3));
+      ltpoReading.style.setProperty('--strategy-foundation-exit', foundationExit.toFixed(3));
+      ltpoReading.style.setProperty('--media-progress', mediaProgress.toFixed(3));
+      ltpoReading.style.setProperty('--ownership-progress', ownershipProgress.toFixed(3));
+      ltpoReading.style.setProperty('--result-progress', resultProgress.toFixed(3));
+      if (mediaProgress >= .02) triggerLTPOMediaAffordance();
+      ltpoReading.dataset.strategyCurrent = strategyProgress < .64 ? '01' : '02';
+      ltpoReading.dataset.strategyState = strategyProgress < .18
+        ? 'intro'
+        : strategyProgress < .28
+          ? 'foundation'
+          : strategyProgress < .64
+            ? 'evidence'
+            : strategyProgress < .72
+              ? 'clear'
+              : 'amplification';
+      ltpoReading.dataset.strategyMediaPhase = mediaProgress < .16 ? 'arrival' : mediaProgress < .82 ? 'takeover' : 'settle';
+      ltpoReading.dataset.strategyEvidencePhase = strategyProgress < .28
+        ? 'pre'
+        : strategyProgress < .36
+          ? 'enter'
+          : strategyProgress < .54
+            ? 'hold'
+            : 'exit';
+      const phaseZIndexes = strategyProgress < .72 ? [8, 6] : [5, 8];
+      ltpoReadingPhases.forEach((phase, index) => {
+        const focus = [strategyFoundation, strategyAmplification][index] || 0;
+        phase.style.setProperty('--phase-focus', focus.toFixed(3));
+        phase.style.setProperty('z-index', String(phaseZIndexes[index] || 1));
+      });
+      ltpoReadingSections.forEach((section) => {
+        const focus = focusValues.get(section) || 0;
+        section.style.setProperty('--reading-focus', focus.toFixed(3));
+        const sectionOffset = section.getBoundingClientRect().top - rootRect.top;
+        const dividerProgress = clamp((viewportHeight * .88 - sectionOffset) / (viewportHeight * .3), 0, 1);
+        section.style.setProperty('--divider-progress', dividerProgress.toFixed(3));
+        section.classList.toggle('is-reading-focus', focus > .42);
+      });
+      if (Math.abs(strategyProgressTarget - strategyProgressVisual) > .0005) {
+        ltpoReadingFrame = window.requestAnimationFrame(renderLTPOReadingProgress);
+      }
     };
+    const scheduleLTPOReadingProgress = () => {
+      if (ltpoReadingFrame) return;
+      ltpoReadingFrame = window.requestAnimationFrame(renderLTPOReadingProgress);
+    };
+
+    ltpoEpisodeStage?.addEventListener('pointerdown', onLTPOEpisodePointerDown, { passive: true });
+    ltpoEpisodeStage?.addEventListener('pointermove', onLTPOEpisodePointerMove, { passive: false });
+    ltpoEpisodeStage?.addEventListener('pointerup', onLTPOEpisodePointerUp, { passive: true });
+    ltpoEpisodeStage?.addEventListener('pointercancel', onLTPOEpisodePointerCancel, { passive: true });
+    ltpoEpisodeStage?.addEventListener('wheel', onLTPOEpisodeWheel, { passive: false });
+    ltpoEpisodeSelects.forEach((button, index) => {
+      button.addEventListener('click', () => selectLTPOEpisode(index));
+    });
+    ltpoEpisodeVideos.forEach((video) => {
+      video.addEventListener('play', () => {
+        ltpoEpisodeVideos.forEach((otherVideo) => {
+          if (otherVideo !== video) otherVideo.pause();
+        });
+      });
+    });
+    if (ltpoEpisodeStage && 'IntersectionObserver' in window) {
+      const ltpoEpisodeObserver = new IntersectionObserver((entries) => {
+        const entry = entries[0];
+        if (!entry || !entry.isIntersecting || entry.intersectionRatio < .22) {
+          pauseLTPOEpisodeVideos();
+        } else {
+          playLTPOEpisode();
+        }
+      }, { root: caseReadingLayer, threshold: [.22] });
+      ltpoEpisodeObserver.observe(ltpoEpisodeStage);
+    }
+    if (ltpoReadingValues && 'IntersectionObserver' in window) {
+      const ltpoBenefitObserver = new IntersectionObserver((entries) => {
+        const entry = entries[0];
+        if (!entry?.isIntersecting || entry.intersectionRatio < .28) stopLTPOBenefitLoop();
+        else startLTPOBenefitLoop();
+      }, { root: caseReadingLayer, threshold: [.28] });
+      ltpoBenefitObserver.observe(ltpoReadingValues);
+    }
 
     const setReadingView = (caseId = null) => {
       const activeView = caseId === 'ltpo' ? 'ltpo' : 'placeholder';
+      if (activeView !== 'ltpo') {
+        ltpoEpisodeVideos.forEach((video) => video.pause());
+      }
       caseReadingViews.forEach((view, viewName) => {
         view.hidden = viewName !== activeView;
       });
       caseReadingLayer?.setAttribute('data-reading-mode', activeView);
       if (activeView === 'ltpo' && ltpoReading) {
+        if (ltpoReadingCursor) ltpoReading.dataset.livingCursor = 'ready';
+        else ltpoReading.removeAttribute('data-living-cursor');
+        strategyProgressTarget = 0;
+        strategyProgressVisual = 0;
+        strategyProgressLastTime = 0;
+        ltpoEpisodeVideos.forEach((video) => {
+          video.pause();
+          video.currentTime = 0;
+          video.muted = true;
+          video.loop = true;
+        });
+        stopLTPOBenefitLoop();
+        setLTPOBenefitState(0);
+        if (ltpoMediaAffordanceTimer) window.clearTimeout(ltpoMediaAffordanceTimer);
+        ltpoMediaAffordanceTimer = null;
+        ltpoMediaAffordancePlayed = false;
+        ltpoEpisodeStage?.classList.remove('is-affordance-nudge', 'is-affordance-nudge-active');
+        selectLTPOEpisode(0);
         caseReadingLayer.scrollTop = 0;
+        ltpoReadingHeroStart = ltpoReadingHero?.offsetTop || 0;
         window.requestAnimationFrame(renderLTPOReadingProgress);
+      } else {
+        ltpoReading?.removeAttribute('data-living-cursor');
       }
     };
     setReadingView();
-    caseReadingLayer?.addEventListener('scroll', renderLTPOReadingProgress, { passive: true });
+    caseReadingLayer?.addEventListener('scroll', scheduleLTPOReadingProgress, { passive: true });
+    window.addEventListener('resize', scheduleLTPOReadingProgress, { passive: true });
 
     const setCaseEntryState = (state, caseId = null) => {
       caseEntryState = state;
@@ -2469,11 +3005,21 @@
       targetFacingScale: tracker.targetFacingScale,
       facing: tracker.facing,
       facingTarget: tracker.facingTarget,
-      pointerFollowEnabled: tracker.pointerFollowEnabled
+      pointerFollowEnabled: tracker.pointerFollowEnabled,
+      readingChromeHidden: readingChrome.map((element) => element.hidden)
     });
+
+    const setReadingChromeHidden = (hidden, snapshot = null) => {
+      readingChrome.forEach((element, index) => {
+        element.hidden = hidden
+          ? true
+          : Boolean(snapshot?.readingChromeHidden?.[index]);
+      });
+    };
 
     const restoreCaseSnapshot = (snapshot) => {
       if (!snapshot) return;
+      setReadingChromeHidden(false, snapshot);
       tracker.position = { ...snapshot.position };
       tracker.previous = { ...snapshot.previous };
       tracker.pointerPosition = { ...snapshot.pointerPosition };
@@ -2500,6 +3046,7 @@
       clearCaseDiscovery();
       world.classList.add('is-case-reading');
       document.body.classList.add('is-case-reading');
+      setReadingChromeHidden(true);
       caseReadingLayer.hidden = false;
       caseReadingLayer.dataset.caseId = caseId;
       if (caseReadingTitle) caseReadingTitle.textContent = CASE_ENTRY_CONFIG[caseId].label;

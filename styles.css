@@ -610,6 +610,177 @@ body.is-ascent-active .descent-onboarding{opacity:0!important}
   .dive-descent .ltpo-reading-end{align-items:flex-start;flex-direction:column;gap:14px;margin-top:46px}
 }
 
+/* LTPO Reading editorial system: one continuous reading field, with type,
+   scale and changing spatial relationships carrying the case instead of UI
+   chrome, cards or diagrams. */
+.dive-descent.is-case-reading .dive-nav,
+.dive-descent.is-case-reading .descent-lifeline,
+.dive-descent.is-case-reading .descent-depth,
+.dive-descent.is-case-reading .descent-onboarding,
+.dive-descent.is-case-reading .cursor-layer,
+.dive-descent.is-case-reading .ascent-light,
+.dive-descent.is-case-reading .ascent-bubbles,
+.dive-descent.is-case-reading .case-discovery-layer{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+.dive-descent .case-reading-layer[data-reading-mode="ltpo"]{background:linear-gradient(180deg,#081a2d 0%,#061525 38%,#071c2b 72%,#04101d 100%);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+.dive-descent .case-reading-layer[data-reading-mode="ltpo"]::before{background:radial-gradient(ellipse 64% 46% at 76% 6%,rgba(93,167,182,.16),transparent 68%),radial-gradient(ellipse 48% 54% at 8% 56%,rgba(21,93,119,.16),transparent 72%),linear-gradient(122deg,transparent 0 36%,rgba(155,211,203,.035) 49%,transparent 64%);filter:blur(16px);opacity:.95}
+.dive-descent .ltpo-reading{--reading-gutter:clamp(24px,8vw,144px);position:relative;width:100%;max-width:1440px;min-height:100%;margin:0 auto;padding:0 var(--reading-gutter) 150px;color:rgba(232,246,241,.9);overflow:visible}
+.dive-descent .ltpo-reading-topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:28px;height:76px;padding:0;background:linear-gradient(180deg,rgba(6,19,35,.97) 0%,rgba(6,19,35,.72) 68%,transparent 100%)}
+.dive-descent .ltpo-reading-mark{color:rgba(179,218,213,.52);font:9px/1.3 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.2em;text-transform:uppercase}
+.dive-descent .ltpo-reading .case-reading-return-top{position:static;top:auto;z-index:auto;width:auto}
+.dive-descent .ltpo-reading .case-reading-return{margin:0;padding:8px 0;border:0;border-bottom:1px solid rgba(203,238,233,.46);background:transparent;color:rgba(222,244,237,.84);font:10px/1.2 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;text-shadow:0 2px 12px rgba(2,9,31,.74)}
+.dive-descent .ltpo-reading .case-reading-return:hover,.dive-descent .ltpo-reading .case-reading-return:focus-visible{color:rgba(255,242,211,.98);border-bottom-color:rgba(255,242,211,.82)}
+.dive-descent .ltpo-reading .case-reading-return:focus-visible{outline:1px solid rgba(227,249,241,.74);outline-offset:7px}
+.dive-descent .ltpo-reading-block{--reading-focus:.35;opacity:calc(.72 + var(--reading-focus) * .28);transform:translate3d(0,calc((1 - var(--reading-focus)) * 22px),0);transition:opacity .45s ease,transform .65s cubic-bezier(.2,.72,.25,1)}
+.dive-descent .ltpo-reading-block.is-reading-focus{opacity:1;transform:translate3d(0,0,0)}
+.dive-descent .ltpo-reading-index{display:block;color:rgba(164,210,207,.58);font:9px/1.35 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.2em;text-transform:uppercase}
+.dive-descent .ltpo-reading-kicker{margin:26px 0 16px;color:rgba(208,235,229,.62);font:10px/1.2 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.3em}
+.dive-descent .ltpo-reading-hero{min-height:94svh;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:clamp(70px,12vh,150px) 0 clamp(150px,22vh,250px)}
+.dive-descent .ltpo-reading-hero h1{margin:0;color:rgba(255,241,210,.98);font:300 clamp(68px,11vw,154px)/.88 "Noto Serif SC","Songti SC",serif;letter-spacing:.01em;text-shadow:0 5px 30px rgba(1,8,25,.72)}
+.dive-descent .ltpo-reading-hero h1 em,.dive-descent .ltpo-reading-section h2 em{display:inline-block;color:rgba(141,208,207,.96);font-style:normal;transform:translateX(.18em)}
+.dive-descent .ltpo-reading-deck{margin:38px 0 0;color:rgba(220,240,233,.72);font:400 clamp(15px,1.45vw,20px)/1.55 "PingFang SC","Noto Sans SC",sans-serif;letter-spacing:.08em}
+.dive-descent .ltpo-reading-date{margin:18px 0 0;color:rgba(175,214,211,.62);font:10px/1.3 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.16em}
+.dive-descent .ltpo-reading-role{max-width:620px;margin:32px 0 0;color:rgba(212,235,229,.7);font:12px/1.8 "PingFang SC","Noto Sans SC",sans-serif;letter-spacing:.06em}
+.dive-descent .ltpo-reading-role span,.dive-descent .ltpo-reading-responsibility span{display:block;margin-bottom:8px;color:rgba(163,207,205,.54);font:9px/1.2 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.2em;text-transform:uppercase}
+.dive-descent .ltpo-reading-section{position:relative;min-height:100svh;padding:18vh 0 24vh}
+.dive-descent .ltpo-reading-section h2{margin:22px 0 0;color:rgba(255,242,211,.94);font:300 clamp(48px,8vw,114px)/.92 "Noto Serif SC","Songti SC",serif;letter-spacing:.01em;text-shadow:0 4px 24px rgba(1,8,25,.6)}
+.dive-descent .ltpo-reading-section h3{margin:20px 0 0;color:rgba(228,246,239,.9);font:400 clamp(16px,1.45vw,22px)/1.35 "PingFang SC","Noto Sans SC",sans-serif;letter-spacing:.1em}
+.dive-descent .ltpo-reading-copy>p,.dive-descent .ltpo-reading-challenge-copy>p{max-width:620px;margin:28px 0 0;color:rgba(213,235,231,.78);font:14px/2 "PingFang SC","Noto Sans SC",sans-serif;letter-spacing:.045em}
+.dive-descent .ltpo-reading-challenge{min-height:158svh;padding-top:12vh}
+.dive-descent .ltpo-reading-challenge-intro{width:min(700px,100%);margin-left:4%}
+.dive-descent .ltpo-reading-challenge-intro h2{font-size:clamp(58px,9.2vw,132px);line-height:.84}
+.dive-descent .ltpo-reading-challenge-intro p{max-width:540px;margin:46px 0 0;color:rgba(216,237,232,.78);font:15px/2 "PingFang SC","Noto Sans SC",sans-serif;letter-spacing:.04em}
+.dive-descent .ltpo-reading-values{display:grid;gap:10px;width:min(390px,56%);margin:16vh 0 0 auto;padding:0;color:rgba(255,239,203,.9);font:500 clamp(19px,2.1vw,28px)/1.25 "PingFang SC","Noto Sans SC",sans-serif;letter-spacing:.1em}
+.dive-descent .ltpo-reading-values span{display:block;padding-top:15px;border-top:1px solid rgba(194,227,222,.25)}
+.dive-descent .ltpo-reading-challenge-copy{width:min(560px,66%);margin:24vh 0 0 auto;padding-left:clamp(18px,3vw,48px);border-left:1px solid rgba(194,227,222,.28)}
+.dive-descent .ltpo-reading-label{display:block;color:rgba(190,224,220,.62);font:9px/1.4 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.24em;text-transform:uppercase}
+.dive-descent .ltpo-reading-challenge-copy small{display:block;margin-top:34px;color:rgba(169,211,215,.58);font:9px/1.8 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.12em}
+.dive-descent .ltpo-reading-challenge-copy small i,.dive-descent .ltpo-reading-section-heading h2 i{color:rgba(238,218,177,.68);font-style:normal;padding:0 .22em}
+.dive-descent .ltpo-reading-strategy{min-height:168svh;padding-top:22vh}
+.dive-descent .ltpo-reading-section-heading{max-width:720px;margin-left:11%}
+.dive-descent .ltpo-reading-section-heading h2{font-size:clamp(58px,9.2vw,132px)}
+.dive-descent .ltpo-reading-section-heading p{max-width:390px;margin:38px 0 0;color:rgba(205,231,226,.68);font:14px/1.9 "PingFang SC","Noto Sans SC",sans-serif;letter-spacing:.05em}
+.dive-descent .ltpo-reading-strategy-stages{display:flex;flex-direction:column;width:min(790px,100%);margin:18vh 0 0 7%}
+.dive-descent .ltpo-reading-stage{display:grid;grid-template-columns:62px minmax(150px,1fr) minmax(130px,.72fr);align-items:baseline;gap:18px;padding:25px 0 29px;border-top:1px solid rgba(194,227,222,.28)}
+.dive-descent .ltpo-reading-stage:nth-child(2){margin-left:15%;}
+.dive-descent .ltpo-reading-stage:nth-child(3){margin-left:30%;}
+.dive-descent .ltpo-reading-stage>span{color:rgba(164,210,207,.54);font:10px/1.3 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.16em}
+.dive-descent .ltpo-reading-stage b{color:rgba(233,246,237,.92);font:400 clamp(19px,2.3vw,30px)/1.2 "PingFang SC","Noto Sans SC",sans-serif;letter-spacing:.08em}
+.dive-descent .ltpo-reading-stage em{color:rgba(171,212,209,.58);font:9px/1.3 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.18em;font-style:normal}
+.dive-descent .ltpo-reading-stage small{grid-column:2 / -1;max-width:330px;margin-top:5px;color:rgba(193,222,216,.55);font:11px/1.6 "PingFang SC","Noto Sans SC",sans-serif;letter-spacing:.03em}
+.dive-descent .ltpo-reading-stage.is-planned{opacity:.55;border-top-style:dashed}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-role{margin:12vh 0 0 7%}
+.dive-descent .ltpo-reading-evidence-note{width:min(460px,76%);margin:16vh 0 0 auto;padding-top:17px;border-top:1px solid rgba(194,227,222,.2)}
+.dive-descent .ltpo-reading-evidence-note span,.dive-descent .ltpo-reading-evidence-note i{display:block;color:rgba(164,210,207,.52);font:9px/1.3 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.18em;font-style:normal;text-transform:uppercase}
+.dive-descent .ltpo-reading-evidence-note b{display:block;margin-top:19px;color:rgba(239,242,220,.86);font:400 18px/1.3 "PingFang SC","Noto Sans SC",sans-serif;letter-spacing:.08em}
+.dive-descent .ltpo-reading-evidence-note p{margin:10px 0 16px;color:rgba(195,224,219,.66);font:12px/1.7 "PingFang SC","Noto Sans SC",sans-serif;letter-spacing:.04em}
+.dive-descent .ltpo-reading-work{min-height:188svh;padding-top:18vh;display:block}
+.dive-descent .ltpo-reading-work-heading{width:min(650px,100%);margin-left:4%}
+.dive-descent .ltpo-reading-work-kicker{margin:25px 0 0;color:rgba(211,236,229,.76);font:10px/1.3 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.2em}
+.dive-descent .ltpo-reading-work-heading h2{font-size:clamp(58px,8.5vw,122px);line-height:.86}
+.dive-descent .ltpo-reading-work-deck{margin:28px 0 0;color:rgba(222,241,232,.78);font:400 clamp(17px,1.7vw,24px)/1.4 "PingFang SC","Noto Sans SC",sans-serif;letter-spacing:.08em}
+.dive-descent .ltpo-media-hero{width:100vw;margin:20vh 0 0 calc(-1 * var(--reading-gutter));}
+.dive-descent .ltpo-media-hero-visual{position:relative;display:grid;place-items:center;min-height:clamp(360px,58vw,740px);overflow:hidden;background:radial-gradient(ellipse at 54% 46%,rgba(116,194,193,.28) 0%,rgba(38,91,108,.18) 28%,transparent 57%),linear-gradient(118deg,#0b283b 0%,#0b172a 44%,#06121f 100%);clip-path:polygon(0 7%,100% 0,100% 93%,0 100%)}
+.dive-descent .ltpo-media-hero-visual::before{content:"";position:absolute;inset:-20% -4%;background:linear-gradient(101deg,transparent 18%,rgba(195,228,215,.13) 38%,transparent 49%,rgba(83,162,173,.11) 72%,transparent 84%);transform:rotate(-7deg);filter:blur(20px);opacity:.8}
+.dive-descent .ltpo-media-hero-visual::after{content:"";position:absolute;inset:13% 9%;border-top:1px solid rgba(215,238,222,.12);border-bottom:1px solid rgba(215,238,222,.08);transform:skewX(-8deg);opacity:.75}
+.dive-descent .ltpo-media-hero-visual span,.dive-descent .ltpo-media-hero-visual b{position:relative;z-index:1;display:block;text-align:center}
+.dive-descent .ltpo-media-hero-visual span{color:rgba(194,225,219,.58);font:9px/1.3 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.25em}
+.dive-descent .ltpo-media-hero-visual b{max-width:270px;margin-top:18px;color:rgba(235,240,220,.76);font:400 clamp(17px,1.8vw,25px)/1.4 "PingFang SC","Noto Sans SC",sans-serif;letter-spacing:.08em}
+.dive-descent .ltpo-media-hero figcaption{margin:25px 0 0 var(--reading-gutter);color:rgba(255,240,206,.9);font:400 clamp(23px,2.8vw,39px)/1.2 "Noto Serif SC","Songti SC",serif;letter-spacing:.04em}
+.dive-descent .ltpo-media-hero figcaption small{margin-left:18px;color:rgba(172,211,207,.58);font:10px/1.3 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.12em}
+.dive-descent .ltpo-reading-work-notes{width:min(640px,74%);margin:13vh 0 0 auto}
+.dive-descent .ltpo-reading-work-notes>p{margin:0;color:rgba(216,238,230,.8);font:15px/2 "PingFang SC","Noto Sans SC",sans-serif;letter-spacing:.04em}
+.dive-descent .ltpo-reading-method{margin-top:38px!important;color:rgba(191,223,217,.67)!important;font-size:12px!important;line-height:1.8!important;letter-spacing:.08em!important}
+.dive-descent .ltpo-reading-method span{display:block;margin-bottom:8px;color:rgba(163,207,205,.52);font:9px/1.3 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.18em;text-transform:uppercase}
+.dive-descent .ltpo-reading-values-note{margin-top:25px!important;color:rgba(255,235,199,.76)!important;font-size:12px!important;letter-spacing:.1em!important}
+.dive-descent .ltpo-reading-responsibility{width:min(560px,74%);margin:18vh 0 0 4%!important;color:rgba(211,233,225,.72)!important;font:12px/1.9 "PingFang SC","Noto Sans SC",sans-serif!important;letter-spacing:.05em!important}
+.dive-descent .ltpo-reading-result{min-height:125svh;padding-top:22vh;display:grid;grid-template-columns:minmax(210px,.7fr) minmax(0,1.35fr);align-content:center;gap:clamp(45px,9vw,150px)}
+.dive-descent .ltpo-reading-result-heading h2{font-size:clamp(66px,9vw,128px)}
+.dive-descent .ltpo-reading-result-list{border-top:1px solid rgba(194,227,222,.25)}
+.dive-descent .ltpo-reading-result-list p{display:grid;grid-template-columns:minmax(100px,.45fr) minmax(0,1fr);gap:25px;margin:0;padding:22px 0 25px;border-bottom:1px solid rgba(194,227,222,.16)}
+.dive-descent .ltpo-reading-result-list span{color:rgba(164,210,207,.56);font:9px/1.3 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.18em}
+.dive-descent .ltpo-reading-result-list b{color:rgba(220,239,232,.82);font:400 14px/1.8 "PingFang SC","Noto Sans SC",sans-serif;letter-spacing:.04em}
+.dive-descent .ltpo-reading-end{grid-column:1 / -1;display:flex;align-items:center;justify-content:space-between;gap:28px;margin-top:10vh;padding-top:22px;border-top:1px solid rgba(194,227,222,.18)}
+.dive-descent .ltpo-reading-end>span{color:rgba(170,210,210,.48);font:9px/1.3 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.2em;text-transform:uppercase}
+.dive-descent .ltpo-reading-end .case-reading-return{margin:0}
+@media(max-width:760px){
+  .dive-descent .ltpo-reading{--reading-gutter:24px;padding-bottom:92px}
+  .dive-descent .ltpo-reading-topbar{height:64px}
+  .dive-descent .ltpo-reading-hero{min-height:86svh;padding-top:80px}
+  .dive-descent .ltpo-reading-hero h1{font-size:clamp(58px,18vw,94px)}
+  .dive-descent .ltpo-reading-deck{max-width:260px;font-size:14px}
+  .dive-descent .ltpo-reading-section{padding-block:16vh 21vh}
+  .dive-descent .ltpo-reading-challenge{min-height:160svh}
+  .dive-descent .ltpo-reading-challenge-intro,.dive-descent .ltpo-reading-section-heading,.dive-descent .ltpo-reading-work-heading{margin-left:0}
+  .dive-descent .ltpo-reading-challenge-intro h2,.dive-descent .ltpo-reading-section-heading h2,.dive-descent .ltpo-reading-work-heading h2{font-size:clamp(54px,17vw,88px)}
+  .dive-descent .ltpo-reading-challenge-intro p{margin-top:35px;font-size:14px}
+  .dive-descent .ltpo-reading-values{width:78%;margin-top:13vh;font-size:18px}
+  .dive-descent .ltpo-reading-challenge-copy{width:88%;margin-top:20vh}
+  .dive-descent .ltpo-reading-strategy{min-height:170svh}
+  .dive-descent .ltpo-reading-strategy-stages{margin:14vh 0 0;width:100%}
+  .dive-descent .ltpo-reading-stage,.dive-descent .ltpo-reading-stage:nth-child(2),.dive-descent .ltpo-reading-stage:nth-child(3){grid-template-columns:42px minmax(0,1fr);gap:10px;margin-left:0;padding-block:22px}
+  .dive-descent .ltpo-reading-stage em{grid-column:2;grid-row:1;margin-top:27px}
+  .dive-descent .ltpo-reading-stage small{grid-column:2;margin-top:10px}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-role{margin-left:0}
+  .dive-descent .ltpo-reading-evidence-note{width:88%;margin-top:13vh}
+  .dive-descent .ltpo-reading-work{min-height:190svh;padding-top:16vh}
+  .dive-descent .ltpo-media-hero{margin-top:13vh}
+  .dive-descent .ltpo-media-hero-visual{min-height:92vw;clip-path:polygon(0 4%,100% 0,100% 96%,0 100%)}
+  .dive-descent .ltpo-media-hero figcaption{margin-top:18px;font-size:23px;line-height:1.45}
+  .dive-descent .ltpo-media-hero figcaption small{display:block;margin:7px 0 0;font-size:9px}
+  .dive-descent .ltpo-reading-work-notes,.dive-descent .ltpo-reading-responsibility{width:90%;margin-left:0}
+  .dive-descent .ltpo-reading-work-notes{margin-top:10vh}
+  .dive-descent .ltpo-reading-responsibility{margin-top:16vh!important}
+  .dive-descent .ltpo-reading-result{min-height:128svh;display:block;padding-top:20vh}
+  .dive-descent .ltpo-reading-result-list{margin-top:16vh}
+  .dive-descent .ltpo-reading-result-list p{grid-template-columns:1fr;gap:10px}
+  .dive-descent .ltpo-reading-end{align-items:flex-start;flex-direction:column;gap:16px;margin-top:11vh}
+}
+
+/* Locked production direction: B / Tidal Condensed. The narrow display face
+   supplies vertical pressure while the cool body and utility faces keep the
+   reading direct and legible. */
+.dive-descent .ltpo-reading[data-reading-variant="tide"]{--ltpo-display:"Arial Narrow","Avenir Next Condensed","Helvetica Neue","Arial";--ltpo-cn:"PingFang SC","Noto Sans SC","Hiragino Sans GB";--ltpo-meta:"SF Mono","Roboto Mono",ui-monospace;--ltpo-title:#E4EFEA;--ltpo-accent:#B6DAD6;--ltpo-body:#B7CCD0;--ltpo-secondary:#718E9A}
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-hero h1,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-section h2,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-media-hero figcaption{font-family:var(--ltpo-display),var(--ltpo-cn),sans-serif;color:var(--ltpo-title)}
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-hero h1 em,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-section h2 em{color:var(--ltpo-accent)}
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-hero h1{font-weight:400;letter-spacing:-.035em}
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-section h2{letter-spacing:-.045em}
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-deck,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-challenge-intro p,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-challenge-copy p,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-section-heading p,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-stage b,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-stage small,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-evidence-note b,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-evidence-note p,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-work-deck,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-work-notes>p,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-responsibility,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-result-list b{font-family:var(--ltpo-cn),sans-serif;color:var(--ltpo-body)}
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-index,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-kicker,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-date,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-role span,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-label,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-stage>span,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-stage em,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-evidence-note span,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-evidence-note i,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-work-kicker,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-method span,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-end>span,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-result-list span,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-media-hero-visual span{font-family:var(--ltpo-meta),sans-serif;color:var(--ltpo-secondary)}
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-role,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-method,
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-values-note{font-family:var(--ltpo-cn),sans-serif;color:var(--ltpo-body)}
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-values span{color:var(--ltpo-title)}
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-method i{color:var(--ltpo-accent)}
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-media-hero figcaption{color:#D8C5AE}
+.dive-descent .ltpo-reading[data-reading-variant="tide"] .ltpo-reading-values-note{color:#C8B9A8}
+
 /* Surface Lifebuoy entry: keep the shared pastel details legible and let the
    two-line invitation sit directly above the object. */
 .surface-hero .dive-cta-region .dive-vortex{display:none!important}
@@ -834,6 +1005,172 @@ body.is-ascent-active .descent-onboarding{opacity:0!important}
   .surface-hero.is-diver-proximity .home-diver{filter:drop-shadow(0 8px 6px rgba(91,75,140,.18))}
 }
 
+/* Media is already visible during arrival; keep the editorial track hittable
+   so drag can begin at the first readable frame without stealing vertical scroll. */
+.dive-descent .ltpo-reading[data-strategy-media-phase="arrival"] .ltpo-episode-stage{pointer-events:auto!important}
+
+/* LTPO information architecture pass. The page now has four equal public
+   reading chapters; strategy owns its evidence, method, series and planned
+   continuation as one editorial field. */
+.dive-descent .ltpo-reading-overview,
+.dive-descent .ltpo-reading-challenge,
+.dive-descent .ltpo-reading-result{min-height:136svh;display:block;padding-top:20vh;padding-bottom:22vh}
+.dive-descent .ltpo-reading-overview-intro,
+.dive-descent .ltpo-reading-challenge-intro{width:min(600px,68%);margin-left:4%}
+.dive-descent .ltpo-reading-overview .ltpo-reading-index,
+.dive-descent .ltpo-reading-challenge .ltpo-reading-index,
+.dive-descent .ltpo-reading-strategy .ltpo-reading-index,
+.dive-descent .ltpo-reading-result .ltpo-reading-index{display:block;color:var(--ltpo-secondary);font:10px/1.3 var(--ltpo-meta),sans-serif;letter-spacing:.2em}
+.dive-descent .ltpo-reading-overview h2,
+.dive-descent .ltpo-reading-challenge h2,
+.dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading h2,
+.dive-descent .ltpo-reading-result h2{margin:24px 0 0;color:var(--ltpo-title);font-family:var(--ltpo-display),var(--ltpo-cn),sans-serif;font-size:clamp(54px,7.6vw,112px);font-weight:400;line-height:.9;letter-spacing:-.045em}
+.dive-descent .ltpo-reading-overview-intro p,
+.dive-descent .ltpo-reading-challenge-intro p{max-width:430px;margin:42px 0 0;color:var(--ltpo-body);font:400 clamp(16px,1.45vw,21px)/1.85 var(--ltpo-cn),sans-serif;letter-spacing:.035em}
+.dive-descent .ltpo-reading-overview .ltpo-reading-values{width:min(850px,78%);margin:20vh 0 0 18%;display:flex;flex-direction:column;gap:8px;font-size:clamp(28px,4.5vw,70px);line-height:1.08;letter-spacing:.04em}
+.dive-descent .ltpo-reading-overview .ltpo-reading-values span{display:block;padding-bottom:15px;border-bottom:1px solid rgba(194,227,222,.14)}
+.dive-descent .ltpo-reading-challenge{min-height:145svh}
+.dive-descent .ltpo-reading-challenge .ltpo-reading-challenge-copy{width:min(700px,72%);margin:22vh 0 0 auto;padding-right:5%}
+.dive-descent .ltpo-reading-challenge .ltpo-reading-label{display:block;margin-bottom:28px}
+.dive-descent .ltpo-reading-challenge .ltpo-reading-challenge-copy p{max-width:620px;margin:0;color:var(--ltpo-body);font:400 clamp(16px,1.45vw,21px)/1.9 var(--ltpo-cn),sans-serif;letter-spacing:.035em}
+.dive-descent .ltpo-reading-challenge .ltpo-reading-challenge-copy small{display:block;max-width:600px;margin:70px 0 0;color:var(--ltpo-accent);font:11px/1.8 var(--ltpo-meta),var(--ltpo-cn),sans-serif;letter-spacing:.12em}
+.dive-descent .ltpo-reading-challenge .ltpo-reading-challenge-copy small i{margin:0 10px;color:var(--ltpo-secondary);font-style:normal}
+
+.dive-descent .ltpo-reading-strategy{min-height:620svh!important;padding:0!important;display:block!important;position:relative;isolation:isolate}
+.dive-descent .ltpo-reading-strategy-stage{position:sticky;top:0;box-sizing:border-box;width:100%;height:100svh;min-height:620px;margin:0;padding:12vh clamp(24px,7vw,108px) 8vh;display:block;overflow:hidden;background:linear-gradient(180deg,rgba(5,18,32,.04),rgba(5,18,32,.18))}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading{position:relative;z-index:7;width:min(330px,30%);margin:0;padding:0;transform:translate3d(0,calc((1 - var(--strategy-progress,0)) * 12px),0);opacity:calc(.72 + var(--strategy-progress,0) * .28);pointer-events:none}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading h2{max-width:300px;margin-top:24px;font-size:clamp(48px,5.8vw,88px)!important;line-height:.92;transform:none;opacity:1}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading p{max-width:300px;margin:28px 0 0;color:var(--ltpo-body);font:400 13px/1.8 var(--ltpo-cn),sans-serif;letter-spacing:.04em}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading small{display:block;max-width:290px;margin-top:14px;color:var(--ltpo-secondary);font:11px/1.7 var(--ltpo-cn),sans-serif;letter-spacing:.03em}
+.dive-descent .ltpo-reading-strategy-scenes{position:absolute;inset:0;z-index:3}
+.dive-descent .ltpo-reading-phase{position:absolute;inset:0;box-sizing:border-box;margin:0;padding:0;opacity:calc(var(--phase-focus,0) * .98);transform:translate3d(calc((1 - var(--phase-focus,0)) * 4vw),calc((1 - var(--phase-focus,0)) * 18px),0) scale(calc(.985 + var(--phase-focus,0) * .015));transition:none;will-change:transform,opacity}
+.dive-descent .ltpo-reading-phase-heading{position:absolute;left:34%;top:31%;display:flex;align-items:baseline;gap:clamp(18px,2.5vw,38px)}
+.dive-descent .ltpo-reading-phase-heading span{color:var(--ltpo-title);font:400 clamp(72px,11vw,172px)/.72 var(--ltpo-display),sans-serif;letter-spacing:-.08em}
+.dive-descent .ltpo-reading-phase-heading h3{margin:0;color:var(--ltpo-title);font:400 clamp(28px,3vw,52px)/1.05 var(--ltpo-cn),sans-serif;letter-spacing:.02em}
+.dive-descent .ltpo-reading-phase-lead{position:absolute;left:34%;top:51%;width:min(300px,24vw);margin:0;color:var(--ltpo-body);font:400 13px/1.85 var(--ltpo-cn),sans-serif;letter-spacing:.035em}
+.dive-descent .ltpo-reading-phase-action{position:absolute;right:8%;bottom:12%;width:min(340px,27vw);padding-top:16px;border-top:1px solid rgba(194,227,222,.17)}
+.dive-descent .ltpo-reading-phase-action span,
+.dive-descent .ltpo-reading-evidence-note span,
+.dive-descent .ltpo-reading-ownership>span,
+.dive-descent .ltpo-reading-series-heading>span{display:block;color:var(--ltpo-secondary);font:10px/1.3 var(--ltpo-meta),var(--ltpo-cn),sans-serif;letter-spacing:.16em}
+.dive-descent .ltpo-reading-phase-action b{display:block;margin-top:15px;color:var(--ltpo-body);font:400 14px/1.8 var(--ltpo-cn),sans-serif;letter-spacing:.04em}
+.dive-descent .ltpo-reading-phase .ltpo-reading-evidence-note{position:absolute;right:8%;bottom:11%;width:min(260px,22vw);margin:0;padding-top:16px;border-top:1px solid rgba(194,227,222,.17);transform:translate3d(0,calc((1 - var(--strategy-evidence,0)) * 16px),0);opacity:calc(.18 + var(--strategy-evidence,0) * .82)}
+.dive-descent .ltpo-reading-phase .ltpo-reading-evidence-note b{display:block;margin-top:18px;color:var(--ltpo-title);font:400 19px/1.3 var(--ltpo-cn),sans-serif}
+.dive-descent .ltpo-reading-phase .ltpo-reading-evidence-note p{margin:10px 0 0;color:var(--ltpo-body);font:12px/1.75 var(--ltpo-cn),sans-serif}
+.dive-descent .ltpo-reading-phase .ltpo-reading-evidence-note i{display:block;margin-top:16px;color:var(--ltpo-secondary);font:10px/1.4 var(--ltpo-meta),var(--ltpo-cn),sans-serif;font-style:normal;letter-spacing:.08em}
+
+.dive-descent .ltpo-reading-phase-amplification{transform:translate3d(calc((1 - var(--phase-focus,0)) * 5vw),calc((1 - var(--phase-focus,0)) * 16px),0) scale(calc(.965 + var(--phase-focus,0) * .035))}
+.dive-descent .ltpo-reading-phase-amplification .ltpo-reading-phase-heading{left:8%;top:12%}
+.dive-descent .ltpo-reading-phase-amplification .ltpo-reading-phase-lead{left:8%;top:30%;width:min(350px,27vw)}
+.dive-descent .ltpo-reading-method-lockup{position:absolute;left:8%;top:43%;max-width:450px;color:var(--ltpo-title);font:400 clamp(28px,3.7vw,64px)/.98 var(--ltpo-display),var(--ltpo-cn),sans-serif;letter-spacing:-.045em}
+.dive-descent .ltpo-reading-method-lockup i{color:var(--ltpo-accent);font-style:normal}
+.dive-descent .ltpo-reading-method-path{position:absolute;left:8%;bottom:13%;margin:0;color:var(--ltpo-accent);font:11px/1.8 var(--ltpo-meta),var(--ltpo-cn),sans-serif;letter-spacing:.1em}
+.dive-descent .ltpo-reading-method-path i{margin:0 9px;color:var(--ltpo-secondary);font-style:normal}
+.dive-descent .ltpo-reading-series{position:absolute;right:7%;top:10%;width:56%;height:80%;margin:0}
+.dive-descent .ltpo-reading-series-heading{position:absolute;left:0;bottom:4%;z-index:4;width:38%;pointer-events:none}
+.dive-descent .ltpo-reading-series-heading h4{margin:19px 0 0;color:var(--ltpo-title);font:400 clamp(22px,2.3vw,40px)/1.12 var(--ltpo-cn),sans-serif;letter-spacing:.02em}
+.dive-descent .ltpo-reading-series-heading p{margin:10px 0 0;color:var(--ltpo-body);font:11px/1.7 var(--ltpo-cn),sans-serif;letter-spacing:.05em}
+.dive-descent .ltpo-episode-stage{position:absolute;inset:0 0 0 22%;overflow:visible}
+.dive-descent .ltpo-episode{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;margin:0;opacity:calc(.08 + var(--episode-focus,.08) * .92);transform:translate3d(calc((1 - var(--episode-focus,.08)) * 4vw),0,0) scale(calc(.86 + var(--episode-focus,.08) * .14));transform-origin:center center;will-change:transform,opacity}
+.dive-descent .ltpo-episode video{display:block;width:auto;height:min(70svh,760px);max-width:100%;aspect-ratio:9 / 16;object-fit:contain;background:rgba(8,23,37,.22);box-shadow:0 24px 70px rgba(0,0,0,.22)}
+.dive-descent .ltpo-episode figcaption{position:absolute;right:0;bottom:2%;color:var(--ltpo-secondary);font:10px/1.3 var(--ltpo-meta),sans-serif;letter-spacing:.14em}
+.dive-descent .ltpo-reading-series-note{position:absolute;left:0;bottom:-3%;width:38%;margin:0;color:var(--ltpo-body);font:12px/1.75 var(--ltpo-cn),sans-serif;letter-spacing:.03em}
+.dive-descent .ltpo-reading-ownership{position:absolute;left:8%;right:7%;bottom:3%;z-index:6;display:flex;align-items:flex-start;justify-content:space-between;gap:28px;padding-top:14px;border-top:1px solid rgba(194,227,222,.14);opacity:calc(.35 + var(--ownership-progress,0) * .65)}
+.dive-descent .ltpo-reading-ownership ul{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:7px 22px;width:min(520px,52%);margin:0;padding:0;list-style:none;color:var(--ltpo-body);font:11px/1.6 var(--ltpo-cn),sans-serif;letter-spacing:.04em}
+.dive-descent .ltpo-reading-ownership li{white-space:nowrap}
+
+.dive-descent .ltpo-reading-phase-planned{display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;transform:translate3d(0,calc((1 - var(--phase-focus,0)) * 16px),0) scale(calc(.985 + var(--phase-focus,0) * .015));filter:saturate(.75)}
+.dive-descent .ltpo-reading-phase-planned .ltpo-reading-phase-heading{position:relative;left:auto;top:auto}
+.dive-descent .ltpo-reading-phase-planned .ltpo-reading-phase-lead{position:relative;left:auto;top:auto;width:min(320px,72vw);margin:44px 0 0}
+.dive-descent .ltpo-reading-planned-note{display:block;margin-top:48px;color:var(--ltpo-secondary);font:10px/1.4 var(--ltpo-meta),var(--ltpo-cn),sans-serif;letter-spacing:.14em}
+
+.dive-descent .ltpo-reading-result{min-height:145svh;padding-top:25vh;display:block}
+.dive-descent .ltpo-reading-result-heading{margin-left:4%}
+.dive-descent .ltpo-reading-result-list{width:min(700px,72%);margin:22vh 0 0 auto;padding-right:5%;border-top:1px solid rgba(194,227,222,.22)}
+.dive-descent .ltpo-reading-result-list p{display:grid;grid-template-columns:minmax(100px,.45fr) minmax(0,1fr);gap:25px;margin:0;padding:27px 0 29px;border-bottom:1px solid rgba(194,227,222,.14)}
+.dive-descent .ltpo-reading-result-list span{color:var(--ltpo-secondary);font:10px/1.4 var(--ltpo-meta),var(--ltpo-cn),sans-serif;letter-spacing:.12em}
+.dive-descent .ltpo-reading-result-list b{color:var(--ltpo-body);font:400 15px/1.8 var(--ltpo-cn),sans-serif;letter-spacing:.04em}
+.dive-descent .ltpo-reading-result-list b br{display:none}
+.dive-descent .ltpo-reading-end{display:flex;align-items:center;justify-content:flex-end;margin-top:18vh;padding-top:22px;border-top:1px solid rgba(194,227,222,.14)}
+.dive-descent .ltpo-reading-end>span{display:none}
+
+@media(max-width:760px){
+  .dive-descent .ltpo-reading-overview,
+  .dive-descent .ltpo-reading-challenge,
+  .dive-descent .ltpo-reading-result{min-height:130svh;padding-top:17vh;padding-bottom:19vh}
+  .dive-descent .ltpo-reading-overview-intro,
+  .dive-descent .ltpo-reading-challenge-intro{width:90%;margin-left:0}
+  .dive-descent .ltpo-reading-overview h2,
+  .dive-descent .ltpo-reading-challenge h2,
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading h2,
+  .dive-descent .ltpo-reading-result h2{font-size:clamp(48px,15vw,78px)!important}
+  .dive-descent .ltpo-reading-overview-intro p,
+  .dive-descent .ltpo-reading-challenge-intro p{margin-top:30px;font-size:14px;line-height:1.85}
+  .dive-descent .ltpo-reading-overview .ltpo-reading-values{width:92%;margin:17vh 0 0 0;font-size:25px}
+  .dive-descent .ltpo-reading-challenge{min-height:145svh}
+  .dive-descent .ltpo-reading-challenge .ltpo-reading-challenge-copy{width:92%;margin:18vh 0 0;padding-right:0}
+  .dive-descent .ltpo-reading-challenge .ltpo-reading-challenge-copy p{font-size:14px}
+  .dive-descent .ltpo-reading-challenge .ltpo-reading-challenge-copy small{margin-top:48px;font-size:9px;line-height:2.2;letter-spacing:.05em}
+  .dive-descent .ltpo-reading-strategy{min-height:680svh!important}
+  .dive-descent .ltpo-reading-strategy-stage{height:100svh;min-height:640px;padding:84px 24px 36px}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading{width:82%;}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading h2{font-size:clamp(42px,12vw,64px)!important}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading p{margin-top:18px;font-size:11px}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading small{font-size:10px}
+  .dive-descent .ltpo-reading-phase-heading{left:24px;top:30%;gap:14px}
+  .dive-descent .ltpo-reading-phase-heading span{font-size:80px}
+  .dive-descent .ltpo-reading-phase-heading h3{font-size:27px}
+  .dive-descent .ltpo-reading-phase-lead{left:24px;top:46%;width:72%;font-size:12px}
+  .dive-descent .ltpo-reading-phase-action{left:24px;right:24px;bottom:9%;width:auto}
+  .dive-descent .ltpo-reading-phase .ltpo-reading-evidence-note{left:24px;right:24px;bottom:9%;width:auto}
+  .dive-descent .ltpo-reading-phase-amplification .ltpo-reading-phase-heading{left:24px;top:14%}
+  .dive-descent .ltpo-reading-phase-amplification .ltpo-reading-phase-lead{left:24px;top:25%;width:78%}
+  .dive-descent .ltpo-reading-method-lockup{left:24px;top:37%;font-size:30px}
+  .dive-descent .ltpo-reading-method-path{left:24px;bottom:8%;font-size:8px;letter-spacing:.04em}
+  .dive-descent .ltpo-reading-series{right:0;top:42%;width:100%;height:45%}
+  .dive-descent .ltpo-reading-series-heading{left:24px;bottom:-2%;width:45%}
+  .dive-descent .ltpo-reading-series-heading h4{font-size:20px}
+  .dive-descent .ltpo-reading-series-heading p{font-size:9px}
+  .dive-descent .ltpo-episode-stage{inset:0 0 0 28%}
+  .dive-descent .ltpo-episode video{height:42svh;max-width:70vw}
+  .dive-descent .ltpo-episode figcaption{right:0;bottom:-8%;font-size:8px}
+  .dive-descent .ltpo-reading-series-note{left:24px;bottom:-22%;width:42%;font-size:10px}
+  .dive-descent .ltpo-reading-ownership{left:24px;right:24px;bottom:2%;display:block}
+  .dive-descent .ltpo-reading-ownership ul{justify-content:flex-start;width:100%;margin-top:14px;gap:5px 14px;font-size:10px}
+  .dive-descent .ltpo-reading-result{min-height:135svh;padding-top:20vh}
+  .dive-descent .ltpo-reading-result-heading{margin-left:0}
+  .dive-descent .ltpo-reading-result-list{width:92%;margin:16vh 0 0;padding-right:0}
+  .dive-descent .ltpo-reading-result-list p{grid-template-columns:1fr;gap:9px;padding:22px 0}
+  .dive-descent .ltpo-reading-result-list b br{display:block}
+  .dive-descent .ltpo-reading-end{margin-top:14vh}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .dive-descent .ltpo-reading-strategy{min-height:auto!important;padding:16vh 0 20vh!important}
+  .dive-descent .ltpo-reading-strategy-stage{position:relative;height:auto;min-height:0;padding:0;overflow:visible;background:none}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading{transform:none!important;opacity:1!important}
+  .dive-descent .ltpo-reading-strategy-scenes{position:relative;inset:auto;margin-top:90px}
+  .dive-descent .ltpo-reading-phase,
+  .dive-descent .ltpo-reading-phase-amplification,
+  .dive-descent .ltpo-reading-phase-planned{position:relative;inset:auto;display:block;min-height:82vh;margin:0 0 100px;padding:0;transform:none!important;opacity:1!important;filter:none!important}
+  .dive-descent .ltpo-reading-phase-heading,
+  .dive-descent .ltpo-reading-phase-amplification .ltpo-reading-phase-heading{position:relative;left:auto;top:auto}
+  .dive-descent .ltpo-reading-phase-lead,
+  .dive-descent .ltpo-reading-phase-amplification .ltpo-reading-phase-lead{position:relative;left:auto;top:auto;width:min(430px,90%);margin:48px 0 0}
+  .dive-descent .ltpo-reading-phase-action,
+  .dive-descent .ltpo-reading-phase .ltpo-reading-evidence-note,
+  .dive-descent .ltpo-reading-method-lockup,
+  .dive-descent .ltpo-reading-method-path,
+  .dive-descent .ltpo-reading-series,
+  .dive-descent .ltpo-reading-ownership{position:relative;left:auto;right:auto;top:auto;bottom:auto;width:auto;margin:48px 0 0;transform:none!important;opacity:1!important}
+  .dive-descent .ltpo-reading-series{height:600px}
+  .dive-descent .ltpo-episode-stage{inset:0;position:absolute}
+  .dive-descent .ltpo-episode{position:relative;inset:auto;display:block;opacity:1!important;transform:none!important;margin:0 0 40px}
+  .dive-descent .ltpo-episode video{height:min(70svh,620px)}
+  .dive-descent .ltpo-reading-series-note{position:relative;left:auto;bottom:auto;width:100%;margin-top:28px}
+  .dive-descent .ltpo-reading-ownership ul{justify-content:flex-start;width:100%;margin-top:14px}
+}
+
 /* Affordance visibility pass: keep each material's existing response, but
    raise the local light just enough to register at a normal desktop glance. */
 .surface-hero:not([data-time="blue-hour"]) .surface-planet-layer::before{
@@ -1036,3 +1373,701 @@ body.is-ascent-active .descent-onboarding{opacity:0!important}
 .dive-descent .deep-water-motion::after{background:
   radial-gradient(ellipse 60% 34% at 68% 20%,rgba(226,235,244,.18) 0%,rgba(194,213,233,.06) 48%,transparent 82%),
   radial-gradient(ellipse 64% 38% at 20% 62%,rgba(184,204,229,.1) 0%,transparent 78%)!important}
+
+/* LTPO Reading Interaction Pass. Scroll changes the relationship between
+   type, values and media; it does not decorate every block with the same
+   entrance animation. */
+.dive-descent .ltpo-reading-block{opacity:1;transform:none;transition:none}
+.dive-descent .ltpo-reading-hero h1{position:relative;z-index:1;transform:translate3d(calc(var(--project-handoff,0) * -5vw),calc(var(--project-handoff,0) * -5vh),0) scale(calc(1 - var(--project-handoff,0) * .26));transform-origin:left center;opacity:calc(1 - var(--project-handoff,0) * .64);will-change:transform,opacity}
+.dive-descent .ltpo-reading-hero .ltpo-reading-deck{transform:translate3d(calc(var(--project-handoff,0) * -1vw),calc(var(--project-handoff,0) * -2vh),0);opacity:calc(1 - var(--project-handoff,0) * .34);will-change:transform,opacity}
+.dive-descent .ltpo-reading-hero .ltpo-reading-date,.dive-descent .ltpo-reading-hero .ltpo-reading-role{opacity:calc(1 - var(--project-handoff,0) * .18)}
+.dive-descent .ltpo-reading-challenge-intro h2{transform:translate3d(calc((1 - var(--what-progress,0)) * 2vw),calc((1 - var(--what-progress,0)) * 5vh),0) scale(calc(.9 + var(--what-progress,0) * .1));transform-origin:left center;opacity:calc(.38 + var(--what-progress,0) * .62);will-change:transform,opacity}
+.dive-descent .ltpo-reading-challenge-intro p{opacity:calc(.55 + var(--what-progress,0) * .45)}
+.dive-descent .ltpo-reading-values{transform:translate3d(calc((1 - var(--what-progress,0)) * 7vw),calc((1 - var(--what-progress,0)) * 18px),0);opacity:calc(.12 + var(--what-progress,0) * .88);will-change:transform,opacity}
+.dive-descent .ltpo-reading-values span{transform:translate3d(calc((1 - var(--what-progress,0)) * 2vw),0,0);transition:none}
+.dive-descent .ltpo-reading-values span:nth-child(2){transform:translate3d(calc((1 - var(--what-progress,0)) * 4vw),0,0)}
+.dive-descent .ltpo-reading-values span:nth-child(3){transform:translate3d(calc((1 - var(--what-progress,0)) * 6vw),0,0)}
+.dive-descent .ltpo-reading-challenge-copy{transform:translate3d(calc((1 - var(--challenge-takeover,0)) * 7vw),calc((1 - var(--challenge-takeover,0)) * 28px),0);opacity:calc(.3 + var(--challenge-takeover,0) * .7);will-change:transform,opacity}
+.dive-descent .ltpo-reading-challenge-copy small{transform:translate3d(calc((1 - var(--challenge-relation,0)) * -10vw),0,0);opacity:calc(.2 + var(--challenge-relation,0) * .8);will-change:transform,opacity}
+.dive-descent .ltpo-reading-strategy{isolation:isolate}
+.dive-descent .ltpo-reading-section-heading{position:sticky;top:14vh;z-index:2;pointer-events:none}
+.dive-descent .ltpo-reading-section-heading h2{transform:scale(calc(.88 + var(--strategy-progress,0) * .12));transform-origin:left center;opacity:calc(.58 + var(--strategy-progress,0) * .42);will-change:transform,opacity}
+.dive-descent .ltpo-reading-section-heading p{opacity:calc(.55 + var(--strategy-progress,0) * .45)}
+.dive-descent .ltpo-reading-strategy-stages{position:relative;z-index:3}
+.dive-descent .ltpo-reading-stage{--stage-focus:.2;transform:translate3d(calc((1 - var(--stage-focus)) * 4vw),calc((1 - var(--stage-focus)) * 24px),0) scale(calc(.9 + var(--stage-focus) * .1));transform-origin:left center;opacity:calc(.26 + var(--stage-focus) * .74);will-change:transform,opacity}
+.dive-descent .ltpo-reading-stage.is-planned{border-top-style:solid;filter:saturate(.72);opacity:calc(.26 + var(--stage-focus,.2) * .74)}
+.dive-descent .ltpo-reading-evidence-note{transform:translate3d(calc((1 - var(--strategy-evidence,0)) * 3vw),calc((1 - var(--strategy-evidence,0)) * 22px),0);opacity:calc(.24 + var(--strategy-evidence,0) * .76);will-change:transform,opacity}
+.dive-descent .ltpo-reading-work-heading{transform:translate3d(calc((1 - var(--media-arrival,0)) * -3vw),calc((1 - var(--media-arrival,0)) * 22px),0) scale(calc(.95 + var(--media-arrival,0) * .05));opacity:calc(1 - var(--media-takeover,0) * .62);transform-origin:left top;will-change:transform,opacity}
+.dive-descent .ltpo-media-hero{width:calc(84vw + var(--media-takeover,0) * 16vw);margin-left:calc(-1 * var(--reading-gutter) + 8vw - var(--media-takeover,0) * 8vw);transform:translate3d(0,calc((1 - var(--media-arrival,0)) * 42px),0) scale(calc(.91 + var(--media-takeover,0) * .09));transform-origin:center center;will-change:width,margin-left,transform}
+.dive-descent .ltpo-media-hero-visual{min-height:clamp(360px,calc(400px + var(--media-takeover,0) * 340px),740px);transition:none}
+.dive-descent .ltpo-media-hero figcaption{transform:translate3d(calc((1 - var(--media-takeover,0)) * 3vw),0,0);opacity:calc(.7 + var(--media-takeover,0) * .3);will-change:transform,opacity}
+.dive-descent .ltpo-reading-work-notes{transform:translate3d(calc((1 - var(--work-recomposition,0)) * 5vw),calc((1 - var(--work-recomposition,0)) * 24px),0);opacity:calc(.44 + var(--work-recomposition,0) * .56);will-change:transform,opacity}
+.dive-descent .ltpo-reading-responsibility{opacity:calc(.58 + var(--work-recomposition,0) * .42)}
+.dive-descent .ltpo-reading-result{opacity:calc(.9 + var(--result-progress,0) * .1)}
+.dive-descent .ltpo-reading-result-heading,.dive-descent .ltpo-reading-result-list,.dive-descent .ltpo-reading-end{transform:none;transition:none}
+.dive-descent .ltpo-reading-result-list p{opacity:calc(.82 + var(--result-progress,0) * .18)}
+
+@media(max-width:760px){
+  .dive-descent .ltpo-reading-section-heading{top:72px}
+  .dive-descent .ltpo-reading-stage{transform:translate3d(calc((1 - var(--stage-focus)) * 5vw),calc((1 - var(--stage-focus)) * 18px),0) scale(calc(.93 + var(--stage-focus) * .07))}
+  .dive-descent .ltpo-media-hero{width:calc(84vw + var(--media-takeover,0) * 16vw);margin-left:calc(-1 * var(--reading-gutter) + 8vw - var(--media-takeover,0) * 8vw)}
+  .dive-descent .ltpo-media-hero-visual{min-height:clamp(300px,calc(84vw + var(--media-takeover,0) * 18vw),560px)}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .dive-descent .ltpo-reading-hero h1,
+  .dive-descent .ltpo-reading-hero .ltpo-reading-deck,
+  .dive-descent .ltpo-reading-values,
+  .dive-descent .ltpo-reading-values span,
+  .dive-descent .ltpo-reading-challenge-copy,
+  .dive-descent .ltpo-reading-challenge-copy small,
+  .dive-descent .ltpo-reading-section-heading h2,
+  .dive-descent .ltpo-reading-stage,
+  .dive-descent .ltpo-reading-evidence-note,
+  .dive-descent .ltpo-reading-work-heading,
+  .dive-descent .ltpo-media-hero,
+  .dive-descent .ltpo-media-hero figcaption,
+  .dive-descent .ltpo-reading-work-notes{transform:none!important;opacity:1!important;transition:none!important}
+  .dive-descent .ltpo-reading-hero .ltpo-reading-date,
+  .dive-descent .ltpo-reading-hero .ltpo-reading-role,
+  .dive-descent .ltpo-reading-challenge-intro h2,
+  .dive-descent .ltpo-reading-challenge-intro p,
+  .dive-descent .ltpo-reading-section-heading p,
+  .dive-descent .ltpo-reading-responsibility,
+  .dive-descent .ltpo-reading-result{opacity:1!important}
+  .dive-descent .ltpo-media-hero{width:100vw!important;margin-left:calc(-1 * var(--reading-gutter))!important}
+}
+
+/* Focused Strategy composition: one sticky 100svh stage travels through a
+   deliberately longer parent. The three existing articles stay in the DOM;
+   only their visual weight and spatial relationship are scrubbed. */
+.dive-descent .ltpo-reading-strategy{min-height:300svh!important;padding:0!important;display:block!important;position:relative;align-content:start;isolation:isolate}
+.dive-descent .ltpo-reading-strategy-stage{position:sticky;top:0;align-self:start;box-sizing:border-box;width:100%;height:100svh;min-height:560px;margin-top:0;padding:0 clamp(24px,7vw,108px);display:grid;grid-template-columns:minmax(190px,.58fr) minmax(0,1.42fr);align-items:stretch;gap:clamp(35px,6vw,105px);overflow:hidden;background:linear-gradient(180deg,rgba(5,18,32,.08),rgba(5,18,32,.16))}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading{position:relative;top:auto;z-index:4;align-self:start;max-width:390px;margin:0;padding-top:12vh;pointer-events:none;transform:translate3d(0,calc((1 - var(--strategy-progress,0)) * 12px),0);opacity:calc(.44 + var(--strategy-progress,0) * .28);will-change:transform,opacity}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading h2{max-width:360px;font-size:clamp(40px,5.2vw,78px)!important;line-height:.92;transform:none;opacity:1}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading p{max-width:300px;margin-top:26px;font-size:12px;line-height:1.75}
+.dive-descent .ltpo-reading-strategy-stages{position:relative;grid-column:2;grid-row:1;align-self:stretch;width:100%;height:100%;margin:0;display:block;z-index:3}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-stage{position:absolute;left:0;top:50%;display:grid;grid-template-columns:minmax(78px,.3fr) minmax(0,1fr);grid-template-rows:auto auto;align-items:baseline;gap:3px clamp(16px,2.2vw,34px);width:min(620px,94%);min-height:0;margin:0!important;padding:0!important;border:0!important;transform-origin:left center;will-change:transform,opacity,filter}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-stage{opacity:calc(.58 + var(--stage-focus,.2) * .42)}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-stage:nth-child(1){transform:translate3d(var(--stage-offset-x,0vw),calc(-50% + var(--stage-offset-y,0vh)),0) scale(calc(.72 + var(--stage-focus,.2) * .28));}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-stage:nth-child(2){transform:translate3d(var(--stage-offset-x,0vw),calc(-50% + var(--stage-offset-y,0vh)),0) scale(calc(.72 + var(--stage-focus,.2) * .28));}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-stage:nth-child(3){transform:translate3d(var(--stage-offset-x,0vw),calc(-50% + var(--stage-offset-y,0vh)),0) scale(calc(.72 + var(--stage-focus,.2) * .28));}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-stage>span{grid-row:1 / span 2;align-self:start;color:var(--ltpo-title);font-family:var(--ltpo-display),sans-serif;font-size:clamp(64px,8vw,146px);font-weight:400;line-height:.72;letter-spacing:-.08em;opacity:calc(.42 + var(--stage-focus,.2) * .58)}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-stage b{display:block;color:var(--ltpo-title);font-family:var(--ltpo-cn),sans-serif;font-size:clamp(22px,calc(1.5vw + var(--stage-focus,.2) * 2.6vw),56px);font-weight:400;line-height:1.05;letter-spacing:.02em;white-space:nowrap}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-stage em{display:block;margin-top:10px;color:var(--ltpo-accent);font-family:var(--ltpo-meta),sans-serif;font-size:clamp(9px,calc(7px + var(--stage-focus,.2) * 3px),13px);line-height:1.2;letter-spacing:.18em;font-style:normal}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-stage small{grid-column:2;max-width:330px;margin-top:18px;color:var(--ltpo-body);font-family:var(--ltpo-cn),sans-serif;font-size:clamp(11px,calc(10px + var(--stage-focus,.2) * 2px),15px);line-height:1.65;letter-spacing:.03em;opacity:calc(.54 + var(--stage-focus,.2) * .46)}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-stage.is-planned{filter:saturate(.72);opacity:calc(.58 + var(--stage-focus,.2) * .42)}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-stage.is-planned b{font-weight:300;letter-spacing:.08em}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-role{position:absolute;left:clamp(24px,7vw,108px);bottom:9vh;z-index:4;width:min(360px,32%);margin:0!important;opacity:calc(.54 + var(--strategy-progress,0) * .2)}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-evidence-note{position:absolute;right:clamp(24px,7vw,108px);bottom:9vh;z-index:4;width:min(360px,32%);margin:0;transform:translate3d(calc((1 - var(--strategy-evidence,0)) * 2vw),calc((1 - var(--strategy-evidence,0)) * 18px),0);opacity:calc(.18 + var(--strategy-evidence,0) * .82)}
+
+@media(max-width:760px){
+  .dive-descent .ltpo-reading-strategy{min-height:320svh!important}
+  .dive-descent .ltpo-reading-strategy-stage{height:100svh;min-height:640px;margin-top:0;padding:0 24px;display:block}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading{position:absolute;left:24px;right:24px;top:0;max-width:none;padding-top:92px}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading h2{max-width:270px;font-size:clamp(38px,12vw,58px)!important}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading p{max-width:260px;margin-top:18px;font-size:11px}
+  .dive-descent .ltpo-reading-strategy-stages{position:absolute;left:24px;right:24px;top:22%;width:auto;height:55%;}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-stage{width:100%;grid-template-columns:clamp(58px,18vw,84px) minmax(0,1fr);gap:10px 14px}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-stage:nth-child(1){transform:translate3d(var(--stage-offset-x,0vw),calc(-50% + var(--stage-offset-y,0vh)),0) scale(calc(.76 + var(--stage-focus,.2) * .24))}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-stage:nth-child(2){transform:translate3d(var(--stage-offset-x,0vw),calc(-50% + var(--stage-offset-y,0vh)),0) scale(calc(.76 + var(--stage-focus,.2) * .24))}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-stage:nth-child(3){transform:translate3d(var(--stage-offset-x,0vw),calc(-50% + var(--stage-offset-y,0vh)),0) scale(calc(.76 + var(--stage-focus,.2) * .24))}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-stage>span{font-size:clamp(54px,18vw,88px)}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-stage b{font-size:clamp(21px,7vw,33px)}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-stage small{max-width:230px;margin-top:12px;font-size:11px}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-role{left:24px;bottom:8vh;width:68%;font-size:11px!important}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-evidence-note{right:24px;bottom:8vh;width:60%;}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .dive-descent .ltpo-reading-strategy{min-height:auto!important;padding:12vh 0 18vh!important}
+  .dive-descent .ltpo-reading-strategy-stage{position:relative;height:auto;min-height:0;margin-top:0;padding:0;display:block;overflow:visible;background:none}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading{position:relative;left:auto;right:auto;top:auto;padding-top:0;transform:none!important;opacity:1!important}
+  .dive-descent .ltpo-reading-strategy-stages{position:relative;left:auto;right:auto;top:auto;height:auto;margin-top:70px}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-stage,
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-stage:nth-child(1),
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-stage:nth-child(2),
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-stage:nth-child(3){position:relative;left:auto;top:auto;display:grid;width:100%;margin:0 0 42px!important;transform:none!important;opacity:1!important;filter:none!important}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-role,
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-evidence-note{position:relative;left:auto;right:auto;bottom:auto;width:100%;margin:18px 0 0!important;transform:none!important;opacity:1!important}
+}
+
+/* Final cascade for the new IA. This intentionally supersedes the previous
+   equal-weight stage experiment while leaving its history in place. */
+.dive-descent .ltpo-reading-strategy{min-height:340svh!important;padding:0!important;display:block!important;position:relative!important;align-content:start!important}
+.dive-descent .ltpo-reading-strategy-stage{position:sticky!important;top:0!important;display:block!important;width:100%!important;height:100svh!important;min-height:620px!important;margin:0!important;padding:12vh clamp(24px,7vw,108px) 8vh!important;overflow:hidden!important;background:linear-gradient(180deg,rgba(5,18,32,.04),rgba(5,18,32,.18))!important}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading{position:relative!important;left:auto!important;right:auto!important;top:auto!important;z-index:7!important;align-self:auto!important;width:min(380px,36%)!important;max-width:none!important;margin:0!important;padding:0!important;transform:translate3d(0,calc((1 - var(--strategy-progress,0)) * 12px),0)!important;opacity:calc(.72 + var(--strategy-progress,0) * .28)!important}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading{opacity:calc(var(--strategy-intro,1) * .92)!important}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading h2{max-width:380px!important;margin-top:24px!important;font-size:clamp(48px,4.8vw,72px)!important;line-height:.92!important;white-space:nowrap!important;transform:none!important;opacity:1!important}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading p{max-width:300px!important;margin:28px 0 0!important;font-size:13px!important;line-height:1.8!important}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading small{display:block!important;max-width:290px!important;margin-top:14px!important;font-size:11px!important;line-height:1.7!important}
+.dive-descent .ltpo-reading-strategy-scenes{position:absolute!important;inset:0!important;height:auto!important;margin:0!important;display:block!important;z-index:3!important}
+
+@media(max-width:760px){
+  .dive-descent .ltpo-reading-strategy{min-height:400svh!important}
+  .dive-descent .ltpo-reading-strategy-stage{height:100svh!important;min-height:640px!important;padding:84px 24px 36px!important}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading{position:relative!important;left:auto!important;right:auto!important;top:auto!important;width:82%!important;padding:0!important}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading h2{max-width:270px!important;font-size:clamp(42px,12vw,64px)!important}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading p{max-width:260px!important;margin-top:18px!important;font-size:11px!important}
+  .dive-descent .ltpo-reading-strategy-scenes{position:absolute!important;inset:0!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .dive-descent .ltpo-reading-strategy{min-height:auto!important;padding:16vh 0 20vh!important}
+  .dive-descent .ltpo-reading-strategy-stage{position:relative!important;height:auto!important;min-height:0!important;padding:0!important;overflow:visible!important;background:none!important}
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading{position:relative!important;width:100%!important;transform:none!important;opacity:1!important}
+  .dive-descent .ltpo-reading-strategy-scenes{position:relative!important;inset:auto!important;margin-top:90px!important}
+  .dive-descent .ltpo-reading-phase,
+  .dive-descent .ltpo-reading-phase-amplification,
+  .dive-descent .ltpo-reading-phase-planned{position:relative!important;inset:auto!important;display:block!important;min-height:82vh!important;margin:0 0 100px!important;padding:0!important;transform:none!important;opacity:1!important;filter:none!important}
+  .dive-descent .ltpo-reading-phase-heading,
+  .dive-descent .ltpo-reading-phase-amplification .ltpo-reading-phase-heading{position:relative!important;left:auto!important;top:auto!important}
+  .dive-descent .ltpo-reading-phase-lead,
+  .dive-descent .ltpo-reading-phase-amplification .ltpo-reading-phase-lead{position:relative!important;left:auto!important;top:auto!important;width:min(430px,90%)!important;margin:48px 0 0!important}
+  .dive-descent .ltpo-reading-phase-action,
+  .dive-descent .ltpo-reading-phase .ltpo-reading-evidence-note,
+  .dive-descent .ltpo-reading-method-lockup,
+  .dive-descent .ltpo-reading-method-path,
+  .dive-descent .ltpo-reading-series,
+  .dive-descent .ltpo-reading-ownership{position:relative!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;width:auto!important;margin:48px 0 0!important;transform:none!important;opacity:1!important}
+  .dive-descent .ltpo-reading-series{height:600px!important}
+  .dive-descent .ltpo-episode-stage{inset:0!important;position:absolute!important}
+  .dive-descent .ltpo-episode{position:relative!important;inset:auto!important;display:block!important;opacity:1!important;transform:none!important;margin:0 0 40px!important}
+}
+
+/* LTPO V1 close-out: restore the native pointer inside Reading. Exploration
+   keeps the established cursor-light language outside this state. */
+.dive-descent.is-case-reading,
+.dive-descent.is-case-reading *{cursor:auto!important}
+.dive-descent.is-case-reading a,
+.dive-descent.is-case-reading button,
+.dive-descent.is-case-reading [role="button"]{cursor:pointer!important}
+.dive-descent.is-case-reading .ltpo-episode-stage,
+.dive-descent.is-case-reading .ltpo-episode-stage *{cursor:grab!important}
+.dive-descent.is-case-reading .ltpo-episode-stage.is-dragging,
+.dive-descent.is-case-reading .ltpo-episode-stage.is-dragging *{cursor:grabbing!important}
+.dive-descent.is-case-reading .ltpo-episode video{cursor:grab!important}
+
+/* Evidence stays an image inside 01, not a faux webpage or a new chapter. */
+.dive-descent .ltpo-reading-phase .ltpo-reading-evidence-note{display:block;overflow:hidden}
+.dive-descent .ltpo-reading-phase .ltpo-reading-evidence-note img{display:block;width:min(100%,248px);height:clamp(132px,16vh,184px);margin-top:17px;object-fit:cover;object-position:top center;opacity:.78;filter:saturate(.78) contrast(.96);clip-path:polygon(0 1%,100% 0,98% 98%,2% 100%)}
+.dive-descent .ltpo-reading-phase .ltpo-reading-evidence-note figcaption{display:block;margin-top:12px;color:var(--ltpo-secondary);font:10px/1.4 var(--ltpo-meta),var(--ltpo-cn),sans-serif;letter-spacing:.08em}
+
+/* 02 is the only dense media beat: copy establishes the context, then the
+   film strip becomes the visual object. */
+.dive-descent .ltpo-reading-phase-amplification .ltpo-reading-method-explanation{position:absolute;left:8%;top:58%;width:min(330px,27vw);margin:0;color:var(--ltpo-body);font:400 12px/1.78 var(--ltpo-cn),sans-serif;letter-spacing:.03em}
+.dive-descent .ltpo-reading-translation{position:absolute;left:8%;bottom:13%;display:flex;flex-direction:column;align-items:flex-start;gap:8px;color:var(--ltpo-accent);font:11px/1.35 var(--ltpo-cn),sans-serif;letter-spacing:.04em}
+.dive-descent .ltpo-reading-translation i{margin-left:6px;color:var(--ltpo-secondary);font-style:normal;line-height:1}
+.dive-descent .ltpo-reading-series{right:7%;top:10%;width:56%;height:80%;margin:0}
+.dive-descent .ltpo-episode-nav{position:absolute;right:0;top:0;z-index:8;display:flex;align-items:center;gap:18px}
+.dive-descent .ltpo-episode-nav button{min-width:18px;margin:0;padding:0 0 5px;border:0;border-bottom:1px solid transparent;background:transparent;color:var(--ltpo-secondary);font:10px/1.3 var(--ltpo-meta),sans-serif;letter-spacing:.12em}
+.dive-descent .ltpo-episode-nav button[aria-pressed="true"]{color:var(--ltpo-title);border-bottom-color:var(--ltpo-accent)}
+.dive-descent .ltpo-episode-nav button:focus-visible{outline:1px solid var(--ltpo-accent);outline-offset:5px}
+.dive-descent .ltpo-episode-stage{position:absolute;inset:0 0 0 22%;overflow:hidden;cursor:grab;touch-action:pan-y}
+.dive-descent .ltpo-episode-stage.is-dragging{cursor:grabbing}
+.dive-descent .ltpo-episode{position:absolute;left:50%;top:50%;inset:auto;display:flex;align-items:center;justify-content:center;width:min(24vw,330px);height:min(70svh,620px);margin:0;z-index:var(--episode-z,1);opacity:var(--episode-opacity,0);transform:translate3d(calc(-50% + var(--episode-x,0px)),-50%,0) scale(var(--episode-scale,.82));transform-origin:center center;will-change:transform,opacity}
+.dive-descent .ltpo-episode video{display:block;width:100%;height:100%;aspect-ratio:9 / 16;object-fit:contain;background:rgba(8,23,37,.22);box-shadow:0 24px 70px rgba(0,0,0,.22)}
+.dive-descent .ltpo-episode figcaption{position:absolute;right:-20px;bottom:-2px;color:var(--ltpo-secondary);font:10px/1.3 var(--ltpo-meta),sans-serif;letter-spacing:.14em}
+.dive-descent .ltpo-reading-ownership{opacity:calc(var(--ownership-progress,0) * .95)}
+
+@media(max-width:760px){
+  .dive-descent .ltpo-reading-phase-amplification .ltpo-reading-method-explanation{left:24px;top:55%;width:78%;font-size:11px;line-height:1.7}
+  .dive-descent .ltpo-reading-translation{left:24px;bottom:12%;font-size:10px;gap:7px}
+  .dive-descent .ltpo-episode-nav{right:24px;top:1%}
+  .dive-descent .ltpo-episode-nav button{font-size:9px}
+  .dive-descent .ltpo-episode-stage{inset:0 0 0 22%}
+  .dive-descent .ltpo-episode{width:min(44vw,240px);height:min(42svh,440px)}
+  .dive-descent .ltpo-episode figcaption{right:-6px;bottom:-15px;font-size:8px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .dive-descent .ltpo-episode-stage{overflow:visible;touch-action:auto}
+  .dive-descent .ltpo-episode{position:relative;left:auto;top:auto;inset:auto;width:min(100%,330px);height:auto;margin:0 auto 30px;opacity:1!important;transform:none!important}
+  .dive-descent .ltpo-episode video{height:auto;aspect-ratio:9 / 16}
+  .dive-descent .ltpo-episode-nav{position:relative;right:auto;top:auto;margin:0 0 24px}
+  .dive-descent .ltpo-reading-translation{position:relative;left:auto;bottom:auto;margin-top:48px}
+}
+
+/* LTPO V1 close-out: enlarge the evidence crop and let the film strip own
+   the amplification viewport. These are editorial viewports, not framed
+   cards: the source image/video continues past the visible crop. */
+.dive-descent .ltpo-reading-phase-foundation .ltpo-reading-phase-action{left:8%;right:auto;bottom:12%;width:min(300px,24vw)}
+.dive-descent .ltpo-reading-phase-foundation .ltpo-reading-evidence-note{right:8%;top:39%;bottom:auto;z-index:9;width:min(35vw,440px);height:clamp(300px,43svh,410px);padding-top:16px;opacity:1!important}
+.dive-descent .ltpo-reading-phase-foundation .ltpo-reading-evidence-note img{width:100%;max-width:none;height:auto;min-height:0;margin-top:17px;object-fit:initial;object-position:top center;opacity:1;filter:saturate(.82) contrast(.98);clip-path:none;transform:translate3d(0,calc(var(--strategy-evidence,0) * -56px),0);will-change:transform}
+.dive-descent .ltpo-reading-phase-foundation .ltpo-reading-evidence-note figcaption{position:absolute;left:0;bottom:0;margin:0}
+
+.dive-descent .ltpo-reading-series{right:4%;top:6%;width:63%;height:88%}
+.dive-descent .ltpo-episode-stage{inset:0 0 0 17%;z-index:7;overflow:hidden;pointer-events:auto;touch-action:pan-y pinch-zoom;user-select:none}
+.dive-descent .ltpo-episode-stage.is-pressed,
+.dive-descent .ltpo-episode-stage.is-pressed *{cursor:grabbing!important}
+.dive-descent .ltpo-episode-stage.is-dragging .ltpo-episode{transition:none!important}
+.dive-descent .ltpo-episode{width:min(38vw,calc(74svh * .5625),500px);height:min(74svh,680px)}
+.dive-descent .ltpo-episode{transition:transform .38s cubic-bezier(.2,.7,.2,1),opacity .28s ease}
+.dive-descent .ltpo-episode video{width:100%;height:100%;max-width:none;pointer-events:none;object-fit:contain}
+
+.dive-descent .ltpo-reading-end{flex-direction:column!important;align-items:center!important;justify-content:center!important;min-height:12vh;margin-top:24vh!important;padding-top:0!important;border-top:0!important}
+.dive-descent .ltpo-reading-end .case-reading-return{margin:0!important;padding:11px 8px 9px!important;border-bottom:1px solid rgba(194,227,222,.44);color:var(--ltpo-title);font-size:12px;letter-spacing:.24em;transition:color .2s ease,border-color .2s ease,transform .2s ease}
+.dive-descent .ltpo-reading-end .case-reading-return:hover,.dive-descent .ltpo-reading-end .case-reading-return:focus-visible{color:var(--ltpo-accent);border-bottom-color:var(--ltpo-accent);transform:translateY(-2px)}
+
+@media(max-width:760px){
+  .dive-descent .ltpo-reading-phase-foundation .ltpo-reading-phase-action{left:24px;right:auto;bottom:10%;width:42%}
+  .dive-descent .ltpo-reading-phase-foundation .ltpo-reading-evidence-note{left:24px;right:24px;top:42%;bottom:auto;width:auto;height:clamp(240px,34svh,330px)}
+  .dive-descent .ltpo-reading-phase-foundation .ltpo-reading-evidence-note img{transform:translate3d(0,calc(var(--strategy-evidence,0) * -42px),0)}
+  .dive-descent .ltpo-reading-series{right:0;top:5%;width:100%;height:90%}
+  .dive-descent .ltpo-episode-stage{inset:0 0 0 12%;z-index:7}
+  .dive-descent .ltpo-episode{width:min(68vw,calc(74svh * .5625),300px);height:min(74svh,520px)}
+  .dive-descent .ltpo-reading-end{min-height:16vh;margin-top:20vh!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .dive-descent .ltpo-reading-strategy{min-height:auto!important}
+  .dive-descent .ltpo-reading-strategy-stage{position:relative!important;height:auto!important;min-height:0!important;padding:0!important;overflow:visible!important;background:none!important}
+  .dive-descent .ltpo-reading-phase-foundation .ltpo-reading-evidence-note{position:relative;left:auto;right:auto;top:auto;bottom:auto;width:100%;height:clamp(300px,50vw,420px);margin:28px 0 0!important;transform:none!important;opacity:1!important}
+  .dive-descent .ltpo-reading-phase-foundation .ltpo-reading-evidence-note img{transform:none!important}
+  .dive-descent .ltpo-reading-phase-foundation .ltpo-reading-phase-action{position:relative;left:auto;right:auto;bottom:auto;width:100%;margin:28px 0 0}
+  .dive-descent .ltpo-reading-series{right:auto;top:auto;width:100%;height:auto}
+  .dive-descent .ltpo-episode-stage{z-index:auto}
+}
+
+/* Final balance pass: keep the reading field alive between the strategy
+   climax and the result without turning every section into a reveal demo. */
+.dive-descent .ltpo-reading-values{transform:translate3d(calc((1 - var(--what-progress,0)) * 3vw),calc((1 - var(--what-progress,0)) * 10px),0) scale(calc(.97 + var(--what-progress,0) * .03));opacity:calc(.36 + var(--what-progress,0) * .64)}
+.dive-descent .ltpo-reading-values span,
+.dive-descent .ltpo-reading-values span:nth-child(2),
+.dive-descent .ltpo-reading-values span:nth-child(3){transform:translate3d(calc((1 - var(--what-progress,0)) * 3vw),0,0)}
+.dive-descent .ltpo-reading-challenge-intro h2{transform:translate3d(calc((1 - var(--what-progress,0)) * 1vw),calc((1 - var(--what-progress,0)) * 3vh),0) scale(calc(.94 + var(--what-progress,0) * .06));opacity:calc(.62 + var(--what-progress,0) * .38)}
+.dive-descent .ltpo-reading-challenge-copy{transform:translate3d(calc((1 - var(--challenge-takeover,0)) * 3vw),calc((1 - var(--challenge-takeover,0)) * 12px),0);opacity:calc(.64 + var(--challenge-takeover,0) * .36)}
+.dive-descent .ltpo-reading-challenge-copy small{transform:translate3d(calc((1 - var(--challenge-relation,0)) * -4vw),0,0);opacity:calc(.5 + var(--challenge-relation,0) * .5)}
+.dive-descent .ltpo-reading-result-heading{transform:translate3d(0,calc((1 - var(--result-progress,0)) * 8px),0);opacity:calc(.84 + var(--result-progress,0) * .16);will-change:transform,opacity}
+.dive-descent .ltpo-reading-result-list{transform:translate3d(0,calc((1 - var(--result-progress,0)) * 12px),0);opacity:calc(.78 + var(--result-progress,0) * .22);will-change:transform,opacity}
+
+/* Typography progression outside Strategy: the same reading field should
+   change its emphasis before and after the main media beat. */
+.dive-descent .ltpo-reading-overview-intro h2{transform:translate3d(calc((1 - var(--what-progress,0)) * 1.4vw),calc((1 - var(--what-progress,0)) * 2.4vh),0) scale(calc(.94 + var(--what-progress,0) * .06));opacity:calc(.62 + var(--what-progress,0) * .38);letter-spacing:calc(.025em + (1 - var(--what-progress,0)) * .045em);will-change:transform,opacity,letter-spacing}
+.dive-descent .ltpo-reading-overview-intro p{transform:translate3d(calc((1 - var(--what-progress,0)) * 1vw),calc((1 - var(--what-progress,0)) * 10px),0);opacity:calc(.68 + var(--what-progress,0) * .32);will-change:transform,opacity}
+.dive-descent .ltpo-reading-challenge-intro h2{letter-spacing:calc(.01em + (1 - var(--challenge-progress,0)) * .035em)}
+.dive-descent .ltpo-reading-challenge-copy small{letter-spacing:calc(.12em + (1 - var(--challenge-relation,0)) * .08em);word-spacing:calc(.02em + (1 - var(--challenge-relation,0)) * .08em)}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading h2{transform:translate3d(calc((1 - var(--strategy-intro,1)) * -1.2vw),calc((1 - var(--strategy-intro,1)) * -2.4vh),0) scale(calc(.97 + var(--strategy-intro,1) * .03))!important;opacity:calc(.58 + var(--strategy-intro,1) * .42)!important;letter-spacing:calc(.01em + (1 - var(--strategy-intro,1)) * .06em)!important;will-change:transform,opacity,letter-spacing}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading p{transform:translate3d(calc((1 - var(--strategy-intro,1)) * -1vw),calc((1 - var(--strategy-intro,1)) * -10px),0);opacity:calc(.48 + var(--strategy-intro,1) * .52);will-change:transform,opacity}
+.dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading small{transform:translate3d(calc((1 - var(--strategy-intro,1)) * -1.4vw),calc((1 - var(--strategy-intro,1)) * -14px),0);opacity:calc(.4 + var(--strategy-intro,1) * .6);will-change:transform,opacity}
+.dive-descent .ltpo-reading-phase-planned .ltpo-reading-phase-heading h3{transform:scale(calc(.96 + var(--phase-focus,0) * .04));letter-spacing:calc(.08em + (1 - var(--phase-focus,0)) * .04em);opacity:calc(.58 + var(--phase-focus,0) * .42);transform-origin:center center;will-change:transform,opacity,letter-spacing}
+
+/* Evidence has an explicit entrance, reading hold and exit. The z-index is
+   also handed off in script so 02 cannot paint over the reading hold. */
+.dive-descent .ltpo-reading-phase-foundation .ltpo-reading-evidence-note{visibility:visible;opacity:1!important}
+.dive-descent .ltpo-reading-phase-foundation .ltpo-reading-phase-heading,
+.dive-descent .ltpo-reading-phase-foundation .ltpo-reading-phase-lead,
+.dive-descent .ltpo-reading-phase-foundation .ltpo-reading-phase-action{transform:translate3d(calc(var(--strategy-foundation-exit,0) * -2.4vw),calc(var(--strategy-foundation-exit,0) * -16px),0);opacity:calc(1 - var(--strategy-foundation-exit,0) * .92);will-change:transform,opacity}
+.dive-descent .ltpo-reading[data-strategy-evidence-phase="pre"] .ltpo-reading-phase-foundation .ltpo-reading-evidence-note{visibility:hidden;opacity:0!important}
+.dive-descent .ltpo-reading[data-strategy-evidence-phase="exit"] .ltpo-reading-phase-foundation .ltpo-reading-evidence-note{opacity:calc(1 - var(--strategy-evidence-exit,0))!important}
+.dive-descent .ltpo-reading-phase-foundation .ltpo-reading-evidence-note img{transform:translate3d(0,calc(var(--strategy-evidence,0) * -18px),0)}
+.dive-descent .ltpo-reading .ltpo-reading-series{opacity:var(--media-progress,0);transition:opacity .25s linear}
+.dive-descent .ltpo-reading[data-strategy-media-phase="arrival"] .ltpo-episode-stage{pointer-events:none}
+
+@media(max-width:760px){
+  .dive-descent .ltpo-reading-phase-foundation .ltpo-reading-evidence-note img{transform:translate3d(0,calc(var(--strategy-evidence,0) * -14px),0)}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .dive-descent .ltpo-reading-values,
+  .dive-descent .ltpo-reading-values span,
+  .dive-descent .ltpo-reading-challenge-intro h2,
+  .dive-descent .ltpo-reading-challenge-copy,
+  .dive-descent .ltpo-reading-challenge-copy small,
+  .dive-descent .ltpo-reading-result-heading,
+  .dive-descent .ltpo-reading-result-list,
+  .dive-descent .ltpo-reading-overview-intro h2,
+  .dive-descent .ltpo-reading-overview-intro p,
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading h2,
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading p,
+  .dive-descent .ltpo-reading-strategy .ltpo-reading-section-heading small,
+  .dive-descent .ltpo-reading-phase-planned .ltpo-reading-phase-heading h3{transform:none!important;opacity:1!important;letter-spacing:inherit!important}
+}
+
+/* LTPO Reading system pass: progress, focus, and a single living point of
+   attention extend the editorial field without turning it into a dashboard. */
+.dive-descent .ltpo-reading-hero{position:relative}
+.dive-descent .ltpo-reading-topbar{pointer-events:none}
+.dive-descent .ltpo-reading-topbar .case-reading-return{pointer-events:auto}
+.dive-descent .ltpo-reading-hero-mark{position:relative;z-index:0;margin:clamp(18px,3vh,40px) 0 -2px;color:var(--ltpo-title);font:500 clamp(150px,24vw,380px)/.78 var(--ltpo-display),sans-serif;letter-spacing:-.06em;white-space:nowrap;transform:translate3d(calc(var(--project-handoff,0) * -5vw),calc(var(--project-handoff,0) * -3vh),0) scale(calc(1 - var(--project-handoff,0) * .18));transform-origin:left center;opacity:calc(.9 - var(--project-handoff,0) * .66);will-change:transform,opacity}
+.dive-descent .ltpo-reading-hero h1{z-index:1}
+
+.dive-descent .ltpo-reading-values{position:relative;display:block;width:min(850px,78%);height:clamp(94px,10.6vw,148px);margin:20vh 0 0 18%;padding-top:18px;border-top:1px solid rgba(194,227,222,.22);font-size:clamp(28px,4.5vw,70px);line-height:1.08;letter-spacing:.04em;transform:translate3d(calc((1 - var(--benefit-progress,0)) * 3vw),calc((1 - var(--benefit-progress,0)) * 10px),0) scale(calc(.97 + var(--benefit-progress,0) * .03));opacity:calc(.36 + var(--benefit-progress,0) * .64);will-change:transform,opacity}
+.dive-descent .ltpo-reading-values span{position:absolute;inset:18px 0 auto;display:block;padding-bottom:15px;border-bottom:1px solid rgba(194,227,222,.14);transform:translate3d(calc((1 - var(--what-progress,0)) * 3vw),var(--benefit-y,0px),0);filter:blur(var(--benefit-blur,0px));opacity:var(--benefit-opacity,1);letter-spacing:var(--benefit-tracking,.025em);transition:none;will-change:transform,filter,opacity,letter-spacing}
+.dive-descent .ltpo-reading-values span:nth-child(2),.dive-descent .ltpo-reading-values span:nth-child(3){transform:translate3d(calc((1 - var(--what-progress,0)) * 3vw),var(--benefit-y,0px),0);}
+
+.dive-descent .ltpo-reading-challenge-copy small{display:flex;align-items:center;flex-wrap:wrap;gap:0;margin-top:70px;letter-spacing:.12em;word-spacing:0}
+.dive-descent .ltpo-reading-challenge-copy small b{font:inherit;color:var(--ltpo-accent);transform:translate3d(0,var(--term-y,0px),0);opacity:calc(.4 + var(--term-reveal,0) * .6);letter-spacing:calc(.1em + var(--term-reveal,0) * .025em);will-change:transform,opacity,letter-spacing}
+.dive-descent .ltpo-reading-challenge-copy small i{flex:0 0 auto}
+
+.dive-descent .ltpo-reading-rail{position:fixed;z-index:35;top:50%;right:32px;width:116px;height:48vh;min-height:290px;transform:translateY(-50%);pointer-events:auto;color:var(--ltpo-body)}
+.dive-descent .ltpo-reading-rail-track{position:absolute;top:0;right:0;width:1px;height:100%;background:rgba(190,215,218,.15)}
+.dive-descent .ltpo-reading-rail-progress{position:absolute;top:0;left:0;display:block;width:1px;height:calc(var(--reading-progress,0) * 100%);background:rgba(218,232,231,.58);transform-origin:top center}
+.dive-descent .ltpo-reading-rail-sections{position:absolute;inset:0 0 0 auto;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;width:100%;padding:0;margin:0}
+.dive-descent .ltpo-reading-rail-sections button{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:10px;width:100%;height:18px;margin:0;padding:0;border:0;background:none;color:rgba(190,215,218,.2);font:10px/1.2 var(--ltpo-meta),var(--ltpo-cn),sans-serif;letter-spacing:.05em;white-space:nowrap;cursor:pointer;transition:color .28s ease}
+.dive-descent .ltpo-reading-rail-sections button i{display:block;width:7px;height:1px;background:currentColor;transition:width .28s ease,background .28s ease}
+.dive-descent .ltpo-reading-rail-sections button span{position:absolute;right:20px;opacity:0;transform:translateX(5px);transition:opacity .28s ease,transform .28s ease}
+.dive-descent .ltpo-reading-rail-sections button.is-current{color:rgba(218,232,231,.75)}
+.dive-descent .ltpo-reading-rail-sections button.is-current i{width:16px;background:rgba(218,232,231,.75)}
+.dive-descent .ltpo-reading-rail:hover .ltpo-reading-rail-sections button span,.dive-descent .ltpo-reading-rail:focus-within .ltpo-reading-rail-sections button span{opacity:1;transform:translateX(0)}
+.dive-descent .ltpo-reading-rail-strategy{position:absolute;right:0;top:30%;bottom:28%;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;width:100%;pointer-events:none}
+.dive-descent .ltpo-reading-rail-strategy i{display:block;width:4px;height:1px;background:rgba(190,215,218,.2);transition:width .28s ease,background .28s ease}
+.dive-descent .ltpo-reading-rail-strategy i.is-current{width:10px;background:rgba(218,232,231,.48)}
+.dive-descent .ltpo-reading-rail-current{position:absolute;right:20px;bottom:-27px;color:rgba(205,220,222,.55);font:10px/1.2 var(--ltpo-meta),var(--ltpo-cn),sans-serif;letter-spacing:.06em;white-space:nowrap}
+
+.dive-descent .ltpo-reading-overview,.dive-descent .ltpo-reading-challenge,.dive-descent .ltpo-reading-strategy,.dive-descent .ltpo-reading-result{--divider-progress:0;position:relative}
+.dive-descent .ltpo-reading-overview::after,.dive-descent .ltpo-reading-challenge::after,.dive-descent .ltpo-reading-strategy::after,.dive-descent .ltpo-reading-result::after{content:"";position:absolute;left:0;right:auto;bottom:4vh;width:66%;height:1px;background:rgba(190,215,218,.16);transform:scaleX(var(--divider-progress,0));transform-origin:left center;will-change:transform}
+.dive-descent .ltpo-reading-challenge::after{left:auto;right:0;width:58%;transform-origin:right center}
+.dive-descent .ltpo-reading-strategy::after{left:13%;width:62%;transform-origin:center center}
+.dive-descent .ltpo-reading-result::after{width:48%;background:rgba(190,215,218,.14)}
+.dive-descent .ltpo-reading-strategy::before{content:"";position:absolute;left:13%;bottom:calc(4vh - 1px);z-index:1;width:4px;height:4px;border-radius:50%;background:rgba(243,231,184,.55);transform:translateX(calc(var(--divider-progress,0) * 62%));opacity:var(--divider-progress,0);}
+
+.dive-descent .ltpo-reading-cursor{position:fixed;z-index:140;left:0;top:0;width:40px;height:36px;pointer-events:none;opacity:0;filter:drop-shadow(0 0 34px rgba(255,243,193,.15));transition:opacity .24s ease;will-change:transform}
+.dive-descent .ltpo-reading-cursor i{display:block;width:100%;height:100%;border-radius:48% 52% 55% 45% / 54% 43% 57% 46%;background:radial-gradient(circle at 38% 35%,rgba(255,244,201,.3),rgba(255,241,184,.17) 42%,rgba(190,229,232,.1) 70%,transparent 74%);box-shadow:0 0 0 1px rgba(255,240,183,.3),0 0 16px rgba(255,240,183,.24),0 0 76px rgba(190,229,232,.1);animation:ltpo-reading-cursor-breathe 6s ease-in-out infinite;transition:width .22s ease,height .22s ease,box-shadow .22s ease}
+.dive-descent .ltpo-reading-cursor[data-cursor-kind="body"] i{width:40px;height:36px}
+.dive-descent .ltpo-reading-cursor[data-cursor-kind="keyword"] i{width:52px;height:38px;box-shadow:0 0 0 1px rgba(255,240,183,.35),0 0 20px rgba(255,240,183,.28),0 0 82px rgba(190,229,232,.11)}
+.dive-descent .ltpo-reading-cursor[data-cursor-kind="media"] i{width:46px;height:30px}
+.dive-descent .ltpo-reading-cursor[data-cursor-kind="media-drag"] i{width:58px;height:26px}
+.dive-descent .ltpo-reading-cursor[data-cursor-kind="rail"] i{width:30px;height:28px;box-shadow:0 0 0 1px rgba(255,240,183,.25),0 0 12px rgba(255,240,183,.2),0 0 48px rgba(190,229,232,.08)}
+.dive-descent .ltpo-reading-cursor[data-cursor-kind="link"] i{width:30px;height:30px;box-shadow:0 0 0 1px rgba(255,240,183,.32),0 0 13px rgba(255,240,183,.24),0 0 52px rgba(190,229,232,.08)}
+@keyframes ltpo-reading-cursor-breathe{0%,100%{transform:scale(.97)}50%{transform:scale(1.03)}}
+.dive-descent .ltpo-episode{left:50%!important;top:50%!important;right:auto!important;bottom:auto!important;inset:auto!important}
+
+@media(max-width:760px){
+  .dive-descent .ltpo-reading-hero-mark{font-size:clamp(116px,30vw,190px)}
+  .dive-descent .ltpo-reading-values{width:92%;height:64px;margin:17vh 0 0;padding-top:14px;font-size:25px}
+  .dive-descent .ltpo-reading-values span{inset:14px 0 auto;padding-bottom:10px}
+  .dive-descent .ltpo-reading-rail{top:72px;right:24px;left:24px;width:auto;height:1px;min-height:0;transform:none}
+  .dive-descent .ltpo-reading-rail-track,.dive-descent .ltpo-reading-rail-progress{width:100%;height:1px}
+  .dive-descent .ltpo-reading-rail-progress{width:calc(var(--reading-progress,0) * 100%);height:1px}
+  .dive-descent .ltpo-reading-rail-sections,.dive-descent .ltpo-reading-rail-strategy,.dive-descent .ltpo-reading-rail-current{display:none}
+  .dive-descent .ltpo-reading-cursor{display:none}
+  .dive-descent .ltpo-reading-overview::after,.dive-descent .ltpo-reading-challenge::after,.dive-descent .ltpo-reading-strategy::after,.dive-descent .ltpo-reading-result::after{width:76%}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .dive-descent .ltpo-reading-hero-mark,.dive-descent .ltpo-reading-values,.dive-descent .ltpo-reading-values span,.dive-descent .ltpo-reading-challenge-copy small b,.dive-descent .ltpo-reading-overview::after,.dive-descent .ltpo-reading-challenge::after,.dive-descent .ltpo-reading-strategy::after,.dive-descent .ltpo-reading-result::after,.dive-descent .ltpo-reading-strategy::before{transform:none!important;filter:none!important}
+  .dive-descent .ltpo-reading-values span,.dive-descent .ltpo-reading-values span:nth-child(2),.dive-descent .ltpo-reading-values span:nth-child(3){position:relative;inset:auto;opacity:1!important;margin-bottom:12px}
+  .dive-descent .ltpo-reading-values{height:auto}
+  .dive-descent .ltpo-reading-cursor{display:none!important}
+}
+
+/* LTPO audit correction: Reading owns the pointer identity on desktop. The
+   exploration cursor remains untouched because every rule is scoped to the
+   Reading state. */
+@media(min-width:761px){
+  .dive-descent.is-case-reading,
+  .dive-descent.is-case-reading *,
+  .dive-descent.is-case-reading .ltpo-reading *{cursor:none!important}
+  .dive-descent.is-case-reading .ltpo-episode-stage,
+  .dive-descent.is-case-reading .ltpo-episode-stage *{cursor:none!important}
+  .dive-descent.is-case-reading .ltpo-reading .ltpo-episode video{cursor:none!important}
+}
+
+/* The values are one typographic anchor. Their emphasis is an automatic,
+   viewport-aware loop; it is not another scroll section. */
+.dive-descent .ltpo-reading-values span{
+  transform:translate3d(0,var(--benefit-y,14px),0)!important;
+  filter:blur(var(--benefit-blur,2.6px));
+  opacity:var(--benefit-opacity,.12);
+  letter-spacing:var(--benefit-tracking,.08em);
+  transition:transform .46s cubic-bezier(.22,.72,.2,1),filter .46s ease,opacity .46s ease,letter-spacing .46s ease;
+  will-change:transform,filter,opacity,letter-spacing;
+}
+.dive-descent .ltpo-reading-challenge-copy small b{
+  transform:translate3d(0,var(--term-y,0),0) scale(var(--term-scale,.94));
+  transition:transform .42s cubic-bezier(.22,.72,.2,1),opacity .42s ease,letter-spacing .42s ease;
+}
+.dive-descent .ltpo-reading .is-cursor-lit{color:var(--ltpo-reading-light,#F3E7B8)!important;transition:color .22s ease}
+
+/* A duplicated type layer makes the Living Cursor illumination legible on
+   the giant landing word and the 02 method lockup without recolouring a
+   whole line. */
+.dive-descent .ltpo-reading-light-target{position:relative;isolation:isolate}
+.dive-descent .ltpo-reading-light-base{position:relative;z-index:1;display:block;color:inherit}
+.dive-descent .ltpo-reading-light-copy{position:absolute;inset:0;z-index:2;display:block;color:#F1E4B2;opacity:var(--light-opacity,0);pointer-events:none;filter:drop-shadow(0 0 13px rgba(243,231,184,.16));-webkit-mask-image:radial-gradient(circle 118px at var(--light-x,50%) var(--light-y,50%),#000 0 28%,rgba(0,0,0,.86) 46%,transparent 78%);mask-image:radial-gradient(circle 118px at var(--light-x,50%) var(--light-y,50%),#000 0 28%,rgba(0,0,0,.86) 46%,transparent 78%);transition:opacity .2s ease}
+.dive-descent .ltpo-reading-method-lockup .ltpo-reading-light-copy i{color:#F1E4B2}
+
+/* Keep Landing metadata on the outer edge so LTPO reads as a composed spread,
+   not a centered project hero with a subtitle stack. */
+@media(min-width:761px){
+  .dive-descent .ltpo-reading-hero{min-height:100svh;max-width:none;padding:0;display:block}
+  .dive-descent .ltpo-reading-hero-mark{position:absolute;left:0;top:29%;margin:0;z-index:0}
+  .dive-descent .ltpo-reading-hero h1{position:absolute;left:4%;top:58%;margin:0;z-index:1;font-size:clamp(48px,6.6vw,104px);line-height:.86}
+  .dive-descent .ltpo-reading-hero .ltpo-reading-deck{position:absolute;right:5.5%;top:39%;width:19%;margin:0}
+  .dive-descent .ltpo-reading-hero .ltpo-reading-date{position:absolute;right:5.5%;top:51%;margin:0}
+  .dive-descent .ltpo-reading-hero .ltpo-reading-role{position:absolute;right:5.5%;bottom:13%;width:25%;margin:0}
+}
+
+/* Evidence has a real reading hold. The image is fully opaque and the only
+   movement during hold is the small internal crop established on entry. */
+.dive-descent .ltpo-reading-phase-foundation .ltpo-reading-evidence-note{
+  z-index:20!important;
+  visibility:visible!important;
+  opacity:1!important;
+  transform:translate3d(0,calc((1 - var(--strategy-evidence,0)) * 20px),0) scale(calc(1.025 - var(--strategy-evidence,0) * .025))!important;
+  transform-origin:center center;
+  will-change:transform;
+}
+.dive-descent .ltpo-reading-phase-foundation .ltpo-reading-evidence-note img{
+  opacity:1!important;
+  filter:saturate(.88) contrast(1)!important;
+  transform:translate3d(0,calc(var(--strategy-evidence,0) * -12px),0)!important;
+}
+.dive-descent .ltpo-reading[data-strategy-evidence-phase="pre"] .ltpo-reading-phase-foundation .ltpo-reading-evidence-note{visibility:hidden!important;opacity:0!important}
+.dive-descent .ltpo-reading[data-strategy-evidence-phase="enter"] .ltpo-reading-phase-foundation .ltpo-reading-evidence-note,
+.dive-descent .ltpo-reading[data-strategy-evidence-phase="hold"] .ltpo-reading-phase-foundation .ltpo-reading-evidence-note{visibility:visible!important;opacity:1!important}
+.dive-descent .ltpo-reading[data-strategy-evidence-phase="hold"] .ltpo-reading-phase-foundation .ltpo-reading-evidence-note{transform:translate3d(0,0,0) scale(1)!important}
+.dive-descent .ltpo-reading[data-strategy-evidence-phase="exit"] .ltpo-reading-phase-foundation .ltpo-reading-evidence-note{visibility:visible!important;opacity:calc(1 - var(--strategy-evidence-exit,0))!important;transform:translate3d(0,calc(var(--strategy-evidence-exit,0) * -20px),0) scale(calc(1 - var(--strategy-evidence-exit,0) * .025))!important}
+
+/* 02 reaches its media object early, then lets the editorial stack and the
+   real video carry the weight. */
+.dive-descent .ltpo-reading .ltpo-reading-series{transition:opacity .34s linear}
+.dive-descent .ltpo-reading .ltpo-episode{transition:transform .78s cubic-bezier(.22,.72,.2,1),opacity .48s ease!important}
+.dive-descent .ltpo-reading .ltpo-episode-stage.is-dragging .ltpo-episode{transition:none!important}
+.dive-descent .ltpo-reading .ltpo-episode{transform:translate3d(calc(-50% + var(--episode-x,0px) + var(--episode-nudge,0px)),-50%,0) scale(var(--episode-scale,.82))}
+.dive-descent .ltpo-reading .ltpo-episode-stage.is-affordance-nudge-active .ltpo-episode.is-current{--episode-nudge:10px}
+.dive-descent .ltpo-reading .ltpo-episode-stage.is-affordance-nudge-active .ltpo-episode:not(.is-current){--episode-nudge:4px}
+.dive-descent .ltpo-reading .ltpo-episode video{pointer-events:none}
+
+/* The Rail is intentionally still quiet, but no longer disappears against
+   the deep field at normal brightness. */
+.dive-descent .ltpo-reading-rail-track{background:rgba(190,215,218,.22)!important}
+.dive-descent .ltpo-reading-rail-progress{background:rgba(218,232,231,.74)!important}
+.dive-descent .ltpo-reading-rail-sections button{color:rgba(190,215,218,.34)!important}
+.dive-descent .ltpo-reading-rail-sections button.is-current{color:rgba(218,232,231,.86)!important}
+.dive-descent .ltpo-reading-rail-sections button.is-current i{background:rgba(218,232,231,.9)!important}
+.dive-descent .ltpo-reading-rail-strategy i{background:rgba(190,215,218,.32)!important}
+.dive-descent .ltpo-reading-rail-strategy i.is-current{background:rgba(218,232,231,.68)!important}
+.dive-descent .ltpo-reading-rail-current{color:rgba(205,220,222,.74)!important}
+
+/* A low-amplitude, long-period drift keeps the Reading field alive while the
+   user pauses, without adding world motion or competing with the copy. */
+.dive-descent .ltpo-reading::before{animation:ltpo-reading-water-drift 18s ease-in-out infinite alternate}
+@keyframes ltpo-reading-water-drift{0%{opacity:.88;transform:translate3d(-.5%,-.35%,0) scale(1.01)}50%{opacity:1;transform:translate3d(.45%,.25%,0) scale(1.018)}100%{opacity:.9;transform:translate3d(-.25%,.4%,0) scale(1.012)}}
+
+@media(prefers-reduced-motion:reduce){
+  .dive-descent .ltpo-reading-values span{transition:opacity .2s ease!important;transform:none!important;filter:none!important;letter-spacing:inherit!important}
+  .dive-descent .ltpo-reading-light-copy{transition:none!important}
+  .dive-descent .ltpo-reading::before{animation:none!important}
+  .dive-descent .ltpo-reading .ltpo-episode{transition:none!important}
+}
+
+/* Strict LTPO Reading correction: the page uses one cold information field,
+   with pale aqua for structure and warm gold reserved for attention. */
+.dive-descent .ltpo-reading[data-reading-variant="tide"]{
+  --ltpo-title:#E1EAEB;
+  --ltpo-accent:#BFE3E7;
+  --ltpo-body:#C9DDE0;
+  --ltpo-secondary:#AFCFD4;
+  --ltpo-reading-light:#F3E7B8;
+}
+
+/* The system pointer is hidden only after the persistent Reading cursor has
+   announced readiness. Before that attribute exists, native cursor remains
+   the safe fallback. */
+@media(min-width:761px){
+  .dive-descent.is-case-reading:has(.ltpo-reading[data-living-cursor="ready"]),
+  .dive-descent.is-case-reading:has(.ltpo-reading[data-living-cursor="ready"]) *{cursor:none!important}
+  .dive-descent.is-case-reading:has(.ltpo-reading[data-living-cursor="ready"]) .ltpo-episode-stage,
+  .dive-descent.is-case-reading:has(.ltpo-reading[data-living-cursor="ready"]) .ltpo-episode-stage *{cursor:none!important}
+}
+
+/* The local light is a duplicate text layer, not an element-wide hover
+   colour. This keeps the base glyphs cold while a soft mask follows the
+   pointer across the exact same line box. */
+.dive-descent .ltpo-reading-text-light-target{position:relative;isolation:isolate}
+.dive-descent .ltpo-reading-text-light-copy{
+  position:absolute!important;
+  inset:0!important;
+  z-index:2!important;
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  color:#F4DF79!important;
+  opacity:var(--text-light-opacity,0);
+  pointer-events:none!important;
+  transform:none!important;
+  filter:drop-shadow(0 0 10px rgba(243,231,184,.12))!important;
+  -webkit-mask-image:radial-gradient(ellipse 62px 48px at var(--text-light-x,50%) var(--text-light-y,50%),#000 0 24%,rgba(0,0,0,.9) 43%,rgba(0,0,0,.38) 64%,transparent 84%);
+  mask-image:radial-gradient(ellipse 62px 48px at var(--text-light-x,50%) var(--text-light-y,50%),#000 0 24%,rgba(0,0,0,.9) 43%,rgba(0,0,0,.38) 64%,transparent 84%);
+  transition:opacity .2s ease;
+  will-change:opacity,mask-position;
+}
+.dive-descent .ltpo-reading-challenge-copy small .ltpo-reading-text-light-copy{color:#F3E7B8!important;-webkit-mask-image:radial-gradient(ellipse 84px 52px at var(--text-light-x,50%) var(--text-light-y,50%),#000 0 24%,rgba(0,0,0,.9) 46%,rgba(0,0,0,.38) 68%,transparent 88%);mask-image:radial-gradient(ellipse 84px 52px at var(--text-light-x,50%) var(--text-light-y,50%),#000 0 24%,rgba(0,0,0,.9) 46%,rgba(0,0,0,.38) 68%,transparent 88%)}
+.dive-descent .ltpo-reading .is-cursor-lit{color:inherit!important}
+
+/* Landing is a giant editorial mark, not a conventional title stack. */
+.dive-descent .ltpo-reading-hero-mark{color:transparent!important}
+.dive-descent .ltpo-reading-hero-mark .ltpo-reading-light-base{
+  color:transparent!important;
+  background:linear-gradient(102deg,#E1EAEB 20%,#C9E7E8 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+}
+.dive-descent .ltpo-reading-hero-mark .ltpo-reading-light-copy{color:#F1E4B2!important;-webkit-mask-image:radial-gradient(ellipse 132px 100px at var(--light-x,50%) var(--light-y,50%),#000 0 25%,rgba(0,0,0,.9) 46%,rgba(0,0,0,.4) 67%,transparent 88%);mask-image:radial-gradient(ellipse 132px 100px at var(--light-x,50%) var(--light-y,50%),#000 0 25%,rgba(0,0,0,.9) 46%,rgba(0,0,0,.4) 67%,transparent 88%)}
+.dive-descent .ltpo-reading-method-lockup .ltpo-reading-light-base{color:#E1EAEB!important}
+.dive-descent .ltpo-reading-method-lockup .ltpo-reading-light-base i{color:#BFE3E7!important}
+@media(min-width:761px){
+  .dive-descent .ltpo-reading-phase-amplification .ltpo-reading-method-lockup{
+    width:min(720px,66vw)!important;
+    max-width:none!important;
+    white-space:nowrap!important;
+  }
+}
+
+/* One viewport reads the definition and its benefit anchor together. */
+@media(min-width:761px){
+  .dive-descent .ltpo-reading-overview{min-height:104svh!important;padding-top:16vh!important;padding-bottom:12vh!important}
+  .dive-descent .ltpo-reading-overview-intro{max-width:34em!important}
+  .dive-descent .ltpo-reading-overview .ltpo-reading-values{margin-top:12vh!important}
+  .dive-descent .ltpo-reading-challenge{min-height:112svh!important;padding-top:16vh!important;padding-bottom:14vh!important}
+}
+
+/* Strategy is a handoff state machine. Detail belongs to one stage at a time;
+   the intro keeps only the low-weight structural skeleton. */
+.dive-descent .ltpo-reading[data-strategy-state="intro"] .ltpo-reading-phase> :not(.ltpo-reading-phase-heading),
+.dive-descent .ltpo-reading[data-strategy-state="clear"] .ltpo-reading-phase,
+.dive-descent .ltpo-reading[data-strategy-state="foundation"] .ltpo-reading-phase:not(.ltpo-reading-phase-foundation),
+.dive-descent .ltpo-reading[data-strategy-state="evidence"] .ltpo-reading-phase:not(.ltpo-reading-phase-foundation),
+.dive-descent .ltpo-reading[data-strategy-state="amplification"] .ltpo-reading-phase:not(.ltpo-reading-phase-amplification),
+.dive-descent .ltpo-reading[data-strategy-state="planned"] .ltpo-reading-phase:not(.ltpo-reading-phase-planned){
+  visibility:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+.dive-descent .ltpo-reading[data-strategy-state="intro"] .ltpo-reading-phase-heading{opacity:.22!important;transform:translate3d(0,0,0) scale(.96)!important}
+.dive-descent .ltpo-reading[data-strategy-state="evidence"] .ltpo-reading-phase-foundation .ltpo-reading-phase-heading,
+.dive-descent .ltpo-reading[data-strategy-state="evidence"] .ltpo-reading-phase-foundation .ltpo-reading-phase-lead,
+.dive-descent .ltpo-reading[data-strategy-state="evidence"] .ltpo-reading-phase-foundation .ltpo-reading-phase-action{opacity:.16!important;transform:translate3d(-1.2vw,-8px,0)!important}
+.dive-descent .ltpo-reading[data-strategy-state="clear"] .ltpo-reading-strategy-scenes{visibility:hidden!important}
+
+/* Evidence is a real image viewport with a full-opacity hold. No card chrome,
+   no browser simulation, and enough crop to read the supplied source. */
+@media(min-width:761px){
+  .dive-descent .ltpo-reading-phase-foundation .ltpo-reading-evidence-note{
+    right:5%!important;
+    top:14%!important;
+    bottom:auto!important;
+    z-index:30!important;
+    width:min(58vw,760px)!important;
+    height:min(65svh,560px)!important;
+    margin:0!important;
+    padding:0!important;
+    border-top:0!important;
+    overflow:hidden!important;
+  }
+  .dive-descent .ltpo-reading-phase-foundation .ltpo-reading-evidence-note img{
+    width:100%!important;
+    max-width:none!important;
+    height:auto!important;
+    margin:16px 0 0!important;
+    opacity:1!important;
+    filter:none!important;
+    transform:translate3d(0,calc(var(--strategy-evidence,0) * -10px),0)!important;
+    clip-path:none!important;
+  }
+}
+
+/* Rail and divider are structural orientation, not a second interface. */
+.dive-descent .ltpo-reading-rail-track{background:rgba(191,227,231,.26)!important}
+.dive-descent .ltpo-reading-rail-progress{background:rgba(201,231,232,.82)!important}
+.dive-descent .ltpo-reading-rail-sections button{color:rgba(191,227,231,.36)!important}
+.dive-descent .ltpo-reading-rail-sections button.is-current{color:rgba(225,234,235,.92)!important}
+.dive-descent .ltpo-reading-rail-sections button.is-current i{background:rgba(225,234,235,.92)!important}
+.dive-descent .ltpo-reading-rail-strategy i{background:rgba(191,227,231,.28)!important}
+.dive-descent .ltpo-reading-rail-strategy i.is-current{background:rgba(225,234,235,.72)!important}
+.dive-descent .ltpo-reading-rail-current{color:rgba(225,234,235,.8)!important}
+.dive-descent .ltpo-reading-overview::after,.dive-descent .ltpo-reading-challenge::after,.dive-descent .ltpo-reading-strategy::after,.dive-descent .ltpo-reading-result::after{background:rgba(191,227,231,.24)!important}
+
+.dive-descent .ltpo-reading-cursor{width:38px!important;height:35px!important;filter:drop-shadow(0 0 30px rgba(255,243,193,.18))!important}
+.dive-descent .ltpo-reading-cursor i{background:radial-gradient(circle at 38% 34%,#FFF8C9 0 8%,rgba(255,244,168,.86) 22%,rgba(244,223,121,.52) 50%,rgba(183,231,234,.16) 73%,transparent 80%)!important;box-shadow:0 0 0 1px rgba(232,214,138,.68),0 0 16px rgba(244,223,121,.34),0 0 88px rgba(183,231,234,.16)!important}
+
+.dive-descent .ltpo-reading::before{animation-duration:16s}
+
+@media(max-width:760px){
+  .dive-descent .ltpo-reading-phase-foundation .ltpo-reading-evidence-note{width:calc(100% - 48px)!important;height:min(62svh,480px)!important;margin:0 24px!important;padding:0!important;border-top:0!important}
+  .dive-descent .ltpo-reading-phase-foundation .ltpo-reading-evidence-note img{width:100%!important;height:auto!important;margin-top:14px!important;transform:translate3d(0,calc(var(--strategy-evidence,0) * -8px),0)!important;filter:none!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .dive-descent .ltpo-reading-text-light-copy{transition:none!important}
+  .dive-descent .ltpo-reading-hero-mark{transform:none!important;opacity:1!important}
+  .dive-descent .ltpo-reading-phase-foundation .ltpo-reading-evidence-note,
+  .dive-descent .ltpo-reading-phase-foundation .ltpo-reading-evidence-note img{transform:none!important}
+}
+
+/* Final public IA correction: the active strategy has two real stages. */
+.dive-descent .ltpo-reading-strategy-bridge{position:absolute;left:39%;top:54%;width:min(600px,50vw);height:180px;z-index:8;pointer-events:none;color:var(--ltpo-accent)}
+.dive-descent .ltpo-reading-strategy-bridge span{position:absolute;display:block;color:var(--ltpo-accent);font:400 clamp(26px,3.4vw,52px)/1 var(--ltpo-cn),sans-serif;letter-spacing:.03em;white-space:nowrap;opacity:.74;will-change:transform,opacity}
+.dive-descent .ltpo-reading-strategy-bridge span:nth-child(1){left:0;top:0;transform:translate3d(calc(var(--strategy-progress,0) * 2vw),calc((1 - var(--strategy-progress,0)) * 8px),0);opacity:calc(.72 + var(--strategy-progress,0) * .18)}
+.dive-descent .ltpo-reading-strategy-bridge span:nth-child(2){left:39%;top:42px;transform:translate3d(calc((1 - var(--strategy-progress,0)) * 2vw),0,0);opacity:calc(.64 + var(--strategy-progress,0) * .26)}
+.dive-descent .ltpo-reading-strategy-bridge span:nth-child(3){left:17%;top:100px;transform:translate3d(calc(var(--strategy-progress,0) * 3vw),calc((1 - var(--strategy-progress,0)) * -5px),0);opacity:calc(.66 + var(--strategy-progress,0) * .26)}
+
+/* Landing: establish a centered thesis, then recompose it into the left
+   anchor / right metadata spread while the same content stays present. */
+@media(min-width:761px){
+  .dive-descent .ltpo-reading-hero{min-height:180svh!important;padding:0!important;position:relative!important;z-index:4;align-content:start!important;justify-content:start!important}
+  .dive-descent .ltpo-reading-hero-stage{position:sticky;top:0;width:100%;height:100svh;min-height:640px;overflow:hidden}
+  .dive-descent .ltpo-reading-hero-mark{left:50%!important;top:50vh!important;margin:0!important;transform:translate3d(calc(-50% - var(--project-handoff,0) * 20vw),calc(-50% - var(--project-handoff,0) * 8vh - var(--project-exit,0) * 18vh),0) scale(calc(1 - var(--project-handoff,0) * .1 - var(--project-exit,0) * .04))!important;opacity:calc(.96 - var(--project-exit,0) * .68)!important;transition:none!important}
+  .dive-descent .ltpo-reading-hero .ltpo-reading-deck{top:42vh!important;font-size:clamp(16px,calc(1.1vw + var(--project-handoff,0) * 1.1vw),30px)!important;transform:translate3d(calc((1 - var(--project-handoff,0)) * 2vw),calc((1 - var(--project-handoff,0)) * 8px - var(--project-exit,0) * 12vh),0)!important;opacity:calc(.22 + var(--project-handoff,0) * .78 - var(--project-exit,0) * .58)!important;transition:none!important}
+  .dive-descent .ltpo-reading-hero .ltpo-reading-date{top:52vh!important;font-size:clamp(10px,calc(.62vw + var(--project-handoff,0) * .35vw),16px)!important;transform:translate3d(calc((1 - var(--project-handoff,0)) * 2vw),calc((1 - var(--project-handoff,0)) * 6px - var(--project-exit,0) * 12vh),0)!important;opacity:calc(.2 + var(--project-handoff,0) * .8 - var(--project-exit,0) * .58)!important;transition:none!important}
+  .dive-descent .ltpo-reading-hero .ltpo-reading-role{top:64vh!important;bottom:auto!important;font-size:clamp(10px,calc(.62vw + var(--project-handoff,0) * .28vw),14px)!important;transform:translate3d(calc((1 - var(--project-handoff,0)) * 2vw),calc((1 - var(--project-handoff,0)) * 8px - var(--project-exit,0) * 12vh),0)!important;opacity:calc(.16 + var(--project-handoff,0) * .84 - var(--project-exit,0) * .58)!important;transition:none!important}
+}
+
+/* Overview is one spread, not a horizontal UI strip. */
+@media(min-width:761px){
+  .dive-descent .ltpo-reading-overview{min-height:100svh!important;padding:0!important}
+  .dive-descent .ltpo-reading-overview-intro{position:absolute;left:8%;top:25vh;width:min(390px,31vw);max-width:none!important;margin:0!important}
+  .dive-descent .ltpo-reading-overview .ltpo-reading-values{position:absolute;right:8%;top:41vh;width:min(620px,49vw);height:150px;margin:0!important;padding:0!important;border:0!important;transform:translate3d(calc((1 - var(--what-progress,0)) * 2vw),0,0) scale(calc(.97 + var(--what-progress,0) * .03))!important;opacity:calc(.46 + var(--what-progress,0) * .54)!important}
+  .dive-descent .ltpo-reading-overview .ltpo-reading-values span,
+  .dive-descent .ltpo-reading-overview .ltpo-reading-values span:nth-child(2),
+  .dive-descent .ltpo-reading-overview .ltpo-reading-values span:nth-child(3){inset:0!important;padding:0!important;border:0!important;transform:translate3d(0,var(--benefit-y,0px),0)!important;opacity:var(--benefit-opacity,.12)!important}
+}
+
+/* Challenge keeps every concept present and uses distance to show the gap. */
+@media(min-width:761px){
+  .dive-descent .ltpo-reading-challenge{min-height:116svh!important;padding:0!important}
+  .dive-descent .ltpo-reading-challenge-intro{position:absolute;left:8%;top:21vh;width:min(370px,29vw);margin:0!important}
+  .dive-descent .ltpo-reading-challenge .ltpo-reading-challenge-copy{position:absolute;right:8%;top:42vh;width:min(650px,51vw);margin:0!important;padding:0!important}
+  .dive-descent .ltpo-reading-challenge .ltpo-reading-challenge-copy small{position:relative;display:block;width:100%;height:220px;margin:62px 0 0!important;max-width:none!important}
+  .dive-descent .ltpo-reading-challenge .ltpo-reading-challenge-copy small b{position:absolute;display:block;margin:0;color:var(--ltpo-accent)!important;opacity:calc(.58 + var(--term-reveal,0) * .42)!important;transform:translate3d(0,var(--term-y,0px),0)!important;letter-spacing:.05em!important}
+  .dive-descent .ltpo-reading-challenge .ltpo-reading-challenge-copy small b:nth-of-type(1){left:0;top:0}
+  .dive-descent .ltpo-reading-challenge .ltpo-reading-challenge-copy small b:nth-of-type(2){left:63%;top:18px}
+  .dive-descent .ltpo-reading-challenge .ltpo-reading-challenge-copy small b:nth-of-type(3){left:24%;top:122px}
+  .dive-descent .ltpo-reading-challenge .ltpo-reading-challenge-copy small b:nth-of-type(4){left:70%;top:168px}
+}
+
+/* The method remains legible, then yields primary weight to the film stack. */
+.dive-descent .ltpo-reading-phase-amplification .ltpo-reading-method-lockup{transform:translate3d(calc(var(--media-progress,0) * -1.6vw),calc(var(--media-progress,0) * -3vh),0) scale(calc(1 - var(--media-progress,0) * .05))!important;opacity:calc(1 - var(--media-progress,0) * .76)!important}
+.dive-descent .ltpo-reading-phase-amplification .ltpo-reading-method-explanation{transform:translate3d(0,calc(var(--media-progress,0) * -2vh),0)!important;opacity:calc(1 - var(--media-progress,0) * .7)!important}
+.dive-descent .ltpo-reading-phase-amplification .ltpo-reading-translation{opacity:calc(1 - var(--media-progress,0) * .62)!important}
+.dive-descent .ltpo-reading-phase-amplification .ltpo-reading-ownership{opacity:var(--ownership-progress,0)!important;transform:translate3d(0,calc((1 - var(--ownership-progress,0)) * 10px),0)!important}
+.dive-descent .ltpo-reading-result-hero{position:relative!important;display:block!important;isolation:isolate;font:400 clamp(46px,7.2vw,104px)/.94 var(--ltpo-cn),sans-serif!important;letter-spacing:-.045em!important;color:var(--ltpo-title)!important}
+.dive-descent .ltpo-reading-result-hero .ltpo-reading-light-base{display:block;color:var(--ltpo-title)!important}
+.dive-descent .ltpo-reading-result-hero .ltpo-reading-light-copy{-webkit-mask-image:radial-gradient(ellipse 138px 106px at var(--light-x,50%) var(--light-y,50%),#000 0 25%,rgba(0,0,0,.9) 46%,rgba(0,0,0,.4) 67%,transparent 88%);mask-image:radial-gradient(ellipse 138px 106px at var(--light-x,50%) var(--light-y,50%),#000 0 25%,rgba(0,0,0,.9) 46%,rgba(0,0,0,.4) 67%,transparent 88%)}
+.dive-descent .ltpo-reading-result-hero br{display:block!important}
+
+@media(max-width:760px){
+  .dive-descent .ltpo-reading-strategy-bridge{left:24px;top:43%;width:calc(100% - 48px);height:150px}
+  .dive-descent .ltpo-reading-strategy-bridge span{font-size:clamp(23px,7vw,36px)}
+  .dive-descent .ltpo-reading-strategy-bridge span:nth-child(2){left:45%;top:36px}
+  .dive-descent .ltpo-reading-strategy-bridge span:nth-child(3){left:20%;top:90px}
+  .dive-descent .ltpo-reading-overview .ltpo-reading-values{border:0!important}
+  .dive-descent .ltpo-reading-overview .ltpo-reading-values span{border:0!important;padding:0!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .dive-descent .ltpo-reading-hero-mark{transform:translate3d(-50%,-50%,0)!important;opacity:1!important}
+  .dive-descent .ltpo-reading-hero .ltpo-reading-deck,
+  .dive-descent .ltpo-reading-hero .ltpo-reading-date,
+  .dive-descent .ltpo-reading-hero .ltpo-reading-role{transform:none!important;opacity:1!important}
+  .dive-descent .ltpo-reading-strategy-bridge span{transform:none!important;opacity:.9!important}
+  .dive-descent .ltpo-reading-phase-amplification .ltpo-reading-method-lockup,
+  .dive-descent .ltpo-reading-phase-amplification .ltpo-reading-method-explanation,
+  .dive-descent .ltpo-reading-phase-amplification .ltpo-reading-translation,
+  .dive-descent .ltpo-reading-phase-amplification .ltpo-reading-ownership{transform:none!important;opacity:1!important}
+}
