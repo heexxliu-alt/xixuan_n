@@ -2375,7 +2375,6 @@
       lifeline,
       world.querySelector('.descent-depth'),
       world.querySelector('.descent-onboarding'),
-      world.querySelector('.cursor-layer'),
       world.querySelector('.ascent-light'),
       ascentBubbles,
       caseDiscoveryLayer,
@@ -2394,21 +2393,34 @@
     const ltpoEpisodeVideos = ltpoEpisodeItems.map((item) => item.querySelector('video')).filter(Boolean);
     const ltpoEpisodeStage = ltpoReading?.querySelector('.ltpo-episode-stage');
     const ltpoEpisodeSelects = [...(ltpoReading?.querySelectorAll('[data-episode-select]') || [])];
+    const ltpoMediaSoundToggle = ltpoReading?.querySelector('.ltpo-media-sound');
+    const ltpoMediaGesture = ltpoReading?.querySelector('.ltpo-media-gesture');
     const ltpoReadingResult = ltpoReading?.querySelector('.ltpo-reading-result');
     const ltpoReadingValueItems = [...(ltpoReading?.querySelectorAll('.ltpo-reading-values span') || [])];
     const ltpoReadingValues = ltpoReading?.querySelector('.ltpo-reading-values');
+    const ltpoMethodTerms = [...(ltpoReading?.querySelectorAll('.ltpo-reading-method-explanation em') || [])];
     const ltpoReadingRail = ltpoReading?.querySelector('.ltpo-reading-rail');
     const ltpoReadingRailProgress = ltpoReading?.querySelector('.ltpo-reading-rail-progress');
     const ltpoReadingRailSections = [...(ltpoReading?.querySelectorAll('[data-reading-target]') || [])];
     const ltpoReadingRailCurrent = ltpoReading?.querySelector('.ltpo-reading-rail-current');
-    const ltpoReadingCursor = ltpoReading?.querySelector('.ltpo-reading-cursor');
+    // The world cursor is the single pointer runtime. Reading only changes
+    // its visual mode; it never creates a section-local cursor or coordinate
+    // system.
+    const ltpoReadingCursor = world.querySelector('.cursor-layer');
     const ltpoReadingChallengeTerms = [...(ltpoReading?.querySelectorAll('.ltpo-reading-challenge-copy small b') || [])];
     const ltpoReadingLightTargets = [...(ltpoReading?.querySelectorAll('.ltpo-reading-light-target') || [])];
     const ltpoReadingTextTargets = [...(ltpoReading?.querySelectorAll([
+      '.ltpo-reading-overview-intro h2',
       '.ltpo-reading-overview-intro p',
+      '.ltpo-reading-values span',
+      '.ltpo-reading-challenge-intro h2',
       '.ltpo-reading-challenge-intro p',
       '.ltpo-reading-challenge-copy p',
       '.ltpo-reading-challenge-copy small b',
+      '.ltpo-reading-section-heading h2',
+      '.ltpo-reading-section-heading p',
+      '.ltpo-reading-strategy-bridge span',
+      '.ltpo-reading-phase-heading h3',
       '.ltpo-reading-phase-lead',
       '.ltpo-reading-phase-action b',
       '.ltpo-reading-method-explanation',
@@ -2442,35 +2454,42 @@
     let ltpoEpisodePointerStartTime = 0;
     let ltpoEpisodeDragMoved = false;
     let ltpoEpisodeWheelDelta = 0;
+    let ltpoMediaSoundEnabled = false;
     let ltpoMediaAffordancePlayed = false;
     let ltpoMediaAffordanceTimer = null;
-    let readingCursorTargetX = 0;
-    let readingCursorTargetY = 0;
-    let readingCursorX = 0;
-    let readingCursorY = 0;
-    let readingCursorLastX = 0;
-    let readingCursorLastY = 0;
-    let readingCursorAngle = 0;
-    let readingCursorRaf = 0;
-    let readingCursorVisible = false;
     let ltpoReadingIlluminationTargets = [];
     let ltpoReadingBenefitIndex = 0;
     let ltpoReadingBenefitTimer = null;
+    let ltpoMediaStackCollapse = 0;
+    let ltpoResultPulsePlayed = false;
+    let ltpoResultPulseTimer = null;
     const setupLTPOReadingTextIllumination = () => {
-      ltpoReadingIlluminationTargets = ltpoReadingTextTargets.map((target) => {
-        target.classList.add('ltpo-reading-text-light-target');
-        const copy = target.cloneNode(true);
-        copy.classList.remove('ltpo-reading-text-light-target');
-        copy.classList.add('ltpo-reading-text-light-copy');
-        copy.removeAttribute('id');
-        copy.setAttribute('aria-hidden', 'true');
-        target.appendChild(copy);
-        return { target, copy };
+      const expandableTargets = ltpoReadingLightTargets.flatMap((target) => (
+        target.matches('.ltpo-reading-method-lockup') && target.children.length
+          ? [...target.children]
+          : [target]
+      ));
+      ltpoReadingIlluminationTargets = [...new Set([...expandableTargets, ...ltpoReadingTextTargets])];
+      ltpoReadingIlluminationTargets.forEach((target) => {
+        const level = target.dataset.lightLevel
+          || (target.matches('.ltpo-reading-hero-mark, .ltpo-reading-method-lockup, .ltpo-reading-result-hero') ? 'hero'
+            : target.matches('h2, h3, .ltpo-reading-values span, .ltpo-reading-challenge-copy small b, .ltpo-reading-strategy-bridge span') ? 'section'
+              : 'body');
+        target.dataset.lightLevel = level;
+        target.classList.add('ltpo-reading-glyph-light');
+        target.style.setProperty('--local-light-x', '-999px');
+        target.style.setProperty('--local-light-y', '-999px');
       });
     };
     setupLTPOReadingTextIllumination();
     const pauseLTPOEpisodeVideos = () => {
       ltpoEpisodeVideos.forEach((video) => video.pause());
+    };
+    const syncLTPOMediaSound = () => {
+      if (!ltpoMediaSoundToggle) return;
+      ltpoMediaSoundToggle.textContent = ltpoMediaSoundEnabled ? 'SOUND ON' : 'SOUND OFF';
+      ltpoMediaSoundToggle.setAttribute('aria-pressed', String(ltpoMediaSoundEnabled));
+      ltpoMediaSoundToggle.setAttribute('aria-label', ltpoMediaSoundEnabled ? '关闭视频声音' : '开启视频声音');
     };
     const playLTPOEpisode = (index = ltpoEpisodeActiveIndex) => {
       const video = ltpoEpisodeVideos[index];
@@ -2479,13 +2498,18 @@
       if (!video || !stageRect || !rootRect || stageRect.height <= 0 || rootRect.height <= 0) return;
       const isVisible = stageRect.bottom > rootRect.top && stageRect.top < rootRect.bottom;
       if (!isVisible) return;
-      video.muted = true;
+      video.muted = !ltpoMediaSoundEnabled;
       video.loop = true;
       video.play().catch(() => {});
     };
+    const markLTPOMediaInteracted = () => {
+      ltpoReading?.setAttribute('data-media-interacted', 'true');
+      if (ltpoMediaGesture) ltpoMediaGesture.setAttribute('aria-hidden', 'true');
+    };
     const syncLTPOEpisodeVisuals = () => {
       if (!ltpoEpisodeItems.length) return;
-      const step = Math.max(180, (ltpoEpisodeStage?.clientWidth || 620) * .46);
+      const baseStep = Math.max(180, (ltpoEpisodeStage?.clientWidth || 620) * .46);
+      const step = baseStep * (1 - ltpoMediaStackCollapse * .58);
       ltpoEpisodeItems.forEach((episode, index) => {
         const distance = index - ltpoEpisodeActiveIndex;
         const draggedDistance = distance + ltpoEpisodeDragOffset / step;
@@ -2493,13 +2517,13 @@
         const opacity = distance === 0
           ? 1
           : Math.abs(distance) === 1
-            ? .34 + proximity * .3
-            : .03;
+            ? .38 + proximity * .28
+            : .12 + proximity * .1;
         episode.style.setProperty('--episode-x', `${(distance * step + ltpoEpisodeDragOffset).toFixed(2)}px`);
         episode.style.setProperty('inset', 'auto', 'important');
         episode.style.setProperty('left', '50%', 'important');
         episode.style.setProperty('top', '50%', 'important');
-        episode.style.setProperty('--episode-scale', (distance === 0 ? 1 : .82 + proximity * .08).toFixed(3));
+        episode.style.setProperty('--episode-scale', (distance === 0 ? 1 - ltpoMediaStackCollapse * .12 : .82 + proximity * .08 - ltpoMediaStackCollapse * .08).toFixed(3));
         episode.style.setProperty('--episode-opacity', opacity.toFixed(3));
         episode.style.setProperty('--episode-z', `${Math.round(20 - Math.abs(distance))}`);
         episode.classList.toggle('is-current', distance === 0);
@@ -2546,6 +2570,7 @@
       if (!ltpoEpisodeDragMoved) {
         if (Math.abs(dx) < 8 || Math.abs(dx) <= Math.abs(dy)) return;
         ltpoEpisodeDragMoved = true;
+        markLTPOMediaInteracted();
         ltpoEpisodeStage.classList.add('is-dragging');
         ltpoEpisodeStage.setPointerCapture?.(event.pointerId);
       }
@@ -2590,6 +2615,7 @@
       event.preventDefault();
       ltpoEpisodeWheelDelta += event.deltaX;
       if (Math.abs(ltpoEpisodeWheelDelta) < 34) return;
+      markLTPOMediaInteracted();
       selectLTPOEpisode(ltpoEpisodeActiveIndex + (ltpoEpisodeWheelDelta > 0 ? 1 : -1));
       ltpoEpisodeWheelDelta = 0;
     };
@@ -2616,7 +2642,28 @@
       setLTPOBenefitState(ltpoReadingBenefitIndex);
       ltpoReadingBenefitTimer = window.setInterval(() => {
         setLTPOBenefitState((ltpoReadingBenefitIndex + 1) % ltpoReadingValueItems.length);
-      }, 2800);
+      }, 1120);
+    };
+    const setLTPOMethodEmphasis = (progress) => {
+      ltpoMethodTerms.forEach((term, index) => {
+        const focus = clamp(progress * 1.35 - index * .23, 0, 1);
+        term.style.setProperty('--method-focus', focus.toFixed(3));
+      });
+    };
+    const playLTPOResultPulse = () => {
+      if (ltpoResultPulsePlayed || !ltpoReadingResult || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      ltpoResultPulsePlayed = true;
+      ltpoReadingResult.classList.remove('is-result-pulse', 'is-result-pulse-peak');
+      void ltpoReadingResult.offsetWidth;
+      ltpoReadingResult.classList.add('is-result-pulse');
+      window.requestAnimationFrame(() => ltpoReadingResult?.classList.add('is-result-pulse-peak'));
+      ltpoResultPulseTimer = window.setTimeout(() => {
+        ltpoReadingResult?.classList.remove('is-result-pulse-peak');
+      }, 590);
+      window.setTimeout(() => {
+        ltpoReadingResult?.classList.remove('is-result-pulse');
+        ltpoResultPulseTimer = null;
+      }, 860);
     };
     const setLTPOChallengeTerms = (progress) => {
       const relationProgress = clamp(progress, 0, 1);
@@ -2652,64 +2699,40 @@
         else button.removeAttribute('aria-current');
       });
     };
-    const readingCursorLoop = () => {
-      readingCursorRaf = 0;
-      if (!ltpoReadingCursor) return;
-      const dx = readingCursorTargetX - readingCursorLastX;
-      const dy = readingCursorTargetY - readingCursorLastY;
-      const speed = Math.min(1, Math.hypot(dx, dy) / 28);
-      if (Math.abs(dx) + Math.abs(dy) > .1) readingCursorAngle += (Math.atan2(dy, dx) * 180 / Math.PI - readingCursorAngle) * .12;
-      readingCursorX += (readingCursorTargetX - readingCursorX) * .62;
-      readingCursorY += (readingCursorTargetY - readingCursorY) * .62;
-      readingCursorLastX += (readingCursorTargetX - readingCursorLastX) * .52;
-      readingCursorLastY += (readingCursorTargetY - readingCursorLastY) * .52;
-      ltpoReadingCursor.style.transform = `translate3d(${readingCursorX}px,${readingCursorY}px,0) translate(-50%,-50%) rotate(${readingCursorAngle.toFixed(2)}deg) scaleX(${(1 + speed * .1).toFixed(3)})`;
-      ltpoReadingCursor.style.setProperty('--cursor-speed', speed.toFixed(3));
-      if (readingCursorVisible || Math.abs(readingCursorTargetX - readingCursorX) + Math.abs(readingCursorTargetY - readingCursorY) > .5) {
-        readingCursorRaf = window.requestAnimationFrame(readingCursorLoop);
-      }
-    };
     const onLTPOReadingPointerMove = (event) => {
       if (!ltpoReadingCursor || event.pointerType === 'touch' || caseEntryState !== CASE_ENTRY_STATES.READING || activeCaseId !== 'ltpo') return;
-      readingCursorTargetX = event.clientX;
-      readingCursorTargetY = event.clientY;
-      const target = event.target?.closest?.('.ltpo-reading-rail, .ltpo-episode-stage, .case-reading-return, .ltpo-reading-values span, .ltpo-reading-challenge-copy small b, .ltpo-reading-method-lockup, .ltpo-reading-hero-mark');
+      const target = event.target?.closest?.('.ltpo-reading-rail, .ltpo-episode-stage, .ltpo-media-sound, .case-reading-return, .ltpo-reading-glyph-light');
+      const lightTarget = event.target?.closest?.('.ltpo-reading-glyph-light');
       const kind = target?.closest?.('.ltpo-reading-rail') ? 'rail'
-        : target?.closest?.('.ltpo-episode-stage') ? 'media'
-          : target?.closest?.('.case-reading-return') ? 'link'
-            : target ? 'keyword' : 'body';
+        : target?.closest?.('.ltpo-episode-stage')?.classList.contains('is-dragging') ? 'media-drag'
+          : target?.closest?.('.ltpo-episode-stage') ? 'media'
+            : target?.closest?.('.case-reading-return, .ltpo-media-sound') ? 'link'
+              : lightTarget?.dataset.lightLevel === 'hero' ? 'hero'
+                : lightTarget?.dataset.lightLevel === 'section' ? 'section'
+                  : 'body';
       ltpoReadingCursor.dataset.cursorKind = kind;
-      const lightTarget = event.target?.closest?.('.ltpo-reading-light-target');
-      ltpoReadingLightTargets.forEach((candidate) => {
+      ltpoReadingIlluminationTargets.forEach((candidate) => {
         const rect = candidate.getBoundingClientRect();
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
-        const near = x >= -96 && x <= rect.width + 96 && y >= -86 && y <= rect.height + 86;
-        candidate.style.setProperty('--light-x', `${x.toFixed(1)}px`);
-        candidate.style.setProperty('--light-y', `${y.toFixed(1)}px`);
-        candidate.style.setProperty('--light-opacity', near ? (candidate === lightTarget ? '1' : '.32') : '0');
+        const radius = candidate.dataset.lightLevel === 'hero' ? 170 : candidate.dataset.lightLevel === 'section' ? 118 : 84;
+        const isActive = candidate === lightTarget
+          && x >= -radius && x <= rect.width + radius
+          && y >= -radius && y <= rect.height + radius;
+        candidate.style.setProperty('--local-light-x', isActive ? `${x.toFixed(1)}px` : '-999px');
+        candidate.style.setProperty('--local-light-y', isActive ? `${y.toFixed(1)}px` : '-999px');
+        candidate.toggleAttribute('data-light-active', isActive);
       });
-      const textTarget = event.target?.closest?.('.ltpo-reading-text-light-target');
-      ltpoReadingIlluminationTargets.forEach(({target: candidate, copy}) => {
-        const rect = candidate.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        const near = x >= -72 && x <= rect.width + 72 && y >= -72 && y <= rect.height + 72;
-        candidate.style.setProperty('--text-light-x', `${x.toFixed(1)}px`);
-        candidate.style.setProperty('--text-light-y', `${y.toFixed(1)}px`);
-        candidate.style.setProperty('--text-light-opacity', near ? (candidate === textTarget ? '1' : '.28') : '0');
-        copy.style.setProperty('--text-light-x', `${x.toFixed(1)}px`);
-        copy.style.setProperty('--text-light-y', `${y.toFixed(1)}px`);
-      });
-      readingCursorVisible = true;
       ltpoReadingCursor.style.opacity = '1';
-      if (!readingCursorRaf) readingCursorRaf = window.requestAnimationFrame(readingCursorLoop);
     };
     const onLTPOReadingPointerLeave = () => {
-      readingCursorVisible = false;
-      if (ltpoReadingCursor) ltpoReadingCursor.style.opacity = '0';
-      ltpoReadingLightTargets.forEach((target) => target.style.setProperty('--light-opacity', '0'));
-      ltpoReadingIlluminationTargets.forEach(({target}) => target.style.setProperty('--text-light-opacity', '0'));
+      // The cursor layer is global and viewport-owned. A local reading-layer
+      // boundary must never be allowed to end its lifetime or hide it.
+      ltpoReadingIlluminationTargets.forEach((target) => {
+        target.style.setProperty('--local-light-x', '-999px');
+        target.style.setProperty('--local-light-y', '-999px');
+        target.removeAttribute('data-light-active');
+      });
     };
     ltpoReadingRailSections.forEach((button) => {
       button.addEventListener('click', () => {
@@ -2720,7 +2743,9 @@
         caseReadingLayer.scrollTo({top: Math.max(0, offset), behavior: 'smooth'});
       });
     });
-    caseReadingLayer?.addEventListener('pointermove', onLTPOReadingPointerMove, {passive: true});
+    // Keep semantic hover state on the same viewport pointer stream as the
+    // world tracker. The tracker owns the actual fixed cursor position.
+    window.addEventListener('pointermove', onLTPOReadingPointerMove, {passive: true});
     caseReadingLayer?.addEventListener('pointerleave', onLTPOReadingPointerLeave, {passive: true});
     syncLTPOEpisodeVisuals();
     const sectionProgress = (section, rootRect, viewportHeight, enter = .86, settle = .16) => {
@@ -2761,10 +2786,14 @@
         ? ltpoReadingStrategy.getBoundingClientRect().top - rootRect.top
         : viewportHeight;
       const strategyHeight = Math.max(viewportHeight, ltpoReadingStrategy?.offsetHeight || viewportHeight);
-      // The outer Strategy section owns the long scroll distance; its inner
-      // stage is sticky, so this progress is a local scrub timeline rather
-      // than a one-shot enter animation.
-      strategyProgressTarget = clamp((viewportHeight - strategyOffset) / strategyHeight, 0, 1);
+      // Strategy progress starts only when its sticky stage reaches the top.
+      // The former viewport-minus-offset mapping consumed the intro before the
+      // stage arrived and allowed every later scene to coexist in one frame.
+      strategyProgressTarget = clamp(
+        -strategyOffset / Math.max(1, strategyHeight - viewportHeight),
+        0,
+        1
+      );
       if (!strategyProgressLastTime) {
         strategyProgressVisual = strategyProgressTarget;
       } else {
@@ -2777,30 +2806,33 @@
         strategyProgressVisual = strategyProgressTarget;
       }
       const strategyProgress = strategyProgressVisual;
-      const strategyFoundation = strategyProgress < .18
-        ? 0
-        : strategyProgress < .28
-          ? scrubRangeProgress(strategyProgress, .18, .28)
-          : strategyProgress < .54
-            ? 1
-            : strategyProgress < .64
-              ? 1 - scrubRangeProgress(strategyProgress, .54, .64) * .92
-              : 0;
-      const strategyAmplification = strategyProgress < .64
-        ? 0
-        : strategyProgress < .72
-          ? scrubRangeProgress(strategyProgress, .64, .72) * .92
-          : strategyProgress < .92
-            ? 1
-            : 1 - scrubRangeProgress(strategyProgress, .92, 1) * .72;
-      const strategyIntro = 1 - rangeProgress(strategyProgress, .16, .28);
-      const evidenceReveal = rangeProgress(strategyProgress, .28, .36);
-      const evidenceExit = rangeProgress(strategyProgress, .54, .64);
-      const foundationExit = rangeProgress(strategyProgress, .54, .64);
-      const mediaProgress = scrubRangeProgress(strategyProgress, .72, .86);
-      const ownershipProgress = rangeProgress(strategyProgress, .86, .96);
+      // Four owned states: the media and responsibility pass are deliberately
+      // one continuous 02 composition rather than two pages competing for the
+      // same sticky viewport.
+      const strategyIntroEnter = rangeProgress(strategyProgress, 0, .035);
+      const strategyIntroLeave = rangeProgress(strategyProgress, .155, .19);
+      const strategyFoundationEnter = rangeProgress(strategyProgress, .185, .22);
+      const strategyFoundationLeave = rangeProgress(strategyProgress, .39, .425);
+      const strategyAmplificationEnter = rangeProgress(strategyProgress, .42, .455);
+      const strategyAmplificationLeave = rangeProgress(strategyProgress, .57, .605);
+      const mediaEnter = rangeProgress(strategyProgress, .60, .64);
+      const mediaRelease = rangeProgress(strategyProgress, .94, .99);
+      const ownershipEnter = rangeProgress(strategyProgress, .82, .89);
+      const strategyIntro = strategyIntroEnter * (1 - strategyIntroLeave);
+      const strategyFoundation = strategyFoundationEnter * (1 - strategyFoundationLeave);
+      const strategyAmplification = strategyAmplificationEnter * (1 - strategyAmplificationLeave);
+      const evidenceReveal = rangeProgress(strategyProgress, .22, .255);
+      const evidenceExit = rangeProgress(strategyProgress, .39, .425);
+      const foundationExit = strategyFoundationLeave;
+      const mediaProgress = mediaEnter * (1 - mediaRelease);
+      const ownershipProgress = ownershipEnter * (1 - mediaRelease);
+      const mediaStoryProgress = rangeProgress(strategyProgress, .645, .82);
+      const mediaCollapse = rangeProgress(strategyProgress, .82, .94);
       const resultProgress = sectionProgress(ltpoReadingResult, rootRect, viewportHeight, .92, .2);
+      const resultHeroProgress = rangeProgress(resultProgress, .25, .82);
+      const resultSupportProgress = rangeProgress(resultProgress, .65, 1);
       setLTPOChallengeTerms(challengeRelation);
+      setLTPOMethodEmphasis(rangeProgress(strategyProgress, .47, .59));
       updateLTPOReadingRail(progress, rootRect, viewportHeight, strategyProgress);
       const focusValues = new Map();
       ltpoReadingSections.forEach((section) => {
@@ -2822,32 +2854,61 @@
       ltpoReading.style.setProperty('--strategy-foundation', strategyFoundation.toFixed(3));
       ltpoReading.style.setProperty('--strategy-amplification', strategyAmplification.toFixed(3));
       ltpoReading.style.setProperty('--strategy-intro', strategyIntro.toFixed(3));
+      ltpoReading.style.setProperty('--strategy-intro-enter', strategyIntroEnter.toFixed(3));
+      ltpoReading.style.setProperty('--strategy-intro-leave', strategyIntroLeave.toFixed(3));
+      ltpoReading.style.setProperty('--strategy-foundation-enter', strategyFoundationEnter.toFixed(3));
+      ltpoReading.style.setProperty('--strategy-foundation-leave', strategyFoundationLeave.toFixed(3));
+      ltpoReading.style.setProperty('--strategy-amplification-enter', strategyAmplificationEnter.toFixed(3));
+      ltpoReading.style.setProperty('--strategy-amplification-leave', strategyAmplificationLeave.toFixed(3));
       ltpoReading.style.setProperty('--strategy-evidence', evidenceReveal.toFixed(3));
       ltpoReading.style.setProperty('--strategy-evidence-exit', evidenceExit.toFixed(3));
       ltpoReading.style.setProperty('--strategy-foundation-exit', foundationExit.toFixed(3));
       ltpoReading.style.setProperty('--media-progress', mediaProgress.toFixed(3));
+      ltpoReading.style.setProperty('--media-enter', mediaEnter.toFixed(3));
+      ltpoReading.style.setProperty('--media-leave', mediaRelease.toFixed(3));
+      ltpoReading.style.setProperty('--media-story-progress', mediaStoryProgress.toFixed(3));
+      ltpoReading.style.setProperty('--media-stack-collapse', mediaCollapse.toFixed(3));
       ltpoReading.style.setProperty('--ownership-progress', ownershipProgress.toFixed(3));
+      ltpoReading.style.setProperty('--ownership-enter', ownershipEnter.toFixed(3));
+      ltpoReading.style.setProperty('--ownership-leave', mediaRelease.toFixed(3));
       ltpoReading.style.setProperty('--result-progress', resultProgress.toFixed(3));
-      if (mediaProgress >= .02) triggerLTPOMediaAffordance();
-      ltpoReading.dataset.strategyCurrent = strategyProgress < .64 ? '01' : '02';
-      ltpoReading.dataset.strategyState = strategyProgress < .18
+      ltpoReading.style.setProperty('--result-hero-progress', resultHeroProgress.toFixed(3));
+      ltpoReading.style.setProperty('--result-support-progress', resultSupportProgress.toFixed(3));
+      ltpoMediaStackCollapse = mediaCollapse;
+      if (mediaEnter >= .02 && mediaRelease < 1) triggerLTPOMediaAffordance();
+      if (mediaEnter > .02 && mediaRelease < 1 && !ltpoEpisodeDragMoved) {
+        const scrollEpisode = clamp(Math.floor(mediaStoryProgress * ltpoEpisodeItems.length), 0, ltpoEpisodeItems.length - 1);
+        if (scrollEpisode !== ltpoEpisodeActiveIndex) selectLTPOEpisode(scrollEpisode);
+      }
+      syncLTPOEpisodeVisuals();
+      ltpoReading.dataset.strategyCurrent = strategyProgress < .185 ? '' : strategyProgress < .42 ? '01' : '02';
+      ltpoReading.dataset.strategyScene = strategyProgress < .185
         ? 'intro'
-        : strategyProgress < .28
+        : strategyProgress < .42
           ? 'foundation'
-          : strategyProgress < .64
-            ? 'evidence'
-            : strategyProgress < .72
-              ? 'clear'
-              : 'amplification';
-      ltpoReading.dataset.strategyMediaPhase = mediaProgress < .16 ? 'arrival' : mediaProgress < .82 ? 'takeover' : 'settle';
-      ltpoReading.dataset.strategyEvidencePhase = strategyProgress < .28
+          : strategyProgress < .60
+            ? 'amplification'
+            : strategyProgress < .99
+              ? 'media'
+              : 'exit';
+      ltpoReading.dataset.strategyState = ltpoReading.dataset.strategyScene;
+      ltpoReading.dataset.strategyMediaPhase = strategyProgress < .60
         ? 'pre'
-        : strategyProgress < .36
+        : strategyProgress < .64
+          ? 'arrival'
+          : strategyProgress < .82
+            ? 'hold'
+            : strategyProgress < .94
+              ? 'release'
+              : 'exit';
+      ltpoReading.dataset.strategyEvidencePhase = strategyProgress < .22
+        ? 'pre'
+        : strategyProgress < .255
           ? 'enter'
-          : strategyProgress < .54
+          : strategyProgress < .39
             ? 'hold'
             : 'exit';
-      const phaseZIndexes = strategyProgress < .72 ? [8, 6] : [5, 8];
+      const phaseZIndexes = strategyProgress < .42 ? [8, 5] : [5, 8];
       ltpoReadingPhases.forEach((phase, index) => {
         const focus = [strategyFoundation, strategyAmplification][index] || 0;
         phase.style.setProperty('--phase-focus', focus.toFixed(3));
@@ -2876,7 +2937,19 @@
     ltpoEpisodeStage?.addEventListener('pointercancel', onLTPOEpisodePointerCancel, { passive: true });
     ltpoEpisodeStage?.addEventListener('wheel', onLTPOEpisodeWheel, { passive: false });
     ltpoEpisodeSelects.forEach((button, index) => {
-      button.addEventListener('click', () => selectLTPOEpisode(index));
+      button.addEventListener('click', () => {
+        markLTPOMediaInteracted();
+        selectLTPOEpisode(index);
+      });
+    });
+    ltpoMediaSoundToggle?.addEventListener('click', () => {
+      ltpoMediaSoundEnabled = !ltpoMediaSoundEnabled;
+      syncLTPOMediaSound();
+      const activeVideo = ltpoEpisodeVideos[ltpoEpisodeActiveIndex];
+      if (activeVideo) {
+        activeVideo.muted = !ltpoMediaSoundEnabled;
+        playLTPOEpisode();
+      }
     });
     ltpoEpisodeVideos.forEach((video) => {
       video.addEventListener('play', () => {
@@ -2904,6 +2977,30 @@
       }, { root: caseReadingLayer, threshold: [.28] });
       ltpoBenefitObserver.observe(ltpoReadingValues);
     }
+    if (ltpoReadingResult && 'IntersectionObserver' in window) {
+      const ltpoResultObserver = new IntersectionObserver((entries) => {
+        const entry = entries[0];
+        if (entry?.isIntersecting && entry.intersectionRatio >= .34) playLTPOResultPulse();
+      }, { root: caseReadingLayer, threshold: [.34] });
+      ltpoResultObserver.observe(ltpoReadingResult);
+    }
+
+    const isReadingCursorRuntimeVisible = () => {
+      const cursor = ltpoReadingCursor;
+      const light = cursor?.querySelector('.cursor-light');
+      if (!cursor || !light) return false;
+      const cursorStyle = window.getComputedStyle(cursor);
+      const lightStyle = window.getComputedStyle(light);
+      const rect = light.getBoundingClientRect();
+      return cursorStyle.display !== 'none'
+        && cursorStyle.visibility !== 'hidden'
+        && Number(cursorStyle.opacity) > 0
+        && lightStyle.display !== 'none'
+        && lightStyle.visibility !== 'hidden'
+        && Number(lightStyle.opacity) > 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
 
     const setReadingView = (caseId = null) => {
       const activeView = caseId === 'ltpo' ? 'ltpo' : 'placeholder';
@@ -2915,8 +3012,13 @@
       });
       caseReadingLayer?.setAttribute('data-reading-mode', activeView);
       if (activeView === 'ltpo' && ltpoReading) {
-        if (ltpoReadingCursor) ltpoReading.dataset.livingCursor = 'ready';
-        else ltpoReading.removeAttribute('data-living-cursor');
+        if (ltpoReadingCursor) {
+          ltpoReadingCursor.dataset.cursorMode = 'reading';
+          ltpoReadingCursor.dataset.cursorKind = 'body';
+          ltpoReadingCursor.style.opacity = '1';
+          if (isReadingCursorRuntimeVisible()) ltpoReading.dataset.livingCursor = 'ready';
+          else ltpoReading.removeAttribute('data-living-cursor');
+        } else ltpoReading.removeAttribute('data-living-cursor');
         strategyProgressTarget = 0;
         strategyProgressVisual = 0;
         strategyProgressLastTime = 0;
@@ -2926,17 +3028,30 @@
           video.muted = true;
           video.loop = true;
         });
+        ltpoMediaSoundEnabled = false;
+        syncLTPOMediaSound();
+        ltpoReading.removeAttribute('data-media-interacted');
         stopLTPOBenefitLoop();
         setLTPOBenefitState(0);
         if (ltpoMediaAffordanceTimer) window.clearTimeout(ltpoMediaAffordanceTimer);
         ltpoMediaAffordanceTimer = null;
         ltpoMediaAffordancePlayed = false;
+        ltpoMediaStackCollapse = 0;
+        ltpoResultPulsePlayed = false;
+        if (ltpoResultPulseTimer) window.clearTimeout(ltpoResultPulseTimer);
+        ltpoResultPulseTimer = null;
+        ltpoReadingResult?.classList.remove('is-result-pulse');
         ltpoEpisodeStage?.classList.remove('is-affordance-nudge', 'is-affordance-nudge-active');
         selectLTPOEpisode(0);
         caseReadingLayer.scrollTop = 0;
         ltpoReadingHeroStart = ltpoReadingHero?.offsetTop || 0;
         window.requestAnimationFrame(renderLTPOReadingProgress);
       } else {
+        if (ltpoReadingCursor) {
+          ltpoReadingCursor.dataset.cursorMode = 'world';
+          ltpoReadingCursor.removeAttribute('data-cursor-kind');
+          ltpoReadingCursor.style.opacity = '';
+        }
         ltpoReading?.removeAttribute('data-living-cursor');
       }
     };
