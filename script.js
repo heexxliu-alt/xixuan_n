@@ -2401,6 +2401,8 @@
     const ltpoMethodTerms = [...(ltpoReading?.querySelectorAll('.ltpo-reading-method-explanation em') || [])];
     const ltpoReadingRail = ltpoReading?.querySelector('.ltpo-reading-rail');
     const ltpoReadingRailProgress = ltpoReading?.querySelector('.ltpo-reading-rail-progress');
+    const ltpoReadingRailBeamPath = ltpoReading?.querySelector('.ltpo-reading-rail-beam path');
+    const ltpoReadingRailBeamPoint = ltpoReading?.querySelector('.ltpo-reading-rail-beam circle');
     const ltpoReadingRailSections = [...(ltpoReading?.querySelectorAll('[data-reading-target]') || [])];
     const ltpoReadingRailCurrent = ltpoReading?.querySelector('.ltpo-reading-rail-current');
     // The world cursor is the single pointer runtime. Reading only changes
@@ -2408,6 +2410,7 @@
     // system.
     const ltpoReadingCursor = world.querySelector('.cursor-layer');
     const ltpoReadingChallengeTerms = [...(ltpoReading?.querySelectorAll('.ltpo-reading-challenge-copy small b') || [])];
+    const ltpoReadingStrategyBridgeTerms = [...(ltpoReading?.querySelectorAll('.ltpo-reading-strategy-bridge span') || [])];
     const ltpoReadingLightTargets = [...(ltpoReading?.querySelectorAll('.ltpo-reading-light-target') || [])];
     const ltpoReadingTextTargets = [...(ltpoReading?.querySelectorAll([
       '.ltpo-reading-overview-intro h2',
@@ -2508,24 +2511,26 @@
     };
     const syncLTPOEpisodeVisuals = () => {
       if (!ltpoEpisodeItems.length) return;
-      const baseStep = Math.max(180, (ltpoEpisodeStage?.clientWidth || 620) * .46);
-      const step = baseStep * (1 - ltpoMediaStackCollapse * .58);
+      const stageWidth = ltpoEpisodeStage?.clientWidth || 620;
+      const stackStep = clamp(stageWidth * .105, 34, 54);
+      const stackRise = clamp(stageWidth * .032, 10, 22);
       ltpoEpisodeItems.forEach((episode, index) => {
         const distance = index - ltpoEpisodeActiveIndex;
-        const draggedDistance = distance + ltpoEpisodeDragOffset / step;
-        const proximity = clamp(1 - Math.abs(draggedDistance), 0, 1);
-        const opacity = distance === 0
-          ? 1
-          : Math.abs(distance) === 1
-            ? .38 + proximity * .28
-            : .12 + proximity * .1;
-        episode.style.setProperty('--episode-x', `${(distance * step + ltpoEpisodeDragOffset).toFixed(2)}px`);
+        const isAhead = distance > 0;
+        const level = Math.min(Math.abs(distance), 3);
+        const opacity = distance === 0 ? 1 : isAhead ? Math.max(.14, .46 - level * .09) : Math.max(.08, .22 - level * .06);
+        const scale = distance === 0 ? 1 - ltpoMediaStackCollapse * .04 : Math.max(.86, .96 - level * .04 - ltpoMediaStackCollapse * .04);
+        const x = distance * stackStep + ltpoEpisodeDragOffset * .78;
+        const y = (isAhead ? level * stackRise : level * stackRise * .52) + Math.abs(ltpoEpisodeDragOffset) * .025;
+        const z = distance === 0 ? 40 : isAhead ? 40 - level : 20 - level;
+        episode.style.setProperty('--episode-x', `${x.toFixed(2)}px`);
+        episode.style.setProperty('--episode-y', `${y.toFixed(2)}px`);
         episode.style.setProperty('inset', 'auto', 'important');
         episode.style.setProperty('left', '50%', 'important');
         episode.style.setProperty('top', '50%', 'important');
-        episode.style.setProperty('--episode-scale', (distance === 0 ? 1 - ltpoMediaStackCollapse * .12 : .82 + proximity * .08 - ltpoMediaStackCollapse * .08).toFixed(3));
+        episode.style.setProperty('--episode-scale', scale.toFixed(3));
         episode.style.setProperty('--episode-opacity', opacity.toFixed(3));
-        episode.style.setProperty('--episode-z', `${Math.round(20 - Math.abs(distance))}`);
+        episode.style.setProperty('--episode-z', String(z));
         episode.classList.toggle('is-current', distance === 0);
         episode.setAttribute('aria-hidden', distance === 0 || Math.abs(distance) === 1 ? 'false' : 'true');
       });
@@ -2647,7 +2652,10 @@
     const setLTPOMethodEmphasis = (progress) => {
       ltpoMethodTerms.forEach((term, index) => {
         const focus = clamp(progress * 1.35 - index * .23, 0, 1);
-        term.style.setProperty('--method-focus', focus.toFixed(3));
+        term.style.setProperty('--method-body-mix', `${(100 - focus * 46).toFixed(1)}%`);
+        term.style.setProperty('--method-aqua-mix', `${(focus * 46).toFixed(1)}%`);
+        term.style.setProperty('--method-opacity', (.5 + focus * .5).toFixed(3));
+        term.style.setProperty('--method-blur', `${((1 - focus) * 2).toFixed(2)}px`);
       });
     };
     const playLTPOResultPulse = () => {
@@ -2676,8 +2684,6 @@
     };
     const updateLTPOReadingRail = (progress, rootRect, viewportHeight, strategyProgress) => {
       if (!ltpoReadingRail) return;
-      ltpoReadingRail.style.setProperty('--reading-progress', progress.toFixed(3));
-      ltpoReadingRailProgress?.style.setProperty('--reading-progress', progress.toFixed(3));
       const sectionEntries = ltpoReadingSections
         .map((section) => ({
           section,
@@ -2685,6 +2691,37 @@
           offset: section.getBoundingClientRect().top - rootRect.top
         }))
         .filter(({step}) => step !== 'project');
+      const semanticStops = new Map([['overview', .06], ['challenge', .32], ['strategy', .61], ['result', .91]]);
+      const documentStops = sectionEntries.map(({section}) => clamp(
+        (section.offsetTop - (ltpoReadingHero?.offsetHeight || 0))
+          / Math.max(1, (caseReadingLayer?.scrollHeight || 1) - (caseReadingLayer?.clientHeight || 0)),
+        0,
+        1
+      ));
+      let semanticProgress = progress;
+      for (let index = 0; index < sectionEntries.length - 1; index += 1) {
+        const from = documentStops[index];
+        const to = documentStops[index + 1];
+        if (progress >= from && progress <= to) {
+          const local = clamp((progress - from) / Math.max(.0001, to - from), 0, 1);
+          semanticProgress = semanticStops.get(sectionEntries[index].step)
+            + (semanticStops.get(sectionEntries[index + 1].step) - semanticStops.get(sectionEntries[index].step)) * local;
+          break;
+        }
+      }
+      if (progress < (documentStops[0] || 0)) semanticProgress = Math.max(.01, progress * 1.4);
+      if (progress > (documentStops.at(-1) || 1)) semanticProgress = Math.min(1, .91 + (progress - documentStops.at(-1)) * 1.4);
+      ltpoReadingRail.style.setProperty('--reading-progress', semanticProgress.toFixed(3));
+      ltpoReadingRailProgress?.style.setProperty('--reading-progress', semanticProgress.toFixed(3));
+      if (ltpoReadingRailBeamPath && ltpoReadingRailBeamPoint) {
+        const length = ltpoReadingRailBeamPath.getTotalLength();
+        const traveled = length * semanticProgress;
+        const point = ltpoReadingRailBeamPath.getPointAtLength(traveled);
+        ltpoReadingRailBeamPath.style.strokeDasharray = `${length.toFixed(1)} ${length.toFixed(1)}`;
+        ltpoReadingRailBeamPath.style.strokeDashoffset = `${(length - traveled).toFixed(1)}`;
+        ltpoReadingRailBeamPoint.setAttribute('cx', point.x.toFixed(2));
+        ltpoReadingRailBeamPoint.setAttribute('cy', point.y.toFixed(2));
+      }
       const currentEntry = sectionEntries.reduce((current, entry) => {
         if (entry.offset <= viewportHeight * .54) return entry;
         return current;
@@ -2721,6 +2758,11 @@
           && y >= -radius && y <= rect.height + radius;
         candidate.style.setProperty('--local-light-x', isActive ? `${x.toFixed(1)}px` : '-999px');
         candidate.style.setProperty('--local-light-y', isActive ? `${y.toFixed(1)}px` : '-999px');
+        if (candidate.matches('.ltpo-reading-hero-mark')) {
+          const position = clamp((x / Math.max(1, rect.width)) * 100, 8, 92);
+          candidate.style.setProperty('--hero-sheen-x', `${position.toFixed(1)}%`);
+          candidate.style.setProperty('--hero-sheen-opacity', isActive ? '.46' : '.22');
+        }
         candidate.toggleAttribute('data-light-active', isActive);
       });
       ltpoReadingCursor.style.opacity = '1';
@@ -2833,6 +2875,10 @@
       const resultSupportProgress = rangeProgress(resultProgress, .65, 1);
       setLTPOChallengeTerms(challengeRelation);
       setLTPOMethodEmphasis(rangeProgress(strategyProgress, .47, .59));
+      ltpoReadingStrategyBridgeTerms.forEach((term, index) => {
+        const bridgeProgress = rangeProgress(strategyProgress, .055 + index * .045, .22 + index * .10);
+        term.style.setProperty('--bridge-term', bridgeProgress.toFixed(3));
+      });
       updateLTPOReadingRail(progress, rootRect, viewportHeight, strategyProgress);
       const focusValues = new Map();
       ltpoReadingSections.forEach((section) => {
@@ -2844,6 +2890,8 @@
       ltpoReading.style.setProperty('--reading-progress', progress.toFixed(3));
       ltpoReading.style.setProperty('--project-handoff', projectHandoff.toFixed(3));
       ltpoReading.style.setProperty('--project-exit', projectExit.toFixed(3));
+      ltpoReading.style.setProperty('--hero-sheen-opacity', (.1 + Math.max(.14, 1 - heroProgress) * .28).toFixed(3));
+      ltpoReading.style.setProperty('--hero-sheen-translate', `${(-projectHandoff * 2.5).toFixed(2)}vw`);
       ltpoReading.style.setProperty('--what-progress', overviewProgress.toFixed(3));
       ltpoReading.style.setProperty('--overview-progress', overviewProgress.toFixed(3));
       ltpoReading.style.setProperty('--benefit-progress', overviewProgress.toFixed(3));
@@ -2874,12 +2922,11 @@
       ltpoReading.style.setProperty('--result-progress', resultProgress.toFixed(3));
       ltpoReading.style.setProperty('--result-hero-progress', resultHeroProgress.toFixed(3));
       ltpoReading.style.setProperty('--result-support-progress', resultSupportProgress.toFixed(3));
+      ltpoReading.style.setProperty('--signal-landing-opacity', (.07 * (1 - heroProgress)).toFixed(3));
+      ltpoReading.style.setProperty('--signal-overview-opacity', (.18 * rangeProgress(overviewProgress, .12, .88)).toFixed(3));
+      ltpoReading.style.setProperty('--signal-strategy-opacity', (.26 * rangeProgress(strategyProgress, .05, .72) * (1 - mediaRelease)).toFixed(3));
       ltpoMediaStackCollapse = mediaCollapse;
       if (mediaEnter >= .02 && mediaRelease < 1) triggerLTPOMediaAffordance();
-      if (mediaEnter > .02 && mediaRelease < 1 && !ltpoEpisodeDragMoved) {
-        const scrollEpisode = clamp(Math.floor(mediaStoryProgress * ltpoEpisodeItems.length), 0, ltpoEpisodeItems.length - 1);
-        if (scrollEpisode !== ltpoEpisodeActiveIndex) selectLTPOEpisode(scrollEpisode);
-      }
       syncLTPOEpisodeVisuals();
       ltpoReading.dataset.strategyCurrent = strategyProgress < .185 ? '' : strategyProgress < .42 ? '01' : '02';
       ltpoReading.dataset.strategyScene = strategyProgress < .185

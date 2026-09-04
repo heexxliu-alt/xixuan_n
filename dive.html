@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="Dreaming of the Sea — Continuous Descent prototype">
   <title>Deep Sea — Continuous Descent</title>
-  <link rel="stylesheet" href="styles.css?v=20260904-ltpo-correction-v6">
+  <link rel="stylesheet" href="styles.css?v=20260904-ltpo-final-v4">
   <link rel="stylesheet" href="motion.css?v=20260830-deep-water-v6">
 </head>
 <body class="descent-body">
@@ -48,6 +48,7 @@
         </button>
       </div>
       <section class="case-reading-layer" aria-modal="true" aria-label="Case reading" tabindex="0" hidden>
+        <div class="ltpo-reading-background" aria-hidden="true"><i class="ltpo-reading-water-base"></i><i class="ltpo-reading-water-light"></i><i class="ltpo-reading-water-haze"></i></div>
         <div class="case-reading-panel" data-reading-view="placeholder">
           <span class="case-reading-kicker">PROJECT</span>
           <h1 id="case-reading-title"></h1>
@@ -57,7 +58,7 @@
         <div class="ltpo-reading" data-reading-view="ltpo" data-reading-variant="tide" hidden tabindex="0">
           <div class="ltpo-reading-topbar"><span class="ltpo-reading-mark">LTPO</span><button class="case-reading-return case-reading-return-top" type="button">BACK</button></div>
           <aside class="ltpo-reading-rail" aria-label="阅读进度">
-            <div class="ltpo-reading-rail-track"><i class="ltpo-reading-rail-progress"></i></div>
+            <div class="ltpo-reading-rail-track"><i class="ltpo-reading-rail-progress"></i><svg class="ltpo-reading-rail-beam" viewBox="0 0 12 1000" preserveAspectRatio="none" aria-hidden="true"><path d="M6 0 C3 166 9 330 6 500 S3 834 6 1000"></path><circle cx="6" cy="0" r="5"></circle></svg></div>
             <nav class="ltpo-reading-rail-sections" aria-label="章节导航">
               <button type="button" data-reading-target="overview"><i></i><span>项目概述</span></button>
               <button type="button" data-reading-target="challenge"><i></i><span>项目挑战</span></button>
@@ -66,11 +67,16 @@
             </nav>
             <span class="ltpo-reading-rail-current">项目概述</span>
           </aside>
+          <svg class="ltpo-reading-signal" viewBox="0 0 1440 900" preserveAspectRatio="none" aria-hidden="true">
+            <path class="ltpo-reading-signal-landing" d="M-40 470 C150 426 272 520 446 474 S708 418 876 474 S1164 548 1488 438"></path>
+            <path class="ltpo-reading-signal-overview" d="M-60 616 C164 562 306 672 490 606 S780 516 954 598 S1226 676 1500 590"></path>
+            <path class="ltpo-reading-signal-strategy" d="M-40 358 C190 322 338 408 512 358 S808 302 976 362 S1222 424 1484 346"></path>
+          </svg>
           <header class="ltpo-reading-hero ltpo-reading-block" data-reading-step="project">
             <div class="ltpo-reading-hero-stage">
             <span class="ltpo-reading-index">LTPO</span>
             <p class="ltpo-reading-kicker">LTPO</p>
-            <div class="ltpo-reading-hero-mark ltpo-reading-light-target" data-light-level="hero" aria-hidden="true">LTPO</div>
+            <div class="ltpo-reading-hero-mark ltpo-reading-light-target" data-light-level="hero" aria-hidden="true"><span>LTP</span><svg class="ltpo-reading-hero-o" viewBox="0 0 100 130" focusable="false"><ellipse cx="50" cy="65" rx="38" ry="56"></ellipse></svg><i class="ltpo-reading-hero-sheen"></i></div>
             <div class="ltpo-reading-hero-meta">
               <p class="ltpo-reading-deck">LTPO 技术营销</p>
               <p class="ltpo-reading-date">2025.04 — 2025.12</p>
@@ -182,6 +188,6 @@
   </main>
   <div class="descent-scroll-spacer" aria-hidden="true"></div>
   <script src="vendor/gsap.min.js"></script>
-  <script src="script.js?v=20260904-ltpo-correction-v2"></script>
+  <script src="script.js?v=20260904-ltpo-final-v1"></script>
 </body>
 </html>
