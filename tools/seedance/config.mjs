@@ -1,4 +1,39 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(HERE, '../..');
+const ENV_PATH = process.env.SEEDANCE_ENV_FILE || path.join(REPO_ROOT, '.env');
+
+function loadLocalEnv(filePath = ENV_PATH) {
+  if (!fs.existsSync(filePath)) return;
+
+  const source = fs.readFileSync(filePath, 'utf8');
+  for (const rawLine of source.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+
+    const match = line.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+    if (!match) continue;
+
+    const [, key, rawValue] = match;
+    if (process.env[key] !== undefined) continue;
+
+    let value = rawValue.trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    process.env[key] = value;
+  }
+}
+
+loadLocalEnv();
 
 export const ARK_API_BASE_URL = (process.env.ARK_API_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3').replace(/\/$/, '');
 export const ARK_API_KEY = process.env.ARK_API_KEY || '';
@@ -24,8 +59,8 @@ export function requireModel(model = SEEDANCE_MODEL_ID) {
   return model;
 }
 
-export function apiUrl(path) {
-  return `${ARK_API_BASE_URL}/${String(path).replace(/^\//, '')}`;
+export function apiUrl(requestPath) {
+  return `${ARK_API_BASE_URL}/${String(requestPath).replace(/^\//, '')}`;
 }
 
 export function authHeaders() {
@@ -36,8 +71,8 @@ export function authHeaders() {
   };
 }
 
-export async function arkRequest(path, options = {}) {
-  const response = await fetch(apiUrl(path), {
+export async function arkRequest(requestPath, options = {}) {
+  const response = await fetch(apiUrl(requestPath), {
     ...options,
     headers: { ...authHeaders(), ...(options.headers || {}) },
   });
