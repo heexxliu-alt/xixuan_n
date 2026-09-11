@@ -5,8 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="Dreaming of the Sea — Continuous Descent prototype">
   <title>Deep Sea — Continuous Descent</title>
-  <link rel="stylesheet" href="styles.css?v=20260904-ltpo-final-v4">
+  <link rel="stylesheet" href="styles.css?v=20260909-writing-water-v6">
   <link rel="stylesheet" href="motion.css?v=20260830-deep-water-v6">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 </head>
 <body class="descent-body">
   <main class="dive-world dive-descent" data-page="dive" data-prototype="continuous-descent">
@@ -40,6 +43,32 @@
         <section class="profile-coordinates" aria-label="Experience and education"><div class="profile-coordinate profile-coordinate-work"><span>EXPERIENCE</span><p><b>BOE（京东方）</b><i>公关传播</i><em>2023.04–至今</em></p><p><b>快手科技</b><i>垂类运营</i><em>2021.04–2023.01</em></p></div><div class="profile-coordinate profile-coordinate-education"><span>EDUCATION</span><p><b>墨尔本大学</b><i>全球媒体传播硕士</i><em>2018.07–2020.12</em></p><p><b>首都师范大学</b><i>公共事业管理本科</i><em>2014.09–2018.06</em></p></div></section>
       </div>
       <div class="case-discovery-layer" aria-live="polite" aria-label="Case discovery">
+        <i class="case-cave-response" data-case-id="ltpo" aria-hidden="true"></i>
+        <i class="case-cave-response" data-case-id="mediaLab" aria-hidden="true"></i>
+        <button class="hundred-inch-entry" type="button" data-case-id="hundredInch" aria-label="进入 100-inch 项目">
+          <span class="hundred-inch-art" aria-hidden="true">
+            <img src="assets/100-inch-crt-television.png" alt="">
+            <span class="hundred-inch-screen"><strong>100&quot;</strong><small>VIEW CASE</small></span>
+          </span>
+        </button>
+        <button class="beijing2022-entry" type="button" data-case-id="beijing2022" aria-label="进入北京2022「冬奥全知道」项目">
+          <span class="beijing2022-art" aria-hidden="true">
+            <img src="assets/beijing2022-entry-sign.png" alt="">
+            <span class="beijing2022-hover-label"><strong>北京2022</strong><small>冬奥全知道</small></span>
+          </span>
+        </button>
+        <section class="writing-archive-discovery" data-writing-state="IDLE" aria-label="写作作品">
+          <div class="writing-archive-water-content">
+            <p class="writing-archive-eyebrow">WRITING ARCHIVE</p>
+            <h2 class="writing-archive-entry-label">写作作品</h2>
+            <div class="writing-archive-list" aria-label="写作作品目录">
+              <button class="writing-archive-title is-active-preview" type="button" data-writing-id="w1" aria-current="true" aria-label="阅读第 1 篇写作作品：京东方邵喜斌：液晶显示仍在迭代进化"><span>01</span><strong>京东方邵喜斌：液晶显示仍在迭代进化</strong></button>
+              <button class="writing-archive-title" type="button" data-writing-id="w2" aria-label="阅读第 2 篇写作作品：ADS Pro+Mini LED“黄金搭档”：高端显示时代的新答案"><span>02</span><strong>ADS Pro+Mini LED“黄金搭档”：高端显示时代的新答案</strong></button>
+              <button class="writing-archive-title" type="button" data-writing-id="w3" aria-label="阅读第 3 篇写作作品：BOE（京东方）重磅发布 ADS Pro 新品 携手创维打造比 OLED 更好的 Mini LED 电视新品 A5F Pro"><span>03</span><strong>BOE（京东方）重磅发布 ADS Pro 新品 携手创维打造比 OLED 更好的 Mini LED 电视新品 A5F Pro</strong></button>
+              <button class="writing-archive-title" type="button" data-writing-id="w4" aria-label="阅读第 4 篇写作作品：执笔绘荣光，这是属于Ta们的热辣滚烫"><span>04</span><strong>执笔绘荣光，这是属于Ta们的热辣滚烫</strong></button>
+            </div>
+          </div>
+        </section>
         <button class="case-discovery" type="button" data-case-id="ltpo" hidden>
           <span class="case-discovery-label">LTPO</span><small>ENTER</small>
         </button>
@@ -55,117 +84,491 @@
           <p>CASE CONTENT COMING NEXT</p>
           <button class="case-reading-return" type="button">BACK</button>
         </div>
-        <div class="ltpo-reading" data-reading-view="ltpo" data-reading-variant="tide" hidden tabindex="0">
-          <div class="ltpo-reading-topbar"><span class="ltpo-reading-mark">LTPO</span><button class="case-reading-return case-reading-return-top" type="button">BACK</button></div>
-          <aside class="ltpo-reading-rail" aria-label="阅读进度">
-            <div class="ltpo-reading-rail-track"><i class="ltpo-reading-rail-progress"></i><svg class="ltpo-reading-rail-beam" viewBox="0 0 12 1000" preserveAspectRatio="none" aria-hidden="true"><path d="M6 0 C3 166 9 330 6 500 S3 834 6 1000"></path><circle cx="6" cy="0" r="5"></circle></svg></div>
-            <nav class="ltpo-reading-rail-sections" aria-label="章节导航">
-              <button type="button" data-reading-target="overview"><i></i><span>项目概述</span></button>
-              <button type="button" data-reading-target="challenge"><i></i><span>项目挑战</span></button>
-              <button type="button" data-reading-target="strategy"><i></i><span>传播策略</span></button>
-              <button type="button" data-reading-target="result"><i></i><span>项目结果</span></button>
-            </nav>
-            <span class="ltpo-reading-rail-current">项目概述</span>
-          </aside>
-          <svg class="ltpo-reading-signal" viewBox="0 0 1440 900" preserveAspectRatio="none" aria-hidden="true">
-            <path class="ltpo-reading-signal-landing" d="M-40 470 C150 426 272 520 446 474 S708 418 876 474 S1164 548 1488 438"></path>
-            <path class="ltpo-reading-signal-overview" d="M-60 616 C164 562 306 672 490 606 S780 516 954 598 S1226 676 1500 590"></path>
-            <path class="ltpo-reading-signal-strategy" d="M-40 358 C190 322 338 408 512 358 S808 302 976 362 S1222 424 1484 346"></path>
-          </svg>
-          <header class="ltpo-reading-hero ltpo-reading-block" data-reading-step="project">
-            <div class="ltpo-reading-hero-stage">
-            <span class="ltpo-reading-index">LTPO</span>
-            <p class="ltpo-reading-kicker">LTPO</p>
-            <div class="ltpo-reading-hero-mark ltpo-reading-light-target" data-light-level="hero" aria-hidden="true"><span>LTP</span><svg class="ltpo-reading-hero-o" viewBox="0 0 100 130" focusable="false"><ellipse cx="50" cy="65" rx="38" ry="56"></ellipse></svg><i class="ltpo-reading-hero-sheen"></i></div>
-            <div class="ltpo-reading-hero-meta">
-              <p class="ltpo-reading-deck">LTPO 技术营销</p>
-              <p class="ltpo-reading-date">2025.04 — 2025.12</p>
-              <p class="ltpo-reading-role">传播策略 · 技术传播 · 内容策划与转译 · 市场教育</p>
+        <div class="writing-archive-reading" data-reading-view="writingArchive" hidden tabindex="0" aria-label="写作作品阅读">
+          <div class="writing-reading-topbar">
+            <span data-writing-reading-index>WRITING ARCHIVE / 01</span>
+            <button class="case-reading-return" type="button">BACK</button>
+          </div>
+          <article class="writing-reading-piece writing-reading-piece--viewpoint" data-writing-article="w1" aria-labelledby="writing-w1-title">
+            <header class="writing-reading-heading">
+              <div class="writing-reading-meta"><span>高管观点与行业表达</span><span>01 / 2024.05</span></div>
+              <h1 id="writing-w1-title">京东方邵喜斌：液晶显示仍在迭代进化</h1>
+            </header>
+            <div class="writing-viewpoint-composition">
+              <figure class="writing-viewpoint-portrait"><img src="assets/writing-archive/shao-xibin-pencil-v1.png" alt="根据邵喜斌真实照片绘制的铅笔人物图"><figcaption>邵喜斌 / 京东方科技集团高级副总裁</figcaption></figure>
+              <div class="writing-viewpoint-quotes">
+                <blockquote><span>INDUSTRY</span><p>液晶显示技术也仍然保持着持续迭代进化的态势。</p></blockquote>
+                <blockquote><span>ADS / ADS PRO</span><p>ADS 技术是当前的最佳解决方案。</p></blockquote>
+                <blockquote><span>AI + DISPLAY</span><p>光感、温感、局部刷新技术可以适应在 AI 技术推动下屏幕与环境和人的交互能力需求。</p></blockquote>
+              </div>
+              <figure class="writing-source-fragment"><img src="assets/writing-archive/shao-xibin-source.jpg" alt="新华网原文中的邵喜斌采访配图"><figcaption>新华网原文配图 / 2024</figcaption></figure>
             </div>
+            <div class="writing-reading-source"><a href="https://www3.xinhuanet.com/tech/20240510/cecf2c08512246eabf4010481f505ba2/c.html" target="_blank" rel="noreferrer" data-writing-source>查看原文 ↗</a><span>新华网</span></div>
+          </article>
+
+          <article class="writing-reading-piece writing-reading-piece--thesis" data-writing-article="w2" hidden aria-labelledby="writing-w2-title">
+            <header class="writing-reading-heading">
+              <div class="writing-reading-meta"><span>产业议题与技术叙事</span><span>02</span></div>
+              <h1 id="writing-w2-title">ADS Pro+Mini LED“黄金搭档”：高端显示时代的新答案</h1>
+            </header>
+            <div class="writing-thesis-composition">
+              <blockquote class="writing-thesis-origin"><span>01 / THE DEBATE</span><p>过去几年，高端显示领域一直存在着 OLED 与高端 LCD 的技术路线之争。</p></blockquote>
+              <p class="writing-thesis-word" aria-hidden="true">协同</p>
+              <blockquote class="writing-thesis-synergy"><span>02 / THE SYNERGY</span><p>二者的结合并非简单的技术叠加，而是从底层实现了强强联合，形成了一套真正“懂用户”的高端显示解决方案。</p></blockquote>
+              <blockquote class="writing-thesis-anchor"><span>03 / THE JUDGEMENT</span><p>这套方案并非试图“替代”OLED，<strong>而是为用户提供另一种同样高端、但更加均衡的选择。</strong></p></blockquote>
+            </div>
+            <div class="writing-reading-source"><a href="https://finance.sina.com.cn/wm/2026-03-30/doc-inhsttre6554441.shtml" target="_blank" rel="noreferrer" data-writing-source>查看原文 ↗</a><span>CINNO</span></div>
+          </article>
+
+          <article class="writing-reading-piece writing-reading-piece--release" data-writing-article="w3" hidden aria-labelledby="writing-w3-title">
+            <div class="writing-release-hero">
+              <header class="writing-reading-heading">
+                <div class="writing-reading-meta"><span>联合传播</span><span>03 / 2025.02.21</span></div>
+                <p class="writing-release-lockup">BOE <i>×</i> SKYWORTH<br><strong>A5F PRO</strong></p>
+                <h1 id="writing-w3-title">BOE（京东方）重磅发布 ADS Pro 新品 携手创维打造比 OLED 更好的 Mini LED 电视新品 A5F Pro</h1>
+              </header>
+              <figure class="writing-release-stage"><img src="assets/writing-archive/a5f-pro-stage.png" alt="创维与京东方 2025 ADS Pro 新品发布会主舞台"><figcaption>创维 &amp; 京东方 2025 ADS Pro 新品发布会</figcaption></figure>
+            </div>
+            <blockquote class="writing-release-opening"><p>2月21日，BOE（京东方）与创维在福州联合举办 ADS Pro 新品发布会，重磅推出基于 ADS Pro 技术的全新极黑广角类纸屏，并全球首发于创维 A5F Pro 系列新品。</p></blockquote>
+            <div class="writing-release-technology">
+              <figure><img src="assets/writing-archive/a5f-pro-product.jpg" alt="创维 A5F Pro 产品现场展示"><figcaption>A5F Pro 产品展示 / ADS Pro × Mini LED</figcaption></figure>
+              <blockquote><span>DISPLAY TECHNOLOGY</span><p>基于京东方 ADS Pro 高端液晶显示技术，京东方与创维联合定制 A5F Pro 极黑广角类纸屏，实现了优于其他技术的超高环境光对比度、全视角无色偏等显著优势，让用户的观看体验实现明显提升。</p></blockquote>
+            </div>
+            <blockquote class="writing-release-view"><span>VIEWING ANGLE</span><p>观看视角方面，京东方 ADS Pro 可实现接近 180 度的超广对比度视角和超大色彩保真视角，结合 STW 全视角补偿层，使 A5F Pro 在各种光线和多角度观看条件下都能保持清晰细腻、色彩准确生动的观看效果。</p></blockquote>
+            <div class="writing-release-close" aria-hidden="true"><span>BOE</span><i>×</i><span>SKYWORTH</span><b>2025 ADS PRO</b></div>
+            <div class="writing-reading-source"><a href="https://www.boe.com/company/dynamic-d08ae95aad03414eb679837241b2c705" target="_blank" rel="noreferrer" data-writing-source>查看原文 ↗</a><span>BOE 官方</span></div>
+          </article>
+
+          <article class="writing-reading-piece writing-reading-piece--people" data-writing-article="w4" hidden aria-labelledby="writing-w4-title">
+            <header class="writing-reading-heading">
+              <div class="writing-reading-meta"><span>采访与人物内容</span><span>04 / 05·01</span></div>
+              <h1 id="writing-w4-title">执笔绘荣光，这是属于Ta们的热辣滚烫</h1>
+              <p class="writing-people-credit">选题策划、采访及撰稿均独立完成</p>
+            </header>
+            <div class="writing-people-opening"><p>五一劳动节，致敬每一位筑梦前行的人。<br>「艺云人」汇聚微光，闪耀荣光。<br>一块屏、一些日夜兼程、一支齐心团队，绘就了凝聚文化和艺术的天府大屋檐。</p></div>
+            <div class="writing-people-sequence">
+              <section class="writing-person writing-person--wang">
+                <div class="writing-person-portrait" role="img" aria-label="根据王石真实照片绘制的铅笔人物图"></div>
+                <div class="writing-person-copy"><span class="writing-person-number">01</span><p class="writing-person-keyword">不畏艰险</p><h2>王石</h2><p class="writing-person-role">京东方艺云传媒董事长、京东方艺云科技副总裁</p><blockquote>从正式安装到大屏点亮，仅有<strong>13天</strong>的时间，却要运作起<strong>1.1万平方米</strong>的大屏工程。时间紧、任务重，需要极大的人力物力。</blockquote><p class="writing-person-ending">天府大屋檐的项目，压力无限、困难无限，但曙光更是无限。</p></div>
+              </section>
+              <section class="writing-person writing-person--feng">
+                <div class="writing-person-portrait" role="img" aria-label="根据冯利明真实照片绘制的铅笔人物图"></div>
+                <div class="writing-person-copy"><span class="writing-person-number">02</span><p class="writing-person-keyword">安全</p><h2>冯利明</h2><p class="writing-person-role">京东方艺云数字展陈事业部项目经理</p><blockquote><strong>150多天</strong>，整整5个月的时间，这是我在外“飘”得最久的一次。项目工程量很大，而且在天气环境恶劣的情况下，还要在<strong>37米</strong>进行高空作业。</blockquote><p class="writing-person-ending">每天进行安全教育宣传，每次高空作业前都严格检查所有装备，并进行实时监测，最终实现项目<strong>0事故</strong>圆满交付。</p></div>
+              </section>
+              <section class="writing-person writing-person--chen">
+                <div class="writing-person-portrait" role="img" aria-label="根据陈镜暄真实照片绘制的铅笔人物图"></div>
+                <div class="writing-person-copy"><span class="writing-person-number">03</span><p class="writing-person-keyword">团队</p><h2>陈镜暄</h2><p class="writing-person-role">京东方艺云数字展陈事业部副总经理、天府大屋檐项目负责人</p><blockquote>从0到1，这个进步的过程，是我和项目一起成长走来的。</blockquote><p class="writing-person-ending">项目的每个阶段都会有无数次的抉择和决策，这要求把握项目的每个进度，清晰每个板块，才能在这样高节奏、高强度的工作里，用最短的时间、最快的速度、最好的质量，在<strong>20天</strong>内拼出一份奇迹。</p></div>
+              </section>
+              <section class="writing-person writing-person--liu">
+                <div class="writing-person-portrait" role="img" aria-label="根据刘兆雨真实照片绘制的铅笔人物图"></div>
+                <div class="writing-person-copy"><span class="writing-person-number">04</span><p class="writing-person-keyword">出圈</p><h2>刘兆雨</h2><p class="writing-person-role">京东方艺云成都基地总经理</p><blockquote>项目打样后到交付，中间时间短、天气不确定因素影响大、施工安全有风险，并且天府大屋檐作为成都跨年活动的主会场，必须保证各个环节紧扣、如期顺利交付。</blockquote><p class="writing-person-ending">在跨年活动的前一天，联调测试期间突发大屏信号缺失，我们连夜在播控台花了<strong>2小时</strong>调试信号，现场沟通对接到凌晨，才终于解决这一难题。</p></div>
+              </section>
+            </div>
+            <div class="writing-people-finale">
+              <p>散是星，聚是火，「艺云人」是个体亦是整体。<br>各司其职、通力协作、各显其能，做好每一件事。</p>
+              <figure><img src="assets/writing-archive/w4-original-page.jpg" alt="原微信公众号成稿页面局部"><figcaption>原公众号成稿页面局部</figcaption></figure>
+            </div>
+            <div class="writing-reading-source"><a href="https://mp.weixin.qq.com/s/QZYiFJhveEcypIL6ukwIdw" target="_blank" rel="noreferrer" data-writing-source>查看原文 ↗</a><span>微信公众号</span></div>
+          </article>
+        </div>
+        <div class="beijing2022-reading" data-reading-view="beijing2022" hidden tabindex="0" aria-label="北京2022｜冬奥全知道 Case Reading">
+          <div class="beijing2022-topbar">
+            <span>SELECTED CASE / BEIJING 2022</span>
+            <button class="case-reading-return" type="button">BACK</button>
+          </div>
+          <article class="beijing2022-poster">
+            <i class="beijing2022-paper-light" aria-hidden="true"></i>
+            <i class="beijing2022-grid" aria-hidden="true"></i>
+            <i class="beijing2022-axis" aria-hidden="true"></i>
+
+            <header class="beijing2022-hero" aria-labelledby="beijing2022-hero-title">
+              <div class="beijing2022-hero-year" aria-hidden="true"><span>20</span><span>22</span></div>
+              <p class="beijing2022-meta">大型事件策划 · 内容运营 · 热点预判</p>
+              <h1 id="beijing2022-hero-title"><span>北京2022</span><strong>冬奥全知道</strong></h1>
+              <p class="beijing2022-hero-index" aria-hidden="true">LIVE UPDATE<br>CONTENT SYSTEM</p>
+            </header>
+
+            <section class="beijing2022-context" aria-labelledby="beijing2022-context-title">
+              <div class="beijing2022-marker" aria-hidden="true"><strong>01</strong><span>CONTEXT</span></div>
+              <div class="beijing2022-context-copy">
+                <h2 id="beijing2022-context-title">大型事件里，<br>计划必须为变化留出位置。</h2>
+                <p>北京冬奥会期间，围绕赛事进程与用户关注热点，持续运营快手「冬奥全知道」相关内容。</p>
+                <p>在高密度、快速变化的大型事件中，既需对可能形成关注的节点进行预判，又需根据实际热点变化持续调整，为实时响应与内容补位预留空间。</p>
+              </div>
+              <div class="beijing2022-context-scale" aria-hidden="true"><span>PLAN</span><i></i><span>UPDATE</span></div>
+            </section>
+
+            <section class="beijing2022-question" aria-labelledby="beijing2022-question-title">
+              <div class="beijing2022-marker" aria-hidden="true"><strong>02</strong><span>CORE QUESTION</span></div>
+              <h2 id="beijing2022-question-title"><span>如何在赛事开始前</span><strong>建立热点判断，</strong><span>并在赛事进行中</span><strong>持续校正？</strong></h2>
+              <p>围绕赛事日程、重要节点与潜在关注点提前规划内容，并根据实际热点与数据反馈持续调整。</p>
+            </section>
+
+            <section class="beijing2022-calendar" aria-labelledby="beijing2022-calendar-title">
+              <div class="beijing2022-calendar-stage">
+                <header class="beijing2022-calendar-heading">
+                  <div class="beijing2022-marker"><strong>03</strong><span>HOTSPOT CALENDAR</span></div>
+                  <div>
+                    <p>CORE METHOD</p>
+                    <h2 id="beijing2022-calendar-title">从预判到实时校正</h2>
+                  </div>
+                </header>
+
+                <div class="beijing2022-process" aria-label="预判、跟踪、验证、补位">
+                  <span data-bj-phase="predict"><b>01</b><strong>PREDICT</strong><small>预判</small></span>
+                  <i aria-hidden="true"></i>
+                  <span data-bj-phase="track"><b>02</b><strong>TRACK</strong><small>跟踪</small></span>
+                  <i aria-hidden="true"></i>
+                  <span data-bj-phase="verify"><b>03</b><strong>VERIFY</strong><small>验证</small></span>
+                  <i aria-hidden="true"></i>
+                  <span data-bj-phase="fill"><b>04</b><strong>FILL</strong><small>补位</small></span>
+                </div>
+
+                <div class="beijing2022-schedule" aria-hidden="true">
+                  <div class="beijing2022-schedule-ruler"><span>PLAN</span><i></i><i></i><i></i><i></i><span>LIVE</span></div>
+                  <article class="beijing2022-block is-plan is-plan-a" data-bj-plan="a"><small>01 / PREDICT</small><strong>预设内容节点</strong><span>PLAN / BLUE</span></article>
+                  <article class="beijing2022-block is-plan is-plan-b" data-bj-plan="b"><small>02 / TRACK</small><strong>持续跟踪</strong><span>SCHEDULE</span></article>
+                  <article class="beijing2022-block is-plan is-plan-c" data-bj-plan="c"><small>03 / VERIFY</small><strong>等待验证</strong><span>PLANNED</span></article>
+                  <article class="beijing2022-block is-plan is-plan-d" data-bj-plan="d"><small>04 / FILL</small><strong>预留空缺</strong><span>OPEN SLOT</span></article>
+                  <article class="beijing2022-block is-live is-live-a" data-bj-live="a"><small>LIVE / UPDATE</small><strong>实际热点进入</strong><span>INSERT</span></article>
+                  <article class="beijing2022-block is-live is-live-b" data-bj-live="b"><small>OFFSET</small><strong>发生偏移</strong><span>SHIFT</span></article>
+                  <article class="beijing2022-block is-live is-live-c" data-bj-live="c"><small>NEW / FILL</small><strong>新增内容填入空缺</strong><span>FILL GAP</span></article>
+                  <p class="beijing2022-status is-status-verified" data-bj-status="verified"><span>✓</span> 判断被验证</p>
+                  <p class="beijing2022-status is-status-reorder" data-bj-status="reorder"><span>↳</span> 后续排程重新组织</p>
+                  <div class="beijing2022-update-line" data-bj-update-line><i></i><span>LIVE UPDATE</span></div>
+                </div>
+
+                <p class="beijing2022-calendar-note">计划先建立，热点发生后持续被验证、调整与补充。</p>
+              </div>
+            </section>
+
+            <section class="beijing2022-results" aria-labelledby="beijing2022-results-title">
+              <div class="beijing2022-marker"><strong>04</strong><span>RESULTS</span></div>
+              <h2 id="beijing2022-results-title">RESULTS</h2>
+              <div class="beijing2022-result-number is-primary"><strong>2.04</strong><span><b>亿</b>播放量</span></div>
+              <div class="beijing2022-result-number is-secondary"><strong>57</strong><span><b>次</b>热榜</span></div>
+              <div class="beijing2022-result-fragments" aria-hidden="true"><i>PLAN</i><i>VERIFY</i><i>LIVE</i><i>FILL</i></div>
+            </section>
+
+            <footer class="beijing2022-closing" aria-labelledby="beijing2022-closing-title">
+              <div class="beijing2022-marker"><strong>05</strong><span>CLOSING</span></div>
+              <h2 id="beijing2022-closing-title">让内容始终跟上热点，<br>也让每一次关注都能被及时回应。</h2>
+              <button class="case-reading-return beijing2022-closing-return" type="button"><i aria-hidden="true"></i><span>BACK TO THE SEA</span></button>
+            </footer>
+          </article>
+        </div>
+        <div class="hundred-inch-reading hundred-v4" data-reading-view="hundredInch" hidden tabindex="0" aria-label="100-inch 议题传播 Case Reading">
+          <div class="hundred-inch-reading-topbar">
+            <span>100-INCH / ISSUE COMMUNICATION</span>
+            <button class="case-reading-return" type="button">BACK</button>
+          </div>
+          <div class="hundred-inch-reading-scroll">
+            <div class="hundred-inch-reading-stage">
+              <i class="hundred-v4-field" aria-hidden="true"></i>
+              <i class="hundred-v4-caustic" aria-hidden="true"></i>
+              <i class="hundred-v4-noise" aria-hidden="true"></i>
+
+              <section class="hundred-inch-state hundred-inch-state-hero" aria-labelledby="hundred-hero-title">
+                <i class="hundred-v4-opening-bezel" aria-hidden="true"></i>
+                <i class="hundred-v4-horizon" aria-hidden="true"></i>
+                <div class="hundred-v4-opening-number" aria-hidden="true"><strong>100</strong><sup>&quot;</sup></div>
+                <div class="hundred-v4-opening-copy">
+                  <span>01 / PROJECT WORLD</span>
+                  <h1 id="hundred-hero-title"><span class="hundred-v4-display-en" lang="en">100-inch</span><br><span lang="zh-CN">议题传播</span></h1>
+                  <p>舆情应对 · 议题传播 · 媒体关系 · 事实沟通</p>
+                </div>
+                <span class="hundred-v4-opening-signal" aria-hidden="true">SIGNAL / SCALE / FACT</span>
+              </section>
+
+              <section class="hundred-inch-state hundred-inch-state-flat" aria-labelledby="hundred-question-title">
+                <div class="hundred-v4-crt-surface">
+                  <i class="hundred-v4-static" aria-hidden="true"></i>
+                  <div class="hundred-v4-question-copy">
+                    <span>02 / CONTEXT + QUESTION</span>
+                    <h2 id="hundred-question-title">当 98 吋与 100 吋<br>成为市场讨论的焦点，</h2>
+                    <strong>如何让传播回到可以被验证的产品事实？</strong>
+                  </div>
+                  <p class="hundred-v4-context-copy">围绕 98 吋与 100 吋相关市场讨论及销售压力产生传播议题。</p>
+                  <small class="hundred-v4-crt-readout" aria-hidden="true">CH 100 · ANALOG MEMORY</small>
+                </div>
+              </section>
+
+              <section class="hundred-inch-state hundred-inch-state-verification" aria-labelledby="hundred-verification-title">
+                <i class="hundred-v4-verification-surface" aria-hidden="true"></i>
+                <div class="hundred-v4-verification-type" aria-hidden="true">
+                  <strong>FACT</strong>
+                  <b>VERIFY</b>
+                </div>
+                <i class="hundred-v4-scan-beam" aria-hidden="true"></i>
+                <div class="hundred-v4-verification-copy">
+                  <span>03 / FACT + VERIFICATION</span>
+                  <h2 id="hundred-verification-title">先确认事实，<br>再让判断发生。</h2>
+                  <div class="hundred-v4-verification-step is-fact">
+                    <small>01 / 事实核验</small>
+                    <p>核验相关尺寸、产品信息与市场讨论中的事实基础，避免传播建立在模糊口径之上。</p>
+                  </div>
+                  <div class="hundred-v4-verification-step is-verify">
+                    <small>02 / 现场验证</small>
+                    <p>通过真实产品与现场信息进一步验证判断，让抽象尺寸议题转化为可以被观察和理解的事实。</p>
+                  </div>
+                </div>
+                <div class="hundred-v4-evidence-trace" aria-hidden="true">
+                  <i></i><i></i><i></i>
+                  <span>尺寸口径</span><span>产品信息</span><span>现场事实</span>
+                </div>
+                <div class="hundred-v4-signal-fragments" aria-hidden="true"><i></i><i></i><i></i></div>
+              </section>
+
+              <section class="hundred-inch-state hundred-inch-state-communication" aria-labelledby="hundred-communication-title">
+                <div class="hundred-v4-communication-heading">
+                  <span>04 / COMMUNICATION</span>
+                  <h2 id="hundred-communication-title">事实被整理成表达，<br>再进入专业讨论。</h2>
+                </div>
+                <div class="hundred-v4-communication-islands">
+                  <article class="hundred-v4-expression">
+                    <small>PROFESSIONAL EXPRESSION</small>
+                    <h3>专业表达</h3>
+                    <p>围绕高层分享、采访问题及传播材料整理专业表达，让信息能够被媒体准确理解。</p>
+                  </article>
+                  <article class="hundred-v4-media">
+                    <small>MEDIA COMMUNICATION</small>
+                    <h3>媒体沟通</h3>
+                    <p>完成媒体筛选与邀约、现场沟通与执行，并通过新闻稿让议题进入更专业的讨论环境。</p>
+                  </article>
+                  <p class="hundred-v4-process-line"><span>事实核验</span><i>→</i><span>现场验证</span><i>→</i><span>专业表达</span><i>→</i><span>媒体沟通</span></p>
+                </div>
+                <div class="hundred-v4-signal-orbit" aria-hidden="true"><i></i><b></b><span>SIGNAL BECOMES LANGUAGE</span></div>
+              </section>
+
+              <section class="hundred-inch-state hundred-inch-state-scale" aria-labelledby="hundred-scale-title">
+                <i class="hundred-v4-scale-sweep" aria-hidden="true"></i>
+                <div class="hundred-v4-scale-98" aria-hidden="true">98&quot;</div>
+                <div class="hundred-v4-scale-100">100&quot;</div>
+                <div class="hundred-v4-scale-copy">
+                  <span>05 / SCALE MOMENT</span>
+                  <h2 id="hundred-scale-title">百吋才是真大屏</h2>
+                  <p>从尺寸争论，回到可以被验证的产品事实。</p>
+                </div>
+              </section>
+
+              <section class="hundred-inch-state hundred-inch-state-return" aria-labelledby="hundred-return-title">
+                <div class="hundred-v4-return-depth" aria-hidden="true">
+                  <i></i><i></i><i></i>
+                </div>
+                <div class="hundred-v4-return-lens">
+                  <div class="hundred-v4-return-water" aria-hidden="true">
+                    <video class="hundred-v4-return-video" autoplay muted loop playsinline preload="auto" src="assets/generated/transitions/100-inch-return-water-pingpong.mp4?v=20260909-pingpong-no-crossfade" poster="assets/100-inch/hero-underwater-updated.png"></video>
+                    <i></i><i></i><i></i>
+                  </div>
+                  <i class="hundred-v4-return-ripple" aria-hidden="true"></i>
+                  <div class="hundred-v4-return-copy">
+                    <button id="hundred-return-title" class="case-reading-return" type="button">BACK TO THE SEA</button>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+        <div class="media-lab-reading" data-reading-view="mediaLab" hidden tabindex="0">
+          <div class="media-lab-atmosphere" aria-hidden="true">
+            <i class="media-lab-depth"></i>
+            <i class="media-lab-caustics"></i>
+            <i class="media-lab-grain"></i>
+          </div>
+          <canvas class="media-lab-wave" aria-hidden="true"></canvas>
+          <div class="media-lab-topbar">
+            <span>SELECTED CASE</span>
+            <button class="case-reading-return" type="button">BACK</button>
+          </div>
+          <header class="media-lab-hero-copy">
+            <h1>融媒实验室</h1>
+            <p class="media-lab-role">创作者运营 · 资源整合 · 项目执行 · 数据验证</p>
+          </header>
+          <p class="media-lab-summary">围绕优质内容与传播渠道，通过资源协同与持续合作，<br>放大内容的传播价值与影响力。</p>
+          <div class="media-lab-hero-spacer" aria-hidden="true"></div>
+
+          <section class="media-lab-question" data-media-lab-step="question" aria-labelledby="media-lab-question-title">
+            <div class="media-lab-question-stage">
+              <span class="media-lab-section-label">THE QUESTION</span>
+              <h2 id="media-lab-question-title"><span>当优质内容遇到传播渠道，</span><strong>如何让内容与需求<br>真正匹配？</strong></h2>
+              <i class="media-lab-question-rule" aria-hidden="true"></i>
+            </div>
+          </section>
+
+          <section class="media-lab-approach" data-media-lab-step="approach" aria-labelledby="media-lab-approach-title">
+            <div class="media-lab-approach-stage">
+              <div class="media-lab-approach-heading">
+                <span class="media-lab-section-label">THE APPROACH</span>
+                <h2 id="media-lab-approach-title"><span data-approach-key="judge">判断</span> <i>→</i> <span data-approach-key="match">匹配</span> <i>→</i> <span data-approach-key="verify">验证</span></h2>
+              </div>
+              <div class="media-lab-correspondence" aria-hidden="true">
+                <div class="media-lab-correspondence-source">
+                  <span>专业内容能力</span><span>账号数据</span><span>合作情况</span>
+                </div>
+                <svg viewBox="0 0 640 430" preserveAspectRatio="none" focusable="false">
+                  <path pathLength="1" d="M74 108 C220 108 314 94 566 128"></path>
+                  <path pathLength="1" d="M74 215 C230 215 320 215 566 215"></path>
+                  <path pathLength="1" d="M74 322 C220 322 314 336 566 302"></path>
+                  <circle cx="74" cy="108" r="4"></circle><circle cx="74" cy="215" r="4"></circle><circle cx="74" cy="322" r="4"></circle>
+                  <circle cx="566" cy="128" r="4"></circle><circle cx="566" cy="215" r="4"></circle><circle cx="566" cy="302" r="4"></circle>
+                </svg>
+                <div class="media-lab-correspondence-demand">
+                  <span>重点创作者</span><span>平台资源</span><span>持续合作</span>
+                </div>
+                <i class="media-lab-match-axis"></i>
+                <b class="media-lab-correspondence-word">判断</b>
+              </div>
+              <div class="media-lab-approach-copy">
+                <article data-approach-index="0"><span>01</span><div><h3>识别重点创作者</h3><p>从专业内容能力、账号数据与合作情况出发，判断值得重点运营的创作者。</p></div></article>
+                <article data-approach-index="1"><span>02</span><div><h3>匹配平台资源</h3><p>结合平台传播需求，协调资源推进小规模合作，让优质内容获得合适的分发位置。</p></div></article>
+                <article data-approach-index="2"><span>03</span><div><h3>用数据验证</h3><p>通过内容消费与账号成长数据验证合作效果，再扩大参与，沉淀持续合作关系。</p></div></article>
+              </div>
+            </div>
+          </section>
+
+          <section class="media-lab-results" data-media-lab-step="results" aria-labelledby="media-lab-results-title">
+            <div class="media-lab-results-stage">
+              <div class="media-lab-results-heading"><span class="media-lab-section-label">THE RESULTS</span><h2 id="media-lab-results-title">内容找到位置之后，<br>传播开始形成规模。</h2></div>
+              <div class="media-lab-result-numbers">
+                <p><strong data-result-counter="7.76" aria-label="7.76 亿">0.00</strong><i>亿</i><span>月曝光</span></p>
+                <p><strong data-result-counter="6.73" aria-label="6.73 亿">0.00</strong><i>亿</i><span>视频播放量</span></p>
+              </div>
+              <p class="media-lab-result-note">疫情播报 · 每日新闻<br>沉淀长期合作核心创作者，并吸引项目外创作者主动寻求后续合作。</p>
+            </div>
+          </section>
+
+          <section class="media-lab-closing" data-media-lab-step="closing" aria-labelledby="media-lab-closing-title">
+            <div class="media-lab-closing-stage">
+              <span class="media-lab-section-label">CLOSING THOUGHT</span>
+              <h2 id="media-lab-closing-title"><span>好的传播，不只是让内容被看见，</span><strong>而是让合适的内容，<br>在合适的位置被看见。</strong></h2>
+              <i class="media-lab-closing-line" aria-hidden="true"></i>
+              <button class="case-reading-return media-lab-closing-return" type="button"><i class="media-lab-return-route" aria-hidden="true"></i><span>BACK TO THE SEA</span></button>
+            </div>
+          </section>
+        </div>
+        <div class="ltpo-reading ltpo-rebuild" data-reading-view="ltpo" hidden tabindex="0">
+          <svg class="ltpo-v2-defs" width="0" height="0" aria-hidden="true" focusable="false">
+            <defs>
+              <filter id="ltpo-v2-water-distortion" x="-18%" y="-30%" width="136%" height="160%" color-interpolation-filters="sRGB">
+                <feTurbulence type="fractalNoise" baseFrequency=".006 .034" numOctaves="2" seed="12" result="ltpoWaterNoise"><animate attributeName="baseFrequency" dur="13s" repeatCount="indefinite" values=".006 .034;.014 .052;.009 .026;.006 .034"></animate></feTurbulence>
+                <feDisplacementMap in="SourceGraphic" in2="ltpoWaterNoise" scale="34" xChannelSelector="R" yChannelSelector="G"><animate attributeName="scale" dur="13s" repeatCount="indefinite" values="22;42;28;22"></animate></feDisplacementMap>
+              </filter>
+              <clipPath id="ltpo-v2-wordmark-clip"><path d="M18 18H126V252H292V342H18Z"></path><path d="M306 18H612V108H513V342H405V108H306Z"></path><path fill-rule="evenodd" d="M648 18H846C947 18 1000 72 1000 162C1000 252 945 305 846 305H756V342H648ZM756 105V218H831C872 218 892 199 892 162C892 124 872 105 831 105Z"></path><path fill-rule="evenodd" d="M1130 18H1218C1290 18 1328 68 1328 150V210C1328 292 1290 342 1218 342H1130C1058 342 1020 292 1020 210V150C1020 68 1058 18 1130 18ZM1137 106C1128 106 1124 118 1124 146V214C1124 242 1128 254 1137 254H1211C1220 254 1224 242 1224 214V146C1224 118 1220 106 1211 106Z"></path></clipPath>
+              <linearGradient id="ltpo-v2-closing-flow" x1="-420" y1="0" x2="1770" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#edf0ea"></stop><stop offset=".24" stop-color="#a9d8d2"></stop><stop offset=".52" stop-color="#7897ad"></stop><stop offset=".76" stop-color="#d8e3df"></stop><stop offset="1" stop-color="#95c8c4"></stop>
+                <animate attributeName="x1" values="-420;140;-420" dur="18s" repeatCount="indefinite"></animate>
+                <animate attributeName="x2" values="1770;2330;1770" dur="18s" repeatCount="indefinite"></animate>
+              </linearGradient>
+            </defs>
+            <symbol id="ltpo-v2-wordmark" viewBox="0 0 1350 360">
+              <path d="M18 18H126V252H292V342H18Z"></path>
+              <path d="M306 18H612V108H513V342H405V108H306Z"></path>
+              <path fill-rule="evenodd" d="M648 18H846C947 18 1000 72 1000 162C1000 252 945 305 846 305H756V342H648ZM756 105V218H831C872 218 892 199 892 162C892 124 872 105 831 105Z"></path>
+              <path fill-rule="evenodd" d="M1130 18H1218C1290 18 1328 68 1328 150V210C1328 292 1290 342 1218 342H1130C1058 342 1020 292 1020 210V150C1020 68 1058 18 1130 18ZM1137 106C1128 106 1124 118 1124 146V214C1124 242 1128 254 1137 254H1211C1220 254 1224 242 1224 214V146C1224 118 1220 106 1211 106Z"></path>
+            </symbol>
+          </svg>
+
+          <div class="ltpo-v2-topbar"><span>SELECTED CASE / LTPO</span><button class="case-reading-return" type="button">BACK</button></div>
+
+          <header class="ltpo-v2-hero" data-ltpo-scene="hero">
+            <div class="ltpo-v2-hero-stage">
+              <div class="ltpo-v2-hero-frame">
+                <div class="ltpo-v2-light-field" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+                <h1 class="ltpo-v2-visually-hidden">LTPO</h1>
+                <svg class="ltpo-v2-wordmark" width="1350" height="360" viewBox="0 0 1350 360" fill="#365863" aria-hidden="true" focusable="false"><path d="M18 18H126V252H292V342H18Z"></path><path d="M306 18H612V108H513V342H405V108H306Z"></path><path fill-rule="evenodd" d="M648 18H846C947 18 1000 72 1000 162C1000 252 945 305 846 305H756V342H648ZM756 105V218H831C872 218 892 199 892 162C892 124 872 105 831 105Z"></path><path fill-rule="evenodd" d="M1130 18H1218C1290 18 1328 68 1328 150V210C1328 292 1290 342 1218 342H1130C1058 342 1020 292 1020 210V150C1020 68 1058 18 1130 18ZM1137 106C1128 106 1124 118 1124 146V214C1124 242 1128 254 1137 254H1211C1220 254 1224 242 1224 214V146C1224 118 1220 106 1211 106Z"></path></svg>
+                <div class="ltpo-v2-hero-meta">
+                  <p>LTPO 技术营销</p>
+                  <p>2025.04 — 2025.12</p>
+                  <p>传播策略 · 技术传播 · 内容策划与转译 · 市场教育</p>
+                </div>
+              </div>
             </div>
           </header>
 
-          <section id="ltpo-reading-overview" class="ltpo-reading-section ltpo-reading-block ltpo-reading-overview" data-reading-step="overview">
-            <div class="ltpo-reading-overview-intro ltpo-reading-challenge-intro">
-              <span class="ltpo-reading-index">01</span>
-              <h2>项目概述</h2>
-              <p>LTPO 是新一代 OLED 技术，通过动态刷新率等技术能力，为用户带来超低功耗、超健康护眼、超流畅显示的体验。</p>
-            </div>
-            <div class="ltpo-reading-values" aria-label="三项体验价值"><span>超低功耗</span><span>超健康护眼</span><span>超流畅显示</span></div>
-          </section>
+          <main class="ltpo-v2-editorial">
+            <section id="ltpo-reading-overview" class="ltpo-v2-overview" data-reading-step="overview">
+              <div class="ltpo-v2-section-label"><span>01</span><b>项目概述</b></div>
+              <div class="ltpo-v2-overview-grid">
+                <h2>LTPO 是<span class="ltpo-v2-no-break">新一代</span><br>OLED 技术</h2>
+                <p>通过动态刷新率等技术能力，为用户带来超低功耗、超健康护眼、超流畅显示的体验。</p>
+              </div>
+            </section>
 
-          <section id="ltpo-reading-challenge" class="ltpo-reading-section ltpo-reading-block ltpo-reading-challenge" data-reading-step="challenge">
-            <div class="ltpo-reading-challenge-intro">
-              <span class="ltpo-reading-index">02</span>
-              <h2>项目挑战</h2>
-              <p>市场对 LTPO 的认知有限，技术优势与普通用户能够理解的实际体验之间缺少连接。</p>
-            </div>
-            <div class="ltpo-reading-challenge-copy">
-              <span class="ltpo-reading-label">需要解决的问题</span>
-              <p>在有限的传播资源下，如何让消费者理解并认可技术价值，并进一步影响其消费决策，是项目真正需要解决的问题。</p>
-              <small aria-label="技术很好，但消费者为什么要在意？"><b class="ltpo-reading-challenge-problem-lead">技术很好，</b><b class="ltpo-reading-challenge-problem-question">但消费者为什么要在意？</b></small>
-            </div>
-          </section>
+            <section class="ltpo-v2-semantic" data-ltpo-scene="semantic" aria-label="LTPO 三项体验价值">
+              <div class="ltpo-v2-semantic-stage">
+                <div class="ltpo-v2-translation" aria-label="技术语言转译为用户体验">
+                  <p class="ltpo-v2-translation-tech"><span>技术语言</span><strong>动态刷新率</strong></p>
+                  <p class="ltpo-v2-translation-experience"><span>转译为</span><strong>用户体验</strong></p>
+                </div>
+                <div class="ltpo-v2-value-list">
+                  <p><span>01</span><strong>超低功耗</strong></p><p><span>02</span><strong>超健康护眼</strong></p><p><span>03</span><strong>超流畅显示</strong></p>
+                </div>
+                <span class="ltpo-v2-semantic-destination">三项可感知的用户价值</span>
+                <i class="ltpo-v2-semantic-light" aria-hidden="true"></i>
+              </div>
+            </section>
 
-          <section id="ltpo-reading-strategy" class="ltpo-reading-section ltpo-reading-block ltpo-reading-strategy" data-reading-step="strategy">
-            <div class="ltpo-reading-strategy-stage">
-              <div class="ltpo-reading-strategy-intro">
-                <div class="ltpo-reading-section-heading">
-                  <span class="ltpo-reading-index">03</span>
-                  <h2>传播策略</h2>
+            <section id="ltpo-reading-challenge" class="ltpo-v2-challenge" data-reading-step="challenge" data-ltpo-scene="challenge">
+              <div class="ltpo-v2-challenge-stage">
+                <div class="ltpo-v2-section-label"><span>02</span><b>项目挑战</b></div>
+                <p class="ltpo-v2-challenge-intro">市场对 LTPO 的认知有限，技术优势与普通用户能够理解的实际体验之间缺少连接。</p>
+                <div class="ltpo-v2-question"><span>技术很好，</span><strong>但消费者<br>为什么要在意？</strong></div>
+                <div class="ltpo-v2-challenge-answer"><span>需要解决的问题</span><p>在有限的传播资源下，如何让消费者理解并认可技术价值，并进一步影响其消费决策，是项目真正需要解决的问题。</p></div>
+              </div>
+            </section>
+
+            <section id="ltpo-reading-strategy" class="ltpo-v2-strategy" data-reading-step="strategy" data-ltpo-scene="strategy">
+              <div class="ltpo-v2-strategy-stage">
+                <div class="ltpo-v2-strategy-intro">
+                  <div class="ltpo-v2-section-label"><span>03</span><b>传播策略</b></div>
                   <p>围绕 LTPO 从技术认知走向用户感知与价值认可，通过填补认知空缺建立技术理解，再以场景化、故事化的内容集中释放技术价值，让抽象的技术优势转化为消费者可理解、可感知的实际体验。</p>
                 </div>
-                <div class="ltpo-reading-strategy-bridge" aria-label="传播策略关系"><span>技术认知</span><span>用户感知</span><span>价值认可</span></div>
-              </div>
-              <div class="ltpo-reading-strategy-scenes" aria-label="传播阶段">
-                <article class="ltpo-reading-phase ltpo-reading-phase-foundation">
-                  <div class="ltpo-reading-foundation-copy">
-                    <div class="ltpo-reading-phase-heading"><span>01</span><h3>认知基建</h3></div>
-                    <p class="ltpo-reading-phase-lead">第一步，通过认知基建填补 LTPO 认知空缺。</p>
-                  </div>
-                  <figure class="ltpo-reading-evidence-note"><span>基础信息入口</span><b>百度百科</b><img src="assets/ltpo-baike-img-7299.jpeg" alt="百度百科中的 BOE LTPO 技术信息页面"><figcaption>轻量辅助证据</figcaption></figure>
+                <div class="ltpo-v2-focus-field" aria-label="技术认知到价值认可"><strong>技术认知</strong><strong>用户感知</strong><strong>价值认可</strong></div>
+
+                <article class="ltpo-v2-foundation">
+                  <div><span>01 / FOUNDATION</span><h3>认知基建</h3><p>第一步，通过认知基建填补 LTPO 认知空缺。</p></div>
+                  <figure><img src="assets/ltpo-baike-img-7299.jpeg" alt="百度百科中的 BOE LTPO 技术信息页面"><figcaption><span>基础信息入口</span><b>百度百科</b><small>轻量辅助证据</small></figcaption></figure>
                 </article>
 
-                <article class="ltpo-reading-phase ltpo-reading-phase-amplification">
-                  <div class="ltpo-reading-amplification-copy">
-                    <div class="ltpo-reading-phase-heading"><span>02</span><h3>集中传播</h3></div>
-                    <div class="ltpo-reading-method-lockup ltpo-reading-light-target" data-light-level="hero"><span class="ltpo-reading-method-primary">场景化植入</span><i>×</i><span class="ltpo-reading-method-secondary">故事化传播</span></div>
-                    <p class="ltpo-reading-method-explanation">以<em>系列短剧</em>为载体，将 LTPO 技术与<em>终端产品</em>相结合，把超低功耗、超健康护眼、超流畅显示等技术优势植入<em>真实使用场景</em>，直击<em>用户痛点</em>，通过剧情转化为<em>可感知的用户体验</em>。</p>
-                  </div>
-                  <div class="ltpo-reading-series">
-                    <div class="ltpo-reading-series-heading"><span>代表内容</span><h4>《“牛马”相对论》</h4><p>北京电视台 · 四集系列短剧</p></div>
-                    <div class="ltpo-episode-nav" aria-label="选择短剧集数">
-                      <button type="button" data-episode-select="01" aria-label="第 1 集" aria-pressed="true">01</button>
-                      <button type="button" data-episode-select="02" aria-label="第 2 集" aria-pressed="false">02</button>
-                      <button type="button" data-episode-select="03" aria-label="第 3 集" aria-pressed="false">03</button>
-                      <button type="button" data-episode-select="04" aria-label="第 4 集" aria-pressed="false">04</button>
-                    </div>
-                    <div class="ltpo-media-utility">
-                      <button class="ltpo-media-sound" type="button" aria-pressed="false">SOUND OFF</button>
-                    </div>
-                    <div class="ltpo-episode-stage" aria-label="《牛马》相对论四集系列短剧">
-                      <figure class="ltpo-episode" data-episode="01"><video src="assets/ltpo-niuma-e01-web.mp4" muted loop playsinline preload="metadata" aria-label="短剧第 1 集"></video><figcaption>01</figcaption></figure>
-                      <figure class="ltpo-episode" data-episode="02"><video src="assets/ltpo-niuma-e02-web.mp4" muted loop playsinline preload="metadata" aria-label="短剧第 2 集"></video><figcaption>02</figcaption></figure>
-                      <figure class="ltpo-episode" data-episode="03"><video src="assets/ltpo-niuma-e03-web.mp4" muted loop playsinline preload="metadata" aria-label="短剧第 3 集"></video><figcaption>03</figcaption></figure>
-                      <figure class="ltpo-episode" data-episode="04"><video src="assets/ltpo-niuma-e04-web.mp4" muted loop playsinline preload="metadata" aria-label="短剧第 4 集"></video><figcaption>04</figcaption></figure>
-                    </div>
-                  </div>
-                  <div class="ltpo-reading-ownership"><span>职责范围</span><ul><li>四集内容规划</li><li>单集逻辑设计</li><li>技术点与剧情映射</li><li>脚本推进</li><li>内容落地</li></ul></div>
+                <article class="ltpo-v2-method">
+                  <span>02 / AMPLIFICATION</span>
+                  <div class="ltpo-v2-method-lockup"><strong>场景化植入</strong><i>×</i><strong>故事化传播</strong></div>
+                  <p>以<em>系列短剧</em>为载体，将 LTPO 技术与<em>终端产品</em>相结合，把超低功耗、超健康护眼、超流畅显示等技术优势植入<em>真实使用场景</em>，直击<em>用户痛点</em>，通过剧情转化为<em>可感知的用户体验</em>。</p>
                 </article>
 
+                <article class="ltpo-v2-evidence">
+                  <div class="ltpo-v2-evidence-copy">
+                    <span>代表内容</span><h3><span class="ltpo-v2-title-unit">《“牛马”</span><span class="ltpo-v2-title-unit">相对论》</span></h3><p>北京电视台 · 四集系列短剧</p>
+                    <div class="ltpo-v2-evidence-logic" aria-label="Narrative Evidence 转译链路"><span>技术</span><i>→</i><span>终端产品</span><i>→</i><span>使用场景</span><i>→</i><span>用户痛点</span><i>→</i><span>可感知体验</span></div>
+                    <div class="ltpo-v2-ownership"><span>职责范围</span><ul><li>四集内容规划</li><li>单集逻辑设计</li><li>技术点与剧情映射</li><li>脚本推进</li><li>内容落地</li></ul></div>
+                  </div>
+                  <div class="ltpo-v2-episode-stage" aria-label="《牛马》相对论四集系列短剧">
+                    <figure data-episode="01"><video src="assets/ltpo-niuma-e01-rebuild.mp4" muted loop playsinline preload="metadata" aria-label="短剧第 1 集"></video><figcaption>E01</figcaption></figure>
+                    <figure data-episode="02"><video src="assets/ltpo-niuma-e02-rebuild.mp4" muted loop playsinline preload="metadata" aria-label="短剧第 2 集"></video><figcaption>E02</figcaption></figure>
+                    <figure data-episode="03"><video src="assets/ltpo-niuma-e03-rebuild.mp4" muted loop playsinline preload="metadata" aria-label="短剧第 3 集"></video><figcaption>E03</figcaption></figure>
+                    <figure data-episode="04"><video src="assets/ltpo-niuma-e04-rebuild.mp4" muted loop playsinline preload="metadata" aria-label="短剧第 4 集"></video><figcaption>E04</figcaption></figure>
+                  </div>
+                  <div class="ltpo-v2-evidence-controls"><div class="ltpo-v2-episode-nav" aria-label="选择短剧集数"><button type="button" data-ltpo-episode="0" aria-pressed="true">01</button><button type="button" data-ltpo-episode="1" aria-pressed="false">02</button><button type="button" data-ltpo-episode="2" aria-pressed="false">03</button><button type="button" data-ltpo-episode="3" aria-pressed="false">04</button></div><button class="ltpo-v2-sound" type="button" aria-pressed="false">SOUND OFF</button></div>
+                </article>
               </div>
-            </div>
-          </section>
+            </section>
 
-          <section id="ltpo-reading-result" class="ltpo-reading-section ltpo-reading-block ltpo-reading-result" data-reading-step="result">
-            <div class="ltpo-reading-result-heading"><span class="ltpo-reading-index">04</span><h2>项目结果</h2></div>
-            <div class="ltpo-reading-result-list">
-              <p><span>获奖</span><b class="ltpo-reading-result-hero ltpo-reading-light-target" data-light-level="hero">融媒创作<br>牡丹奖 · 好创意</b></p>
-              <p><span>市场反馈</span><b>LTPO 相关关键词搜索与市场提及较项目前有所提升</b></p>
-              <p><span>业务反馈</span><b>获得业务与客户认可，并进入下一轮合作</b></p>
-            </div>
-            <div class="ltpo-reading-end"><span></span><button class="case-reading-return" type="button">BACK</button></div>
-          </section>
+            <section id="ltpo-reading-result" class="ltpo-v2-result" data-reading-step="result" data-ltpo-scene="result">
+              <div class="ltpo-v2-result-sheet">
+                <div class="ltpo-v2-section-label"><span>04</span><b>项目结果</b></div>
+                <div class="ltpo-v2-result-grid">
+                  <p class="ltpo-v2-award"><span>获奖</span><strong><b>融媒创作</b><b>牡丹奖 · 好创意</b></strong></p>
+                  <div><p><span>市场反馈</span><b>LTPO 相关关键词搜索与市场提及较项目前有所提升</b></p><p><span>业务反馈</span><b>获得业务与客户认可，并进入下一轮合作</b></p></div>
+                </div>
+              </div>
+              <div class="ltpo-v2-closing">
+                <div class="ltpo-v2-closing-light" aria-hidden="true"><i></i><i></i><i></i></div>
+                <p class="ltpo-v2-closing-note">TECHNOLOGY <i>→</i> EXPERIENCE</p>
+                <svg class="ltpo-v2-closing-wordmark" viewBox="0 0 1350 360" aria-hidden="true" focusable="false"><g class="ltpo-v2-closing-wordmark-base"><path d="M18 18H126V252H292V342H18Z"></path><path d="M306 18H612V108H513V342H405V108H306Z"></path><path fill-rule="evenodd" d="M648 18H846C947 18 1000 72 1000 162C1000 252 945 305 846 305H756V342H648ZM756 105V218H831C872 218 892 199 892 162C892 124 872 105 831 105Z"></path><path fill-rule="evenodd" d="M1130 18H1218C1290 18 1328 68 1328 150V210C1328 292 1290 342 1218 342H1130C1058 342 1020 292 1020 210V150C1020 68 1058 18 1130 18ZM1137 106C1128 106 1124 118 1124 146V214C1124 242 1128 254 1137 254H1211C1220 254 1224 242 1224 214V146C1224 118 1220 106 1211 106Z"></path></g><g class="ltpo-v2-closing-water-mask" clip-path="url(#ltpo-v2-wordmark-clip)" filter="url(#ltpo-v2-water-distortion)"><rect class="ltpo-v2-closing-water-fill" x="-480" y="-140" width="2310" height="650"></rect><path class="ltpo-v2-closing-water-ribbon ltpo-v2-closing-water-ribbon-a" d="M-300 74C95-15 294 215 633 112C949 16 1185-21 1665 103L1665 249C1267 166 1057 320 682 215C316 111 76 307-300 240Z"></path><path class="ltpo-v2-closing-water-ribbon ltpo-v2-closing-water-ribbon-b" d="M-340 244C98 150 295 395 658 270C959 170 1202 121 1676 258L1676 452L-340 452Z"></path></g></svg>
+                <button class="case-reading-return ltpo-v2-closing-return" type="button"><i class="ltpo-v2-return-route" aria-hidden="true"></i><span>BACK TO THE SEA</span></button>
+              </div>
+            </section>
+          </main>
         </div>
       </section>
     </div>
@@ -188,6 +591,6 @@
   </main>
   <div class="descent-scroll-spacer" aria-hidden="true"></div>
   <script src="vendor/gsap.min.js"></script>
-  <script src="script.js?v=20260904-ltpo-final-v1"></script>
+  <script src="script.js?v=20260909-beijing2022-continuity-v3"></script>
 </body>
 </html>

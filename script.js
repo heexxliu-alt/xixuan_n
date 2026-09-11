@@ -334,7 +334,11 @@
           Object.freeze({ x: .36, y: masterWorldY(1665) }),
           Object.freeze({ x: .35, y: masterWorldY(1450) }),
           Object.freeze({ x: .31, y: masterWorldY(1295) })
-        ])
+        ]),
+        // The cave silhouette remains the spatial truth. This is only the
+        // surrounding open-water allowance that lets a natural approach form
+        // before the diver reaches the painted mouth exactly.
+        entryRadius: .062
       })
     }),
     Object.freeze({
@@ -365,7 +369,8 @@
           Object.freeze({ x: .65, y: masterWorldY(1655) }),
           Object.freeze({ x: .65, y: masterWorldY(1440) }),
           Object.freeze({ x: .69, y: masterWorldY(1285) })
-        ])
+        ]),
+        entryRadius: .062
       })
     }),
     Object.freeze({
@@ -415,6 +420,18 @@
       })
     })
   ]);
+  // Writing Archive is an ambient text discovery in the quiet water after the
+  // chamber. It is intentionally not a Case anchor or collision region.
+  const WRITING_ARCHIVE_WORLD_ANCHOR = Object.freeze({
+    x: .32,
+    y: masterWorldY(2215)
+  });
+  const WRITING_ARCHIVE_ARTICLES = Object.freeze({
+    w1: Object.freeze({ index: '01', label: '京东方邵喜斌：液晶显示仍在迭代进化' }),
+    w2: Object.freeze({ index: '02', label: 'ADS Pro+Mini LED“黄金搭档”：高端显示时代的新答案' }),
+    w3: Object.freeze({ index: '03', label: 'BOE（京东方）重磅发布 ADS Pro 新品 携手创维打造比 OLED 更好的 Mini LED 电视新品 A5F Pro' }),
+    w4: Object.freeze({ index: '04', label: '执笔绘荣光，这是属于Ta们的热辣滚烫' })
+  });
   const swimRegionAt = (worldY) => {
     const y = clamp(worldY, 0, 1);
     return DEEP_SEA_SWIM_MAP.regions.find((region, index) => y < region.yEnd || index === DEEP_SEA_SWIM_MAP.regions.length - 1)
@@ -2289,12 +2306,10 @@
       node.style.setProperty('--information-base-opacity', '1');
     });
     const scrollSpacer = document.querySelector('.descent-scroll-spacer');
-    const debugHiddenCave = DEBUG_HIDDEN_CAVE || new URLSearchParams(window.location.search).has('debug-hidden-cave');
-    document.body.classList.toggle('debug-hidden-cave', debugHiddenCave);
-    if (debugHiddenCave && scrollSpacer) scrollSpacer.style.height = '520vh';
     let viewport = { width: 0, height: 0, halfW: 66, halfH: 47, maxDepth: 1 };
     let targetDepth = 0;
     let currentDepth = 0;
+    let readingPerformanceSuspended = false;
     let dirty = true;
     let lastProximityPosition = { x: Number.NaN, y: Number.NaN };
     let onboardingDismissed = false;
@@ -2340,21 +2355,49 @@
       && item.worldAnchor
       && item.approachRegion?.polygon
     ));
-    const caseApproachesAt = (point) => placedCaseAnchors().filter((item) => (
-      pointInPolygon(point, item.approachRegion.polygon)
-    ));
+    const distanceToSegment = (point, start, end) => {
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      const lengthSquared = dx * dx + dy * dy;
+      if (!lengthSquared) return Math.hypot(point.x - start.x, point.y - start.y);
+      const t = clamp(((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared, 0, 1);
+      return Math.hypot(point.x - (start.x + dx * t), point.y - (start.y + dy * t));
+    };
+    const distanceToPolygon = (point, polygon) => polygon.reduce((nearest, start, index) => (
+      Math.min(nearest, distanceToSegment(point, start, polygon[(index + 1) % polygon.length]))
+    ), Infinity);
+    // One shared approach calculation owns discovery, the true enter range,
+    // and the environmental light. The original polygons remain the cave
+    // geometry; entryRadius softly extends only into its surrounding water.
+    const caseApproachesAt = (point) => placedCaseAnchors().flatMap((item) => {
+      const insideMouthOrFrontWater = pointInPolygon(point, item.approachRegion.polygon);
+      const distance = insideMouthOrFrontWater ? 0 : distanceToPolygon(point, item.approachRegion.polygon);
+      const radius = item.entryRadius || 0;
+      if (!insideMouthOrFrontWater && distance > radius) return [];
+      return [{
+        ...item,
+        proximity: insideMouthOrFrontWater ? 1 : clamp(1 - distance / Math.max(radius, .0001), 0, 1)
+      }];
+    });
 
     // Case Entry Skeleton V1 deliberately exposes only the two confirmed
     // enterable caves. The other confirmed anchors remain available to the
     // shared data model, but do not receive a production entry affordance yet.
     const CASE_ENTRY_STATES = Object.freeze({
-      FREE: 'FREE',
+      FREE: 'IDLE',
       PROXIMITY: 'PROXIMITY',
-      READING: 'READING'
+      READING: 'ACTIVE'
     });
     const CASE_ENTRY_CONFIG = Object.freeze({
       ltpo: Object.freeze({ label: 'LTPO', spatialType: 'PRIMARY CAVE' }),
-      mediaLab: Object.freeze({ label: '融媒实验室', spatialType: 'SECONDARY CAVE' })
+      mediaLab: Object.freeze({ label: '融媒实验室', spatialType: 'SECONDARY CAVE' }),
+      hundredInch: Object.freeze({ label: '100-inch', spatialType: 'ROCK PLATFORM' }),
+      beijing2022: Object.freeze({
+        label: '北京2022',
+        ariaLabel: '进入北京2022「冬奥全知道」项目',
+        spatialType: 'ROCK TERRACE'
+      }),
+      writingArchive: Object.freeze({ label: '写作作品', spatialType: 'AMBIENT TEXT' })
     });
     const caseDiscoveryLayer = world.querySelector('.case-discovery-layer');
     const caseReadingLayer = world.querySelector('.case-reading-layer');
@@ -2365,9 +2408,19 @@
         .map((view) => [view.dataset.readingView, view])
     );
     const ltpoReading = caseReadingViews.get('ltpo');
+    const hundredInchReading = caseReadingViews.get('hundredInch');
+    const mediaLabReading = caseReadingViews.get('mediaLab');
+    const beijing2022Reading = caseReadingViews.get('beijing2022');
+    const writingArchiveReading = caseReadingViews.get('writingArchive');
+    const writingArchiveDiscovery = caseDiscoveryLayer?.querySelector('.writing-archive-discovery');
+    const writingArchiveLinks = [...(writingArchiveDiscovery?.querySelectorAll('[data-writing-id]') || [])];
+    const writingArchiveArticles = [...(writingArchiveReading?.querySelectorAll('[data-writing-article]') || [])];
+    const writingArchiveReadingIndex = writingArchiveReading?.querySelector('[data-writing-reading-index]');
+    const writingArchiveSources = [...(writingArchiveReading?.querySelectorAll('[data-writing-source]') || [])];
+    const mediaLabWave = mediaLabReading?.querySelector('.media-lab-wave');
     const ltpoReadingSections = [...(ltpoReading?.querySelectorAll('[data-reading-step]') || [])];
     const caseDiscoveryButtons = new Map(
-      [...(caseDiscoveryLayer?.querySelectorAll('[data-case-id]') || [])]
+      [...(caseDiscoveryLayer?.querySelectorAll('.case-discovery[data-case-id]') || [])]
         .map((button) => [button.dataset.caseId, button])
     );
     const readingChrome = [
@@ -2383,6 +2436,115 @@
     let caseEntryState = CASE_ENTRY_STATES.FREE;
     let activeCaseId = null;
     let caseSnapshot = null;
+    let activeWritingArticleId = null;
+    let writingArchivePreviewId = 'w1';
+    let mediaLabWaveFrame = 0;
+    let mediaLabWaveSize = { width: 0, height: 0, ratio: 1 };
+    let mediaLabScrollProgress = 0;
+    let mediaLabResultsPlayed = false;
+    let mediaLabResultsTween = null;
+    const mediaLabWavePointer = { x: 0, y: 0, ready: false };
+    const mediaLabResultCounters = [...(mediaLabReading?.querySelectorAll('[data-result-counter]') || [])];
+
+    const resizeMediaLabWave = () => {
+      if (!mediaLabWave) return;
+      const rect = mediaLabWave.getBoundingClientRect();
+      const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+      mediaLabWaveSize = { width: rect.width, height: rect.height, ratio };
+      mediaLabWave.width = Math.max(1, Math.round(rect.width * ratio));
+      mediaLabWave.height = Math.max(1, Math.round(rect.height * ratio));
+    };
+
+    const drawMediaLabWave = (time = 0) => {
+      if (!mediaLabWave || !mediaLabReading || mediaLabReading.hidden) {
+        mediaLabWaveFrame = 0;
+        return;
+      }
+      if (!mediaLabWaveSize.width || !mediaLabWaveSize.height) resizeMediaLabWave();
+      const size = mediaLabWaveSize;
+      const context = mediaLabWave.getContext('2d');
+      if (!context || !size.width || !size.height) return;
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const phase = reducedMotion ? 0 : time * .000075;
+      const progress = mediaLabScrollProgress;
+      const heroCompression = rangeProgress(progress, .055, .20);
+      const approachPresence = rangeProgress(progress, .24, .34) * (1 - rangeProgress(progress, .65, .76));
+      const resultCalm = rangeProgress(progress, .66, .80);
+      const closingReawaken = rangeProgress(progress, .84, .915);
+      const livePointer = tracker.getPointerPosition();
+      if (!mediaLabWavePointer.ready) {
+        mediaLabWavePointer.x = livePointer.x;
+        mediaLabWavePointer.y = livePointer.y;
+        mediaLabWavePointer.ready = true;
+      }
+      const pointerEase = reducedMotion ? 1 : .075;
+      mediaLabWavePointer.x += (livePointer.x - mediaLabWavePointer.x) * pointerEase;
+      mediaLabWavePointer.y += (livePointer.y - mediaLabWavePointer.y) * pointerEase;
+      context.setTransform(size.ratio, 0, 0, size.ratio, 0, 0);
+      context.clearRect(0, 0, size.width, size.height);
+      context.lineCap = 'round';
+      context.lineJoin = 'round';
+      context.globalCompositeOperation = 'screen';
+      const rows = size.width < 720 ? 42 : 68;
+      const columns = size.width < 720 ? 86 : 138;
+      const horizon = size.height * ((size.width < 720 ? .39 : .36) + heroCompression * .12 - approachPresence * .035 + closingReawaken * .012);
+      const fieldDepth = size.height * Math.max(.065, (size.width < 720 ? .48 : .51) * (1 - heroCompression * .68) + approachPresence * .08 - resultCalm * .035 + closingReawaken * .11);
+      const pointerActivity = Math.max(1 - rangeProgress(progress, .16, .30), closingReawaken) * (reducedMotion ? 0 : 1);
+      const pointAt = (depth, column) => {
+        const sample = column / columns;
+        const xBase = sample * size.width;
+        const primary = Math.sin(sample * 7.4 + phase * 2.2 + depth * 2.6);
+        const secondary = Math.sin(sample * 16.5 - phase * 1.45 + depth * 5.1) * .34;
+        const longCurrent = Math.sin(sample * 2.55 - phase * .72 + depth * 1.8) * .5;
+        const envelope = .46 + Math.sin(sample * Math.PI) * .54;
+        const yBase = horizon + Math.pow(depth, 1.5) * fieldDepth + (primary + secondary + longCurrent) * envelope * size.height * (.018 + Math.pow(depth, 1.5) * .045) * (1 + closingReawaken * .22);
+        const dx = xBase - mediaLabWavePointer.x;
+        const dy = yBase - mediaLabWavePointer.y;
+        const influence = Math.exp(-((dx * dx) / (size.width * size.width * .012) + (dy * dy) / (size.height * size.height * .022))) * pointerActivity;
+        return {
+          x: xBase + Math.sign(dx || 1) * influence * (2 + depth * 5),
+          y: yBase + influence * size.height * (.035 + depth * .028)
+        };
+      };
+      for (let row = 0; row < rows; row += 1) {
+        const depth = row / (rows - 1);
+        const perspective = Math.pow(depth, 1.5);
+        const alpha = .07 + perspective * .24;
+        context.beginPath();
+        for (let column = 0; column <= columns; column += 1) {
+          const point = pointAt(depth, column);
+          if (column === 0) context.moveTo(point.x, point.y);
+          else context.lineTo(point.x, point.y);
+        }
+        context.strokeStyle = `rgba(210, 249, 250, ${(alpha * (1 + closingReawaken * .22)).toFixed(3)})`;
+        context.lineWidth = .42 + perspective * .55;
+        context.stroke();
+        const pointStride = depth > .58 ? 2 : 3;
+        context.fillStyle = `rgba(235, 255, 255, ${(alpha * (.82 + closingReawaken * .18)).toFixed(3)})`;
+        for (let column = row % pointStride; column <= columns; column += pointStride) {
+          const point = pointAt(depth, column);
+          const radius = .35 + perspective * .48;
+          context.beginPath();
+          context.arc(point.x, point.y, radius, 0, Math.PI * 2);
+          context.fill();
+        }
+      }
+      context.globalCompositeOperation = 'source-over';
+      if (!reducedMotion) mediaLabWaveFrame = window.requestAnimationFrame(drawMediaLabWave);
+    };
+
+    const startMediaLabWave = () => {
+      if (!mediaLabWave || mediaLabWaveFrame) return;
+      resizeMediaLabWave();
+      mediaLabWaveFrame = window.requestAnimationFrame(drawMediaLabWave);
+    };
+
+    const stopMediaLabWave = () => {
+      if (mediaLabWaveFrame) window.cancelAnimationFrame(mediaLabWaveFrame);
+      mediaLabWaveFrame = 0;
+      mediaLabWavePointer.ready = false;
+    };
+    if (mediaLabWave && 'ResizeObserver' in window) new ResizeObserver(resizeMediaLabWave).observe(mediaLabWave);
 
     const ltpoReadingOverview = ltpoReading?.querySelector('.ltpo-reading-overview');
     const ltpoReadingHero = ltpoReading?.querySelector('.ltpo-reading-hero');
@@ -2409,6 +2571,63 @@
     // its visual mode; it never creates a section-local cursor or coordinate
     // system.
     const ltpoReadingCursor = world.querySelector('.cursor-layer');
+    const hundredInchStage = hundredInchReading?.querySelector('.hundred-inch-reading-stage');
+    const hundredInchHeroState = hundredInchReading?.querySelector('.hundred-inch-state-hero');
+    const hundredInchFlatState = hundredInchReading?.querySelector('.hundred-inch-state-flat');
+    const hundredInchVerificationState = hundredInchReading?.querySelector('.hundred-inch-state-verification');
+    const hundredInchCommunicationState = hundredInchReading?.querySelector('.hundred-inch-state-communication');
+    const hundredInchScaleState = hundredInchReading?.querySelector('.hundred-inch-state-scale');
+    const hundredInchReturnState = hundredInchReading?.querySelector('.hundred-inch-state-return');
+    const hundredInchField = hundredInchReading?.querySelector('.hundred-v4-field');
+    const hundredInchCaustic = hundredInchReading?.querySelector('.hundred-v4-caustic');
+    const hundredInchNoise = hundredInchReading?.querySelector('.hundred-v4-noise');
+    const hundredInchOpeningBezel = hundredInchReading?.querySelector('.hundred-v4-opening-bezel');
+    const hundredInchHorizon = hundredInchReading?.querySelector('.hundred-v4-horizon');
+    const hundredInchOpeningNumber = hundredInchReading?.querySelector('.hundred-v4-opening-number');
+    const hundredInchOpeningCopy = hundredInchReading?.querySelector('.hundred-v4-opening-copy');
+    const hundredInchOpeningSignal = hundredInchReading?.querySelector('.hundred-v4-opening-signal');
+    const hundredInchCrtSurface = hundredInchReading?.querySelector('.hundred-v4-crt-surface');
+    const hundredInchQuestionCopy = hundredInchReading?.querySelector('.hundred-v4-question-copy');
+    const hundredInchContextCopy = hundredInchReading?.querySelector('.hundred-v4-context-copy');
+    const hundredInchVerificationSurface = hundredInchReading?.querySelector('.hundred-v4-verification-surface');
+    const hundredInchVerificationType = hundredInchReading?.querySelector('.hundred-v4-verification-type');
+    const hundredInchFactType = hundredInchReading?.querySelector('.hundred-v4-verification-type strong');
+    const hundredInchVerifyType = hundredInchReading?.querySelector('.hundred-v4-verification-type b');
+    const hundredInchScanBeam = hundredInchReading?.querySelector('.hundred-v4-scan-beam');
+    const hundredInchVerificationCopy = hundredInchReading?.querySelector('.hundred-v4-verification-copy');
+    const hundredInchFactStep = hundredInchReading?.querySelector('.hundred-v4-verification-step.is-fact');
+    const hundredInchVerifyStep = hundredInchReading?.querySelector('.hundred-v4-verification-step.is-verify');
+    const hundredInchEvidenceTrace = hundredInchReading?.querySelector('.hundred-v4-evidence-trace');
+    const hundredInchEvidenceNodes = [...(hundredInchReading?.querySelectorAll('.hundred-v4-evidence-trace i') || [])];
+    const hundredInchCommunicationHeading = hundredInchReading?.querySelector('.hundred-v4-communication-heading');
+    const hundredInchCommunicationIslands = hundredInchReading?.querySelector('.hundred-v4-communication-islands');
+    const hundredInchCommunicationArticles = [...(hundredInchReading?.querySelectorAll('.hundred-v4-communication-islands article') || [])];
+    const hundredInchProcessLine = hundredInchReading?.querySelector('.hundred-v4-process-line');
+    const hundredInchSignalOrbit = hundredInchReading?.querySelector('.hundred-v4-signal-orbit');
+    const hundredInchScaleSweep = hundredInchReading?.querySelector('.hundred-v4-scale-sweep');
+    const hundredInchScale98 = hundredInchReading?.querySelector('.hundred-v4-scale-98');
+    const hundredInchScale100 = hundredInchReading?.querySelector('.hundred-v4-scale-100');
+    const hundredInchScaleCopy = hundredInchReading?.querySelector('.hundred-v4-scale-copy');
+    const hundredInchReturnDepth = hundredInchReading?.querySelector('.hundred-v4-return-depth');
+    const hundredInchReturnLayers = [...(hundredInchReading?.querySelectorAll('.hundred-v4-return-depth i') || [])];
+    const hundredInchReturnLens = hundredInchReading?.querySelector('.hundred-v4-return-lens');
+    const hundredInchReturnRipple = hundredInchReading?.querySelector('.hundred-v4-return-ripple');
+    const beijing2022Calendar = beijing2022Reading?.querySelector('.beijing2022-calendar');
+    const beijing2022Results = beijing2022Reading?.querySelector('.beijing2022-results');
+    const beijing2022Closing = beijing2022Reading?.querySelector('.beijing2022-closing');
+    const beijing2022Plans = new Map(
+      [...(beijing2022Reading?.querySelectorAll('[data-bj-plan]') || [])]
+        .map((item) => [item.dataset.bjPlan, item])
+    );
+    const beijing2022LiveBlocks = new Map(
+      [...(beijing2022Reading?.querySelectorAll('[data-bj-live]') || [])]
+        .map((item) => [item.dataset.bjLive, item])
+    );
+    const beijing2022Statuses = new Map(
+      [...(beijing2022Reading?.querySelectorAll('[data-bj-status]') || [])]
+        .map((item) => [item.dataset.bjStatus, item])
+    );
+    const beijing2022UpdateLine = beijing2022Reading?.querySelector('[data-bj-update-line]');
     const ltpoReadingChallengeTerms = [...(ltpoReading?.querySelectorAll('.ltpo-reading-challenge-copy small b') || [])];
     const ltpoReadingStrategyBridgeTerms = [...(ltpoReading?.querySelectorAll('.ltpo-reading-strategy-bridge span') || [])];
     const ltpoReadingLightTargets = [...(ltpoReading?.querySelectorAll('.ltpo-reading-light-target') || [])];
@@ -2437,6 +2656,10 @@
       ['result', '项目结果']
     ]);
     let ltpoReadingFrame = 0;
+    let hundredInchReadingFrame = 0;
+    let hundredInchTimeline = null;
+    let beijing2022ReadingFrame = 0;
+    let beijing2022Timeline = null;
     let strategyProgressTarget = 0;
     let strategyProgressVisual = 0;
     let strategyProgressLastTime = 0;
@@ -2449,6 +2672,57 @@
       0,
       1
     );
+    const ltpoV2 = ltpoReading?.classList.contains('ltpo-rebuild') ? ltpoReading : null;
+    const ltpoV2Hero = ltpoV2?.querySelector('.ltpo-v2-hero');
+    const ltpoV2Semantic = ltpoV2?.querySelector('.ltpo-v2-semantic');
+    const ltpoV2Challenge = ltpoV2?.querySelector('.ltpo-v2-challenge');
+    const ltpoV2Strategy = ltpoV2?.querySelector('.ltpo-v2-strategy');
+    const ltpoV2Result = ltpoV2?.querySelector('.ltpo-v2-result');
+    const ltpoV2FocusTerms = [...(ltpoV2?.querySelectorAll('.ltpo-v2-focus-field strong') || [])];
+    const ltpoV2EpisodeFigures = [...(ltpoV2?.querySelectorAll('.ltpo-v2-episode-stage figure') || [])];
+    const ltpoV2EpisodeVideos = ltpoV2EpisodeFigures.map((figure) => figure.querySelector('video')).filter(Boolean);
+    const ltpoV2EpisodeButtons = [...(ltpoV2?.querySelectorAll('[data-ltpo-episode]') || [])];
+    const ltpoV2Sound = ltpoV2?.querySelector('.ltpo-v2-sound');
+    let ltpoV2EpisodeIndex = 0;
+    let ltpoV2SoundEnabled = false;
+    const ltpoV2SceneProgress = (section, viewportHeight) => {
+      if (!section) return 0;
+      const rect = section.getBoundingClientRect();
+      const rootRect = caseReadingLayer.getBoundingClientRect();
+      const top = rect.top - rootRect.top;
+      return clamp(-top / Math.max(1, rect.height - viewportHeight), 0, 1);
+    };
+    const syncLTPOV2Sound = () => {
+      if (!ltpoV2Sound) return;
+      ltpoV2Sound.textContent = ltpoV2SoundEnabled ? 'SOUND ON' : 'SOUND OFF';
+      ltpoV2Sound.setAttribute('aria-pressed', String(ltpoV2SoundEnabled));
+      ltpoV2Sound.setAttribute('aria-label', ltpoV2SoundEnabled ? '关闭视频声音' : '开启视频声音');
+      ltpoV2EpisodeVideos.forEach((video, index) => { video.muted = index !== ltpoV2EpisodeIndex || !ltpoV2SoundEnabled; });
+    };
+    const setLTPOV2Episode = (index, shouldPlay = true) => {
+      const nextIndex = clamp(Math.round(index), 0, Math.max(0, ltpoV2EpisodeFigures.length - 1));
+      ltpoV2EpisodeIndex = nextIndex;
+      ltpoV2EpisodeFigures.forEach((figure, figureIndex) => {
+        const delta = figureIndex - nextIndex;
+        figure.style.setProperty('--episode-opacity', figureIndex === nextIndex ? '1' : '0');
+        figure.style.setProperty('--episode-x', `${delta * 13}%`);
+        figure.style.setProperty('--episode-y', `${Math.abs(delta) * 2}%`);
+        figure.style.setProperty('--episode-scale', figureIndex === nextIndex ? '1' : '.965');
+        figure.style.zIndex = String(10 - Math.abs(delta));
+      });
+      ltpoV2EpisodeButtons.forEach((button, buttonIndex) => button.setAttribute('aria-pressed', String(buttonIndex === nextIndex)));
+      ltpoV2EpisodeVideos.forEach((video, videoIndex) => {
+        video.muted = videoIndex !== nextIndex || !ltpoV2SoundEnabled;
+        if (videoIndex !== nextIndex || !shouldPlay) video.pause();
+        else video.play().catch(() => {});
+      });
+    };
+    const resetLTPOV2 = () => {
+      ltpoV2EpisodeVideos.forEach((video) => { video.pause(); video.currentTime = 0; video.muted = true; });
+      ltpoV2SoundEnabled = false;
+      syncLTPOV2Sound();
+      setLTPOV2Episode(0, false);
+    };
     let ltpoEpisodeActiveIndex = 0;
     let ltpoEpisodeDragOffset = 0;
     let ltpoEpisodePointerId = null;
@@ -2796,9 +3070,93 @@
       return clamp((viewportHeight * enter - offset) / Math.max(1, viewportHeight * (enter - settle)), 0, 1);
     };
 
+    const renderLTPOV2Progress = () => {
+      if (!ltpoV2 || !caseReadingLayer) return;
+      const viewportHeight = Math.max(1, caseReadingLayer.clientHeight);
+      const hero = ltpoV2SceneProgress(ltpoV2Hero, viewportHeight);
+      const semantic = ltpoV2SceneProgress(ltpoV2Semantic, viewportHeight);
+      const challenge = ltpoV2SceneProgress(ltpoV2Challenge, viewportHeight);
+      const strategy = ltpoV2SceneProgress(ltpoV2Strategy, viewportHeight);
+      const result = ltpoV2SceneProgress(ltpoV2Result, viewportHeight);
+      const semanticPush = rangeProgress(semantic, .08, .34);
+      const semanticValuesIn = rangeProgress(semantic, .43, .53);
+      const semanticCollective = rangeProgress(semantic, .86, .93);
+      const semanticValuesOut = rangeProgress(semantic, .95, 1);
+      let valueOne = .12 + .88 * rangeProgress(semantic, .50, .57) * (1 - .66 * rangeProgress(semantic, .63, .69));
+      let valueTwo = .12 + .88 * rangeProgress(semantic, .61, .68) * (1 - .66 * rangeProgress(semantic, .75, .81));
+      let valueThree = .12 + .88 * rangeProgress(semantic, .73, .80);
+      valueOne += (1 - valueOne) * semanticCollective;
+      valueTwo += (1 - valueTwo) * semanticCollective;
+      valueThree += (1 - valueThree) * semanticCollective;
+      const questionShift = rangeProgress(challenge, .36, .69);
+      const answerIn = rangeProgress(challenge, .58, .82);
+      const strategyIntro = rangeProgress(strategy, 0, .035) * (1 - rangeProgress(strategy, .13, .175));
+      const focusIn = rangeProgress(strategy, .12, .17) * (1 - rangeProgress(strategy, .36, .405));
+      const foundationIn = rangeProgress(strategy, .39, .435) * (1 - rangeProgress(strategy, .55, .59));
+      const methodIn = rangeProgress(strategy, .575, .62) * (1 - rangeProgress(strategy, .735, .78));
+      const methodPush = rangeProgress(strategy, .70, .775);
+      const evidenceIn = rangeProgress(strategy, .71, .78) * (1 - rangeProgress(strategy, .965, .995));
+      const episodeStory = clamp((strategy - .785) / .16, 0, .9999);
+      const episodeIndex = clamp(Math.floor(episodeStory * 4), 0, 3);
+      const resultClosing = rangeProgress(result, .56, .82);
+      ltpoV2.style.setProperty('--ltpo-hero-p', rangeProgress(hero, .04, .82).toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-semantic-p', rangeProgress(semantic, .10, .90).toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-semantic-push', semanticPush.toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-values-in', semanticValuesIn.toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-values-out', semanticValuesOut.toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-collective', semanticCollective.toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-value-1', valueOne.toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-value-2', valueTwo.toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-value-3', valueThree.toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-challenge-p', challenge.toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-question-shift', questionShift.toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-answer-in', answerIn.toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-strategy-p', strategy.toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-strategy-intro', strategyIntro.toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-focus-in', focusIn.toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-foundation-in', foundationIn.toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-foundation-out', rangeProgress(strategy, .55, .59).toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-method-in', methodIn.toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-method-push', methodPush.toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-evidence-in', evidenceIn.toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-result-p', result.toFixed(4));
+      ltpoV2.style.setProperty('--ltpo-closing-in', resultClosing.toFixed(4));
+      const focusPosition = clamp((strategy - .165) / .205, 0, .999);
+      const focusIndex = Math.min(2, Math.floor(focusPosition * 3));
+      ltpoV2FocusTerms.forEach((term, index) => {
+        const focus = index === focusIndex && focusIn > .08 ? 1 : .08;
+        term.style.setProperty('--focus', focus.toFixed(2));
+        term.classList.toggle('is-focused', focus === 1);
+      });
+      const evidenceIsLive = evidenceIn > .22 && strategy < .98;
+      ltpoV2.dataset.ltpoEvidenceLive = String(evidenceIsLive);
+      if (episodeIndex !== ltpoV2EpisodeIndex) setLTPOV2Episode(episodeIndex, evidenceIsLive);
+      else if (!evidenceIsLive) ltpoV2EpisodeVideos.forEach((video) => video.pause());
+      else {
+        const activeVideo = ltpoV2EpisodeVideos[ltpoV2EpisodeIndex];
+        if (activeVideo?.paused) activeVideo.play().catch(() => {});
+      }
+      const immersive = hero < .88 || resultClosing > .1;
+      ltpoV2.dataset.ltpoImmersive = String(immersive);
+      // The fixed BACK uses the existing reading-state progression, never
+      // sampled pixels. This keeps it legible without touching the timeline.
+      const topbarTone = (semantic > .02 && semantic < .995)
+        || focusIn > .08
+        || methodIn > .08
+        || resultClosing > .08
+        ? 'light'
+        : 'dark';
+      ltpoV2.dataset.ltpoTopbarTone = topbarTone;
+      ltpoV2.dataset.ltpoEndingLive = String(resultClosing > .28);
+    };
+
     const renderLTPOReadingProgress = (now = performance.now()) => {
       ltpoReadingFrame = 0;
       if (!caseReadingLayer || !ltpoReading || caseEntryState !== CASE_ENTRY_STATES.READING || activeCaseId !== 'ltpo') return;
+      if (ltpoV2) {
+        renderLTPOV2Progress();
+        return;
+      }
       const rootRect = caseReadingLayer.getBoundingClientRect();
       const viewportHeight = Math.max(1, caseReadingLayer.clientHeight);
       const focusLine = viewportHeight * .46;
@@ -2977,6 +3335,361 @@
       if (ltpoReadingFrame) return;
       ltpoReadingFrame = window.requestAnimationFrame(renderLTPOReadingProgress);
     };
+    ltpoV2EpisodeFigures.forEach((figure, index) => {
+      figure.addEventListener('click', () => setLTPOV2Episode(index, true));
+      figure.addEventListener('mouseenter', () => {
+        if (ltpoReadingCursor) ltpoReadingCursor.dataset.cursorKind = 'media';
+      }, { passive: true });
+    });
+    ltpoV2EpisodeVideos.forEach((video) => {
+      video.addEventListener('play', () => {
+        ltpoV2EpisodeVideos.forEach((otherVideo) => {
+          if (otherVideo !== video) otherVideo.pause();
+        });
+      });
+    });
+    ltpoV2EpisodeButtons.forEach((button, index) => {
+      button.addEventListener('click', () => {
+        if (!caseReadingLayer || !ltpoV2Strategy) return;
+        const rootRect = caseReadingLayer.getBoundingClientRect();
+        const strategyRect = ltpoV2Strategy.getBoundingClientRect();
+        const strategyTop = strategyRect.top - rootRect.top + caseReadingLayer.scrollTop;
+        const strategyTravel = Math.max(1, ltpoV2Strategy.offsetHeight - caseReadingLayer.clientHeight);
+        const targetProgress = .79 + index * (.155 / 3);
+        caseReadingLayer.scrollTo({ top: strategyTop + strategyTravel * targetProgress, behavior: 'smooth' });
+      });
+    });
+    ltpoV2?.addEventListener('pointermove', (event) => {
+      if (event.pointerType === 'touch') return;
+      ltpoV2.style.setProperty('--ltpo-pointer-x', `${event.clientX - window.innerWidth * .5}px`);
+      ltpoV2.style.setProperty('--ltpo-pointer-y', `${event.clientY - window.innerHeight * .5}px`);
+      if (!ltpoReadingCursor) return;
+      const target = event.target?.closest?.('.case-reading-return, .ltpo-v2-wordmark, .ltpo-v2-closing-wordmark, .ltpo-v2-question, .ltpo-v2-method-lockup, .ltpo-v2-episode-stage');
+      ltpoReadingCursor.dataset.cursorKind = target?.closest?.('.case-reading-return') ? 'link'
+        : target?.closest?.('.ltpo-v2-episode-stage') ? 'media'
+          : target ? 'hero' : 'body';
+    }, { passive: true });
+    ltpoV2Sound?.addEventListener('click', () => {
+      ltpoV2SoundEnabled = !ltpoV2SoundEnabled;
+      syncLTPOV2Sound();
+      const activeVideo = ltpoV2EpisodeVideos[ltpoV2EpisodeIndex];
+      if (activeVideo) {
+        activeVideo.muted = !ltpoV2SoundEnabled;
+        activeVideo.play().catch(() => {});
+      }
+    });
+    let mediaLabReadingFrame = 0;
+    const resetMediaLabResults = () => {
+      mediaLabResultsTween?.kill();
+      mediaLabResultsTween = null;
+      mediaLabResultsPlayed = false;
+      mediaLabResultCounters.forEach((counter) => { counter.textContent = '0.00'; });
+    };
+    const playMediaLabResults = () => {
+      if (mediaLabResultsPlayed || !mediaLabResultCounters.length) return;
+      mediaLabResultsPlayed = true;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !gs) {
+        mediaLabResultCounters.forEach((counter) => { counter.textContent = Number(counter.dataset.resultCounter).toFixed(2); });
+        return;
+      }
+      const state = { value: 0 };
+      mediaLabResultsTween = gs.to(state, {
+        value: 1,
+        duration: 1.85,
+        ease: 'power4.out',
+        overwrite: 'auto',
+        onUpdate: () => {
+          mediaLabResultCounters.forEach((counter) => {
+            const target = Number(counter.dataset.resultCounter);
+            counter.textContent = (target * state.value).toFixed(2);
+          });
+        },
+        onComplete: () => {
+          mediaLabResultCounters.forEach((counter) => { counter.textContent = Number(counter.dataset.resultCounter).toFixed(2); });
+          mediaLabResultsTween = null;
+        }
+      });
+    };
+    const renderMediaLabProgress = () => {
+      mediaLabReadingFrame = 0;
+      if (!mediaLabReading || mediaLabReading.hidden || !caseReadingLayer) return;
+      const maxScroll = Math.max(1, caseReadingLayer.scrollHeight - caseReadingLayer.clientHeight);
+      const progress = clamp(caseReadingLayer.scrollTop / maxScroll, 0, 1);
+      const heroExit = rangeProgress(progress, .035, .115);
+      const questionIn = rangeProgress(progress, .095, .17);
+      const questionOut = rangeProgress(progress, .265, .315);
+      const approachIn = rangeProgress(progress, .275, .335);
+      const approachLocal = clamp((progress - .295) / .345, 0, 1);
+      const approachPhase = rangeProgress(approachLocal, .08, .9);
+      const matchFocus = rangeProgress(approachLocal, .22, .40) * (1 - rangeProgress(approachLocal, .72, .90));
+      const resultsIn = rangeProgress(progress, .625, .70);
+      const resultsOut = rangeProgress(progress, .79, .835);
+      const closingIn = rangeProgress(progress, .805, .875);
+      const closingReawaken = rangeProgress(progress, .84, .915);
+      const closingOut = 0;
+      const activeApproach = approachLocal < .30 ? 0 : approachLocal < .78 ? 1 : 2;
+      const approachWords = ['判断', '匹配', '验证'];
+      mediaLabScrollProgress = progress;
+      mediaLabReading.style.setProperty('--ml-progress', progress.toFixed(4));
+      mediaLabReading.style.setProperty('--ml-hero-exit', heroExit.toFixed(4));
+      mediaLabReading.style.setProperty('--ml-question-in', questionIn.toFixed(4));
+      mediaLabReading.style.setProperty('--ml-question-out', questionOut.toFixed(4));
+      mediaLabReading.style.setProperty('--ml-approach-in', approachIn.toFixed(4));
+      mediaLabReading.style.setProperty('--ml-approach-phase', approachPhase.toFixed(4));
+      mediaLabReading.style.setProperty('--ml-match-focus', matchFocus.toFixed(4));
+      mediaLabReading.style.setProperty('--ml-results-in', resultsIn.toFixed(4));
+      mediaLabReading.style.setProperty('--ml-results-out', resultsOut.toFixed(4));
+      mediaLabReading.style.setProperty('--ml-closing-in', closingIn.toFixed(4));
+      mediaLabReading.style.setProperty('--ml-closing-out', closingOut.toFixed(4));
+      mediaLabReading.style.setProperty('--ml-closing-reawaken', closingReawaken.toFixed(4));
+      mediaLabReading.dataset.closingReawaken = closingReawaken > .02 ? 'true' : 'false';
+      if (resultsIn > .34) playMediaLabResults();
+      else if (progress < .60) resetMediaLabResults();
+      mediaLabReading.dataset.approachActive = String(activeApproach);
+      const correspondenceWord = mediaLabReading.querySelector('.media-lab-correspondence-word');
+      if (correspondenceWord && correspondenceWord.textContent !== approachWords[activeApproach]) {
+        correspondenceWord.textContent = approachWords[activeApproach];
+        if (gs) gs.fromTo(correspondenceWord, { autoAlpha: 0, y: 10, filter: 'blur(7px)' }, { autoAlpha: 1, y: 0, filter: 'blur(0px)', duration: .48, ease: 'power2.out', overwrite: 'auto' });
+      }
+    };
+    const scheduleMediaLabProgress = () => {
+      if (mediaLabReadingFrame) return;
+      mediaLabReadingFrame = window.requestAnimationFrame(renderMediaLabProgress);
+    };
+
+    const createBeijing2022Timeline = () => {
+      if (!gs || !beijing2022Calendar) return null;
+      const desktopReading = window.matchMedia('(min-width: 761px)').matches;
+      const planA = beijing2022Plans.get('a');
+      const planB = beijing2022Plans.get('b');
+      const planC = beijing2022Plans.get('c');
+      const planD = beijing2022Plans.get('d');
+      const liveA = beijing2022LiveBlocks.get('a');
+      const liveB = beijing2022LiveBlocks.get('b');
+      const liveC = beijing2022LiveBlocks.get('c');
+      const verified = beijing2022Statuses.get('verified');
+      const reorder = beijing2022Statuses.get('reorder');
+      const liveBlocks = [liveA, liveB, liveC].filter(Boolean);
+      const statuses = [verified, reorder].filter(Boolean);
+      const planAAfterInsert = desktopReading
+        ? { xPercent: -18, yPercent: -10, scale: .86, autoAlpha: .72 }
+        : { xPercent: -8, yPercent: -8, scale: .91 };
+      const planBAfterInsert = desktopReading
+        ? { xPercent: 48, yPercent: 118, scale: .66, rotation: 2, autoAlpha: .68 }
+        : { xPercent: 24, yPercent: 101, scale: .8 };
+      const planCAtVerify = desktopReading
+        ? { xPercent: -14, yPercent: -10, scale: .88, autoAlpha: .78 }
+        : { xPercent: -10, yPercent: -7, scale: .92 };
+      const planCAfterOffset = desktopReading
+        ? { xPercent: 21, yPercent: 112, scale: .64, rotation: 2.5, autoAlpha: .66 }
+        : { xPercent: 16, yPercent: 102, scale: .78, rotation: 1.2 };
+      const planDAfterFill = desktopReading
+        ? { xPercent: -49, yPercent: 124, scale: .63, rotation: -2.5, autoAlpha: .62 }
+        : { xPercent: -34, yPercent: 106, scale: .76, rotation: -1.4 };
+      const liveAFinal = desktopReading
+        ? { xPercent: -42, yPercent: -8, scale: .94 }
+        : { xPercent: -34, scale: .92 };
+      const liveBFinal = desktopReading
+        ? { xPercent: 16, yPercent: -12, scale: 1.07 }
+        : { xPercent: 10, scale: 1.04 };
+      gs.set([planA, planB, planC, planD].filter(Boolean), { xPercent: 0, yPercent: 0, scale: 1, rotation: 0, autoAlpha: 1 });
+      gs.set(liveBlocks, { autoAlpha: 0, scaleY: .08, rotationX: -72, transformOrigin: 'left top' });
+      gs.set(statuses, { autoAlpha: 0, y: 12 });
+      gs.set(beijing2022UpdateLine, { autoAlpha: 0, scaleX: .12, transformOrigin: 'left center' });
+
+      const timeline = gs.timeline({ paused: true, defaults: { duration: .62, ease: 'power3.inOut' } });
+      timeline
+        .addLabel('predict', 0)
+        .to([planA, planB, planC, planD].filter(Boolean), { scale: .985, stagger: .05, duration: .34, ease: 'power1.inOut' }, .12)
+        .addLabel('track', .62)
+        .to(beijing2022UpdateLine, { autoAlpha: 1, scaleX: 1, duration: .55, ease: 'power2.out' }, .62)
+        .fromTo(liveA, { autoAlpha: 0, yPercent: 38, scaleY: .08, rotationX: -72 }, { autoAlpha: 1, yPercent: 0, scaleY: 1, rotationX: 0, duration: .7, ease: 'power3.out' }, .78)
+        .to(planA, { ...planAAfterInsert, duration: .68 }, .82)
+        .to(planB, { ...planBAfterInsert, duration: .74 }, .82)
+        .addLabel('verify', 1.62)
+        .fromTo(verified, { autoAlpha: 0, x: -18, y: 10 }, { autoAlpha: 1, x: 0, y: 0, duration: .42, ease: 'power2.out' }, 1.62)
+        .to(planC, { ...planCAtVerify, duration: .64 }, 1.62)
+        .fromTo(liveB, { autoAlpha: 0, rotationX: -82, scaleY: .06 }, { autoAlpha: 1, rotationX: 0, scaleY: 1, duration: .62, ease: 'power3.out' }, 1.78)
+        .to(planC, { ...planCAfterOffset, duration: .72 }, 2.28)
+        .to(liveB, { xPercent: -10, yPercent: -8, duration: .58 }, 2.32)
+        .addLabel('fill', 2.9)
+        .fromTo(liveC, { autoAlpha: 0, xPercent: 28, scaleY: .04, rotationX: -78 }, { autoAlpha: 1, xPercent: 0, scaleY: 1, rotationX: 0, duration: .72, ease: 'power3.out' }, 2.9)
+        .to(planD, { ...planDAfterFill, duration: .78 }, 2.94)
+        .to(liveA, { ...liveAFinal, duration: .68 }, 3.02)
+        .to(liveB, { ...liveBFinal, duration: .64 }, 3.08)
+        .fromTo(reorder, { autoAlpha: 0, x: 20, y: 12 }, { autoAlpha: 1, x: 0, y: 0, duration: .5, ease: 'power2.out' }, 3.45)
+        .to(beijing2022UpdateLine, { yPercent: desktopReading ? 32 : 17, duration: .74 }, 3.4)
+        .addLabel('reordered', 4.15);
+      return timeline;
+    };
+
+    const renderBeijing2022Progress = () => {
+      beijing2022ReadingFrame = 0;
+      if (!beijing2022Reading || beijing2022Reading.hidden || !beijing2022Calendar || !caseReadingLayer) return;
+      if (!beijing2022Timeline) beijing2022Timeline = createBeijing2022Timeline();
+      const viewport = Math.max(1, caseReadingLayer.clientHeight);
+      const start = beijing2022Calendar.offsetTop - viewport * .24;
+      const end = beijing2022Calendar.offsetTop + beijing2022Calendar.offsetHeight - viewport * 1.08;
+      const progress = clamp((caseReadingLayer.scrollTop - start) / Math.max(1, end - start), 0, 1);
+      const timelineProgress = reducedMotion ? 1 : progress;
+      const resultsBridgeStart = (beijing2022Results?.offsetTop || 0) - viewport * 1.04;
+      const resultsBridge = clamp((caseReadingLayer.scrollTop - resultsBridgeStart) / Math.max(1, viewport * 1.18), 0, 1);
+      const closingStart = (beijing2022Closing?.offsetTop || 0) - viewport * .86;
+      const closingFade = clamp((caseReadingLayer.scrollTop - closingStart) / Math.max(1, viewport * 1.1), 0, 1);
+      beijing2022Reading.dataset.calendarProgress = progress.toFixed(4);
+      beijing2022Reading.style.setProperty('--bj-results-bridge', resultsBridge.toFixed(4));
+      beijing2022Reading.style.setProperty('--bj-closing-fade', closingFade.toFixed(4));
+      beijing2022Reading.style.setProperty('--bj-results-shift', `${(-18 * resultsBridge).toFixed(2)}vh`);
+      beijing2022Reading.style.setProperty('--bj-results-fragment-opacity', Math.max(.18, .76 - resultsBridge * .48).toFixed(3));
+      beijing2022Reading.style.setProperty('--bj-bridge-structure-opacity', Math.max(.16, .62 - resultsBridge * .38).toFixed(3));
+      beijing2022Reading.style.setProperty('--bj-closing-structure-opacity', Math.max(.08, .5 - closingFade * .4).toFixed(3));
+      beijing2022Timeline?.progress(timelineProgress);
+    };
+
+    const scheduleBeijing2022Progress = () => {
+      if (beijing2022ReadingFrame) return;
+      beijing2022ReadingFrame = window.requestAnimationFrame(renderBeijing2022Progress);
+    };
+
+    const resetBeijing2022Reading = () => {
+      if (!beijing2022Timeline) beijing2022Timeline = createBeijing2022Timeline();
+      beijing2022Timeline?.progress(reducedMotion ? 1 : 0);
+      beijing2022Reading?.removeAttribute('data-calendar-progress');
+      beijing2022Reading?.style.setProperty('--bj-results-bridge', '0');
+      beijing2022Reading?.style.setProperty('--bj-closing-fade', '0');
+      beijing2022Reading?.style.setProperty('--bj-results-shift', '0vh');
+      beijing2022Reading?.style.setProperty('--bj-results-fragment-opacity', '.76');
+      beijing2022Reading?.style.setProperty('--bj-bridge-structure-opacity', '.62');
+      beijing2022Reading?.style.setProperty('--bj-closing-structure-opacity', '.5');
+    };
+
+    const createHundredInchTimeline = () => {
+      if (!gs || !hundredInchStage || !hundredInchHeroState) return null;
+      const states = [
+        hundredInchHeroState,
+        hundredInchFlatState,
+        hundredInchVerificationState,
+        hundredInchCommunicationState,
+        hundredInchScaleState,
+        hundredInchReturnState
+      ].filter(Boolean);
+      gs.set(states, { autoAlpha: 0 });
+      gs.set(hundredInchHeroState, { autoAlpha: 1 });
+      gs.set(hundredInchStage, { backgroundColor: '#abcbd8' });
+      gs.set([hundredInchField, hundredInchCaustic, hundredInchNoise], { autoAlpha: 1 });
+      gs.set([hundredInchVerifyType, hundredInchVerifyStep, hundredInchScale100, hundredInchScaleCopy], { autoAlpha: 0 });
+      const timeline = gs.timeline({ paused: true, defaults: { ease: 'power2.inOut' } });
+      timeline
+        .addLabel('project-world', 0)
+        .fromTo(hundredInchOpeningNumber, { scale: .92, xPercent: 3, filter: 'blur(0px)' }, { scale: 1, xPercent: 0, filter: 'blur(0px)', duration: 1.15 }, 0)
+        .fromTo(hundredInchOpeningCopy, { x: 0, autoAlpha: 1 }, { x: 0, autoAlpha: 1, duration: .86 }, .18)
+        .set(hundredInchOpeningBezel, { scale: 1, autoAlpha: 1 }, 0)
+        .fromTo(hundredInchHorizon, { scale: .985, autoAlpha: 1 }, { scale: 1, autoAlpha: 1, duration: 1.2 }, .05)
+        .fromTo(hundredInchOpeningSignal, { xPercent: 5, autoAlpha: .42 }, { xPercent: 0, autoAlpha: .62, duration: .8 }, .38)
+        .to(hundredInchOpeningNumber, { scale: 1.15, xPercent: -4, yPercent: -2, letterSpacing: '.01em', autoAlpha: 0, duration: .76 }, 1.05)
+        .to([hundredInchOpeningCopy, hundredInchOpeningSignal], { xPercent: -7, autoAlpha: 0, duration: .58 }, 1.1)
+        .to(hundredInchHorizon, { scale: 1.14, borderRadius: '0%', duration: 1.1 }, 1.04)
+        .to(hundredInchOpeningBezel, { scale: 1.16, borderColor: 'rgba(13,23,30,0)', autoAlpha: 0, duration: .82 }, 1.22)
+        .fromTo(hundredInchFlatState, { autoAlpha: 0 }, { autoAlpha: 1, duration: .16 }, 1.62)
+        .fromTo(hundredInchCrtSurface, { scale: .965, rotationX: 0, borderRadius: '2.4% / 3.2%' }, { scale: 1, rotationX: 0, borderRadius: '0%', duration: .92 }, 1.48)
+        .to(hundredInchHeroState, { autoAlpha: 0, duration: .18 }, 1.82)
+        .addLabel('question', 2.45)
+        .fromTo(hundredInchQuestionCopy, { y: 55, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: .82 }, 1.82)
+        .fromTo(hundredInchContextCopy, { x: -45, autoAlpha: 0 }, { x: 0, autoAlpha: .78, duration: .72 }, 2.02)
+        .to(hundredInchCrtSurface, { scale: 1.045, yPercent: -1, rotationX: 0, filter: 'saturate(.92) brightness(1.03)', duration: .72 }, 2.82)
+        .to([hundredInchQuestionCopy, hundredInchContextCopy], { autoAlpha: 0, y: -34, duration: .55 }, 2.78)
+        .set(hundredInchVerificationState, { autoAlpha: 1 }, 3.02)
+        .set(hundredInchVerificationSurface, { scale: 1, xPercent: 0, autoAlpha: 1 }, 3.02)
+        .fromTo(hundredInchVerificationType, { scale: .54, z: -260, rotationY: 12 }, { scale: 1, z: 0, rotationY: 0, duration: 1.05 }, 3.12)
+        .fromTo(hundredInchVerificationCopy, { x: -70, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: .85 }, 3.26)
+        .fromTo(hundredInchEvidenceTrace, { xPercent: 28, autoAlpha: 0 }, { xPercent: 0, autoAlpha: 1, duration: .92 }, 3.38)
+        .fromTo(hundredInchEvidenceNodes, { scale: 0 }, { scale: 1, duration: .5, stagger: .16 }, 3.62)
+        .to(hundredInchFlatState, { autoAlpha: 0, duration: .22 }, 3.34)
+        .addLabel('fact-scan', 4.3)
+        .to(hundredInchVerificationSurface, { xPercent: 5, scale: 1.035, duration: 1.28 }, 4.18)
+        .fromTo(hundredInchScanBeam, { xPercent: -115, autoAlpha: 0 }, { xPercent: 115, autoAlpha: 1, duration: 1.35, ease: 'power1.inOut' }, 4.2)
+        .to(hundredInchFactType, { xPercent: -42, scale: .66, autoAlpha: .12, duration: .9 }, 4.68)
+        .fromTo(hundredInchVerifyType, { xPercent: 34, scale: .7, autoAlpha: 0 }, { xPercent: 0, scale: 1, autoAlpha: 1, duration: .92 }, 4.6)
+        .to(hundredInchFactStep, { autoAlpha: .12, y: -30, duration: .66 }, 4.74)
+        .fromTo(hundredInchVerifyStep, { autoAlpha: 0, y: 36 }, { autoAlpha: 1, y: 0, duration: .72 }, 4.8)
+        .addLabel('verified', 5.7)
+        .to(hundredInchVerificationType, { scale: 1.28, xPercent: -16, filter: 'blur(5px)', autoAlpha: .14, duration: .9 }, 6.02)
+        .to([hundredInchVerificationCopy, hundredInchEvidenceTrace], { xPercent: -10, autoAlpha: 0, duration: .7 }, 6.08)
+        .fromTo(hundredInchCommunicationState, { autoAlpha: 0 }, { autoAlpha: 1, duration: .58 }, 6.25)
+        .fromTo(hundredInchCommunicationHeading, { xPercent: 18, yPercent: -18, autoAlpha: 0 }, { xPercent: 0, yPercent: 0, autoAlpha: 1, duration: .92 }, 6.3)
+        .fromTo(hundredInchCommunicationArticles, { y: 70, rotationX: -8, autoAlpha: 0 }, { y: 0, rotationX: 0, autoAlpha: 1, duration: .85, stagger: .14 }, 6.48)
+        .fromTo(hundredInchProcessLine, { scaleX: .35, transformOrigin: 'left center', autoAlpha: 0 }, { scaleX: 1, autoAlpha: 1, duration: .9 }, 6.7)
+        .fromTo(hundredInchSignalOrbit, { scale: .5, rotation: -24, autoAlpha: 0 }, { scale: 1, rotation: 0, autoAlpha: 1, duration: 1.08 }, 6.34)
+        .set(hundredInchVerificationState, { autoAlpha: 1 }, 6.5)
+        .addLabel('communication', 7.5)
+        .to(hundredInchCommunicationHeading, { xPercent: -28, yPercent: -15, scale: .82, autoAlpha: .2, duration: 1.0 }, 8.05)
+        .to(hundredInchCommunicationIslands, { xPercent: 18, scale: .9, rotationY: -6, autoAlpha: .12, duration: 1.0 }, 8.02)
+        .to(hundredInchSignalOrbit, { scale: 1.8, rotation: 42, autoAlpha: .12, duration: 1.0 }, 8.0)
+        .fromTo(hundredInchScaleState, { autoAlpha: 0 }, { autoAlpha: 1, duration: .52 }, 8.42)
+        .fromTo(hundredInchScale98, { scale: .48, xPercent: 32, filter: 'blur(9px)', autoAlpha: 0 }, { scale: 1, xPercent: 0, filter: 'blur(0px)', autoAlpha: 1, duration: 1.05 }, 8.35)
+        .to(hundredInchCommunicationState, { autoAlpha: 0, duration: .4 }, 8.65)
+        .to(hundredInchVerificationState, { autoAlpha: 0, duration: .4 }, 8.65)
+        .addLabel('scale-98', 9.35)
+        .fromTo(hundredInchScaleSweep, { xPercent: -120, skewX: -12, autoAlpha: 0 }, { xPercent: 120, skewX: 8, autoAlpha: .9, duration: 1.15 }, 9.28)
+        .to(hundredInchScale98, { xPercent: -46, scaleX: 1.42, scaleY: .74, filter: 'blur(3px)', autoAlpha: .14, duration: 1.05 }, 9.48)
+        .fromTo(hundredInchScale100, { xPercent: 42, scale: 1.65, filter: 'blur(8px)', autoAlpha: 0 }, { xPercent: 0, scale: 1, filter: 'blur(0px)', autoAlpha: 1, duration: 1.12, ease: 'power3.out' }, 9.54)
+        .addLabel('scale-100', 10.72)
+        .fromTo(hundredInchScaleCopy, { y: 46, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: .82 }, 10.6)
+        .to(hundredInchScale100, { scale: 1.08, letterSpacing: '-.055em', duration: .78 }, 11.22)
+        .to(hundredInchScale100, { scale: 3.15, yPercent: -12, filter: 'blur(12px)', autoAlpha: 0, duration: 1.08 }, 12.05)
+        .to(hundredInchScaleCopy, { y: -36, autoAlpha: 0, duration: .5 }, 12.12)
+        .fromTo(hundredInchReturnState, { autoAlpha: 0 }, { autoAlpha: 1, duration: .72 }, 12.28)
+        .set([hundredInchReturnDepth, hundredInchReturnLayers], { autoAlpha: 0 }, 12.18)
+        .fromTo(hundredInchReturnLens, { scale: 1.02, xPercent: 0, yPercent: 0, autoAlpha: 0 }, { scale: 1, xPercent: 0, yPercent: 0, autoAlpha: 1, duration: .98 }, 12.24)
+        .fromTo(hundredInchReturnRipple, { scaleX: .45, xPercent: -26, autoAlpha: 0 }, { scaleX: 1, xPercent: 0, autoAlpha: .68, duration: 1.18 }, 12.58)
+        .to(hundredInchScaleState, { autoAlpha: 0, duration: .42 }, 12.48)
+        .addLabel('back-to-sea', 13.72);
+      return timeline;
+    };
+
+    const renderHundredInchProgress = () => {
+      hundredInchReadingFrame = 0;
+      if (!hundredInchReading || hundredInchReading.hidden || !caseReadingLayer) return;
+      const maxScroll = Math.max(1, caseReadingLayer.scrollHeight - caseReadingLayer.clientHeight);
+      const progress = clamp(caseReadingLayer.scrollTop / maxScroll, 0, 1);
+      const timelineProgress = reducedMotion ? Math.round(progress * 5) / 5 : progress;
+      hundredInchReading.dataset.progress = progress.toFixed(4);
+      if (hundredInchTimeline) hundredInchTimeline.progress(timelineProgress);
+    };
+
+    const scheduleHundredInchProgress = () => {
+      if (hundredInchReadingFrame) return;
+      hundredInchReadingFrame = window.requestAnimationFrame(renderHundredInchProgress);
+    };
+
+    const resetHundredInchReading = () => {
+      if (!hundredInchTimeline) hundredInchTimeline = createHundredInchTimeline();
+      hundredInchTimeline?.progress(0);
+      hundredInchReading?.removeAttribute('data-progress');
+    };
+
+    const onMediaLabPointerMove = (event) => {
+      if (!ltpoReadingCursor || event.pointerType === 'touch' || caseEntryState !== CASE_ENTRY_STATES.READING || activeCaseId !== 'mediaLab') return;
+      const target = event.target?.closest?.('.case-reading-return, .media-lab-hero-copy h1, .media-lab-question h2, .media-lab-approach-heading h2, .media-lab-approach-copy article, .media-lab-result-numbers, .media-lab-closing h2');
+      const kind = target?.closest?.('.case-reading-return') ? 'link'
+        : target?.closest?.('.media-lab-hero-copy h1, .media-lab-result-numbers') ? 'hero'
+          : target?.closest?.('.media-lab-question h2, .media-lab-approach-heading h2, .media-lab-closing h2') ? 'section'
+            : target?.closest?.('.media-lab-approach-copy article') ? 'keyword'
+              : 'body';
+      ltpoReadingCursor.dataset.cursorKind = kind;
+      ltpoReadingCursor.style.opacity = '1';
+    };
+    mediaLabReading?.addEventListener('pointermove', onMediaLabPointerMove, { passive: true });
+    beijing2022Reading?.addEventListener('pointermove', (event) => {
+      if (!ltpoReadingCursor || event.pointerType === 'touch' || caseEntryState !== CASE_ENTRY_STATES.READING || activeCaseId !== 'beijing2022') return;
+      const target = event.target?.closest?.('.case-reading-return, .beijing2022-hero h1, .beijing2022-question h2, .beijing2022-result-number, .beijing2022-block');
+      ltpoReadingCursor.dataset.cursorKind = target?.closest?.('.case-reading-return') ? 'link'
+        : target?.closest?.('.beijing2022-hero h1, .beijing2022-result-number') ? 'hero'
+          : target?.closest?.('.beijing2022-question h2') ? 'section'
+            : target?.closest?.('.beijing2022-block') ? 'keyword'
+              : 'body';
+      ltpoReadingCursor.style.opacity = '1';
+    }, { passive: true });
 
     ltpoEpisodeStage?.addEventListener('pointerdown', onLTPOEpisodePointerDown, { passive: true });
     ltpoEpisodeStage?.addEventListener('pointermove', onLTPOEpisodePointerMove, { passive: false });
@@ -3049,15 +3762,48 @@
         && rect.height > 0;
     };
 
+    const setWritingArchiveArticle = (articleId) => {
+      const article = WRITING_ARCHIVE_ARTICLES[articleId] || WRITING_ARCHIVE_ARTICLES.w1;
+      const resolvedId = WRITING_ARCHIVE_ARTICLES[articleId] ? articleId : 'w1';
+      writingArchiveArticles.forEach((piece) => {
+        piece.hidden = piece.dataset.writingArticle !== resolvedId;
+      });
+      if (writingArchiveReadingIndex) {
+        writingArchiveReadingIndex.textContent = `WRITING ARCHIVE / ${article.index}`;
+      }
+      if (writingArchiveReading) {
+        writingArchiveReading.setAttribute('aria-label', `写作作品阅读：${article.label}`);
+      }
+    };
+
+    const setWritingArchivePreview = (articleId) => {
+      const resolvedId = WRITING_ARCHIVE_ARTICLES[articleId] ? articleId : 'w1';
+      writingArchiveLinks.forEach((link) => {
+        const isCurrent = link.dataset.writingId === resolvedId;
+        link.classList.toggle('is-active-preview', isCurrent);
+        if (isCurrent) link.setAttribute('aria-current', 'true');
+        else link.removeAttribute('aria-current');
+      });
+    };
+
     const setReadingView = (caseId = null) => {
-      const activeView = caseId === 'ltpo' ? 'ltpo' : 'placeholder';
+      const activeView = caseId === 'ltpo' ? 'ltpo'
+        : caseId === 'mediaLab' ? 'mediaLab'
+          : caseId === 'hundredInch' ? 'hundredInch'
+            : caseId === 'beijing2022' ? 'beijing2022'
+              : caseId === 'writingArchive' ? 'writingArchive'
+                : 'placeholder';
       if (activeView !== 'ltpo') {
         ltpoEpisodeVideos.forEach((video) => video.pause());
+        ltpoV2EpisodeVideos.forEach((video) => video.pause());
       }
       caseReadingViews.forEach((view, viewName) => {
         view.hidden = viewName !== activeView;
       });
       caseReadingLayer?.setAttribute('data-reading-mode', activeView);
+      if (activeView === 'mediaLab') startMediaLabWave();
+      else stopMediaLabWave();
+      if (activeView !== 'mediaLab') mediaLabReading?.removeAttribute('data-living-cursor');
       if (activeView === 'ltpo' && ltpoReading) {
         if (ltpoReadingCursor) {
           ltpoReadingCursor.dataset.cursorMode = 'reading';
@@ -3075,6 +3821,7 @@
           video.muted = true;
           video.loop = true;
         });
+        resetLTPOV2();
         ltpoMediaSoundEnabled = false;
         syncLTPOMediaSound();
         ltpoReading.removeAttribute('data-media-interacted');
@@ -3092,7 +3839,61 @@
         selectLTPOEpisode(0);
         caseReadingLayer.scrollTop = 0;
         ltpoReadingHeroStart = ltpoReadingHero?.offsetTop || 0;
-        window.requestAnimationFrame(renderLTPOReadingProgress);
+        window.requestAnimationFrame(() => {
+          renderLTPOReadingProgress();
+          caseReadingLayer.focus({ preventScroll: true });
+        });
+      } else if (caseId === 'mediaLab' && mediaLabReading) {
+        if (ltpoReadingCursor) {
+          ltpoReadingCursor.dataset.cursorMode = 'reading';
+          ltpoReadingCursor.dataset.cursorKind = 'body';
+          ltpoReadingCursor.style.opacity = '1';
+          if (isReadingCursorRuntimeVisible()) mediaLabReading.dataset.livingCursor = 'ready';
+        }
+        mediaLabScrollProgress = 0;
+        resetMediaLabResults();
+        caseReadingLayer.scrollTop = 0;
+        caseReadingLayer.focus({ preventScroll: true });
+        caseReadingLayer.parentElement && (caseReadingLayer.parentElement.scrollTop = 0);
+        startMediaLabWave();
+        window.requestAnimationFrame(() => {
+          caseReadingLayer.scrollTop = 0;
+          caseReadingLayer.parentElement && (caseReadingLayer.parentElement.scrollTop = 0);
+          renderMediaLabProgress();
+        });
+      } else if (caseId === 'mediaLab') {
+        caseReadingLayer.focus({ preventScroll: true });
+        caseReadingLayer.scrollTop = 0;
+        caseReadingLayer.parentElement && (caseReadingLayer.parentElement.scrollTop = 0);
+      } else if (caseId === 'beijing2022' && beijing2022Reading) {
+        if (ltpoReadingCursor) {
+          ltpoReadingCursor.dataset.cursorMode = 'reading';
+          ltpoReadingCursor.dataset.cursorKind = 'body';
+          ltpoReadingCursor.style.opacity = '1';
+        }
+        resetBeijing2022Reading();
+        caseReadingLayer.scrollTop = 0;
+        caseReadingLayer.parentElement && (caseReadingLayer.parentElement.scrollTop = 0);
+        caseReadingLayer.focus({ preventScroll: true });
+        window.requestAnimationFrame(() => {
+          caseReadingLayer.scrollTop = 0;
+          caseReadingLayer.parentElement && (caseReadingLayer.parentElement.scrollTop = 0);
+          renderBeijing2022Progress();
+        });
+      } else if (caseId === 'hundredInch') {
+        if (ltpoReadingCursor) {
+          ltpoReadingCursor.dataset.cursorMode = 'reading';
+          ltpoReadingCursor.dataset.cursorKind = 'body';
+          ltpoReadingCursor.style.opacity = '1';
+        }
+        if (!hundredInchTimeline) hundredInchTimeline = createHundredInchTimeline();
+        resetHundredInchReading();
+        caseReadingLayer.scrollTop = 0;
+        caseReadingLayer.focus({ preventScroll: true });
+        window.requestAnimationFrame(() => {
+          caseReadingLayer.scrollTop = 0;
+          renderHundredInchProgress();
+        });
       } else {
         if (ltpoReadingCursor) {
           ltpoReadingCursor.dataset.cursorMode = 'world';
@@ -3101,10 +3902,16 @@
         }
         ltpoReading?.removeAttribute('data-living-cursor');
       }
+      if (caseId === 'writingArchive') setWritingArchiveArticle(activeWritingArticleId);
     };
     setReadingView();
     caseReadingLayer?.addEventListener('scroll', scheduleLTPOReadingProgress, { passive: true });
+    caseReadingLayer?.addEventListener('scroll', scheduleMediaLabProgress, { passive: true });
+    caseReadingLayer?.addEventListener('scroll', scheduleHundredInchProgress, { passive: true });
+    caseReadingLayer?.addEventListener('scroll', scheduleBeijing2022Progress, { passive: true });
     window.addEventListener('resize', scheduleLTPOReadingProgress, { passive: true });
+    window.addEventListener('resize', scheduleMediaLabProgress, { passive: true });
+    window.addEventListener('resize', scheduleBeijing2022Progress, { passive: true });
 
     const setCaseEntryState = (state, caseId = null) => {
       caseEntryState = state;
@@ -3114,7 +3921,6 @@
       else delete world.dataset.caseEntryCase;
     };
     setCaseEntryState(CASE_ENTRY_STATES.FREE);
-
     const clearCaseDiscovery = () => {
       caseDiscoveryButtons.forEach((button) => {
         button.hidden = true;
@@ -3123,7 +3929,49 @@
       });
     };
 
+    const renderWritingArchiveDiscovery = () => {
+      if (!writingArchiveDiscovery || caseEntryState === CASE_ENTRY_STATES.READING) return;
+      const snapshot = worldProjection.refresh();
+      const rootRect = snapshot.rootRect;
+      const anchor = worldProjection.worldToScreen(WRITING_ARCHIVE_WORLD_ANCHOR);
+      const diver = tracker.getPosition();
+      const pointer = tracker.getPointerPosition();
+      const toScreen = (point) => ({ x: rootRect.left + point.x, y: rootRect.top + point.y });
+      const revealRadius = clamp(rootRect.width * .18, 190, 280);
+      const proximityAt = (point) => clamp(
+        1 - Math.hypot(point.x - anchor.x, point.y - anchor.y) / revealRadius,
+        0,
+        1
+      );
+      const proximity = Math.max(
+        proximityAt(toScreen(diver)),
+        proximityAt(toScreen(pointer)) * .82
+      );
+      const isNear = proximity > .055;
+      writingArchiveDiscovery.style.setProperty('--writing-screen-x', `${(anchor.x - rootRect.left).toFixed(1)}px`);
+      writingArchiveDiscovery.style.setProperty('--writing-screen-y', `${(anchor.y - rootRect.top).toFixed(1)}px`);
+      writingArchiveDiscovery.style.setProperty('--writing-proximity', proximity.toFixed(3));
+      writingArchiveDiscovery.dataset.writingState = isNear
+        ? CASE_ENTRY_STATES.PROXIMITY
+        : CASE_ENTRY_STATES.FREE;
+      if (isNear) {
+        if (writingArchiveLeaveTimer) window.clearTimeout(writingArchiveLeaveTimer);
+        writingArchiveLeaveTimer = 0;
+        writingArchiveDiscovery.classList.remove('is-leaving');
+      } else if (writingArchiveWasNear) {
+        writingArchiveDiscovery.classList.add('is-leaving');
+        if (writingArchiveLeaveTimer) window.clearTimeout(writingArchiveLeaveTimer);
+        writingArchiveLeaveTimer = window.setTimeout(() => {
+          writingArchiveDiscovery.classList.remove('is-leaving');
+          writingArchiveLeaveTimer = 0;
+        }, 1500);
+      }
+      writingArchiveWasNear = isNear;
+      writingArchiveDiscovery.classList.toggle('is-near', isNear);
+    };
+
     const renderCaseDiscovery = () => {
+      renderWritingArchiveDiscovery();
       if (!caseDiscoveryLayer || caseEntryState === CASE_ENTRY_STATES.READING) return;
       const snapshot = worldProjection.refresh();
       const rootRect = snapshot.rootRect;
@@ -3136,21 +3984,26 @@
           .map((item) => [item.caseId, item])
       );
       const nextState = nearby.size ? CASE_ENTRY_STATES.PROXIMITY : CASE_ENTRY_STATES.FREE;
-      if (caseEntryState !== nextState) setCaseEntryState(nextState);
+      const activeNearbyCase = nearby.keys().next().value || null;
+      if (caseEntryState !== nextState || activeCaseId !== activeNearbyCase) {
+        setCaseEntryState(nextState, activeNearbyCase);
+      }
       caseDiscoveryButtons.forEach((button, caseId) => {
         const item = nearby.get(caseId);
         if (!item) {
           button.hidden = true;
           button.classList.remove('is-visible');
+          button.style.setProperty('--case-proximity', '0');
           return;
         }
         const anchor = worldProjection.worldToScreen(item.worldAnchor);
         button.style.setProperty('--case-screen-x', `${(anchor.x - rootRect.left).toFixed(1)}px`);
         button.style.setProperty('--case-screen-y', `${(anchor.y - rootRect.top).toFixed(1)}px`);
+        button.style.setProperty('--case-proximity', item.proximity.toFixed(3));
         button.hidden = false;
         button.classList.add('is-visible');
         button.dataset.caseState = CASE_ENTRY_STATES.PROXIMITY;
-        button.setAttribute('aria-label', `进入 ${CASE_ENTRY_CONFIG[caseId].label}`);
+        button.setAttribute('aria-label', CASE_ENTRY_CONFIG[caseId].ariaLabel || `进入 ${CASE_ENTRY_CONFIG[caseId].label}`);
       });
     };
 
@@ -3199,14 +4052,28 @@
       tracker.renderDiver();
     };
 
-    const openCaseLanding = (caseId) => {
-      if (caseEntryState !== CASE_ENTRY_STATES.PROXIMITY || !CASE_ENTRY_CONFIG[caseId] || !caseReadingLayer) return;
-      const item = DEEP_SEA_CASE_ANCHORS.find((candidate) => candidate.caseId === caseId);
+    const openCaseLanding = (caseId, options = {}) => {
+      const isWritingArchive = caseId === 'writingArchive';
+      const directBeijingEntry = options.direct === true && caseId === 'beijing2022';
+      if (!CASE_ENTRY_CONFIG[caseId] || !caseReadingLayer) return;
+      if (isWritingArchive) {
+        if (
+          !WRITING_ARCHIVE_ARTICLES[activeWritingArticleId]
+          || !writingArchiveDiscovery?.classList.contains('is-near')
+        ) return;
+      } else if (caseEntryState !== CASE_ENTRY_STATES.PROXIMITY && !directBeijingEntry) {
+        return;
+      }
+      const item = isWritingArchive
+        ? { status: 'CONFIRMED', enabled: true, worldAnchor: WRITING_ARCHIVE_WORLD_ANCHOR }
+        : DEEP_SEA_CASE_ANCHORS.find((candidate) => candidate.caseId === caseId);
       if (!item || item.status !== 'CONFIRMED' || !item.enabled) return;
       caseSnapshot = captureCaseSnapshot();
       setCaseEntryState(CASE_ENTRY_STATES.READING, caseId);
+      setReadingPerformanceSuspended(true);
       clearCaseDiscovery();
       world.classList.add('is-case-reading');
+      world.classList.toggle('is-writing-reading', isWritingArchive);
       document.body.classList.add('is-case-reading');
       setReadingChromeHidden(true);
       caseReadingLayer.hidden = false;
@@ -3225,6 +4092,22 @@
           caseReadingLayer.scrollTop = 0;
           renderLTPOReadingProgress();
         });
+      } else if (caseId === 'hundredInch') {
+        hundredInchReading?.focus({ preventScroll: true });
+        caseReadingLayer.scrollTop = 0;
+        window.requestAnimationFrame(renderHundredInchProgress);
+      } else if (caseId === 'beijing2022') {
+        caseReadingLayer.focus({ preventScroll: true });
+        caseReadingLayer.scrollTop = 0;
+        caseReadingLayer.parentElement && (caseReadingLayer.parentElement.scrollTop = 0);
+        window.requestAnimationFrame(() => {
+          caseReadingLayer.scrollTop = 0;
+          caseReadingLayer.parentElement && (caseReadingLayer.parentElement.scrollTop = 0);
+          renderBeijing2022Progress();
+        });
+      } else if (isWritingArchive) {
+        writingArchiveReading?.focus({ preventScroll: true });
+        caseReadingLayer.scrollTop = 0;
       } else {
         caseReadingReturns.find((button) => (
           button.closest('[data-reading-view]')?.dataset.readingView === 'placeholder'
@@ -3239,9 +4122,12 @@
       caseReadingLayer.hidden = true;
       caseReadingLayer.removeAttribute('data-case-id');
       setReadingView();
+      setReadingPerformanceSuspended(false);
       world.classList.remove('is-case-reading');
+      world.classList.remove('is-writing-reading');
       document.body.classList.remove('is-case-reading');
       setCaseEntryState(CASE_ENTRY_STATES.FREE);
+      activeWritingArticleId = null;
       if (snapshot) window.scrollTo(0, snapshot.scrollY);
       restoreCaseSnapshot(snapshot);
       dirty = true;
@@ -3255,6 +4141,36 @@
         openCaseLanding(caseId);
       });
     });
+    hundredInchEntry?.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openCaseLanding('hundredInch');
+    });
+    beijing2022Entry?.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openCaseLanding('beijing2022', { direct: true });
+    });
+    writingArchiveLinks.forEach((link) => {
+      const preview = () => setWritingArchivePreview(link.dataset.writingId);
+      const restorePreview = () => setWritingArchivePreview(writingArchivePreviewId);
+      link.addEventListener('pointerenter', preview);
+      link.addEventListener('pointerleave', restorePreview);
+      link.addEventListener('focus', preview);
+      link.addEventListener('blur', restorePreview);
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        activeWritingArticleId = event.currentTarget.dataset.writingId;
+        writingArchivePreviewId = activeWritingArticleId;
+        setWritingArchivePreview(writingArchivePreviewId);
+        openCaseLanding('writingArchive');
+      });
+    });
+    setWritingArchivePreview(writingArchivePreviewId);
+    writingArchiveSources.forEach((source) => source.addEventListener('click', (event) => {
+      if (source.getAttribute('aria-disabled') === 'true') event.preventDefault();
+    }));
     caseReadingReturns.forEach((button) => button.addEventListener('click', closeCaseLanding));
     const lockCaseReadingScroll = (event) => {
       if (caseEntryState === CASE_ENTRY_STATES.READING && !caseReadingLayer?.contains(event.target)) {
@@ -3415,6 +4331,8 @@
     let riftLandingTimer = null;
     let riftAutoScrollStart = null;
     let riftAutoScrollEnd = null;
+    let lastObservedScrollProgress = 0;
+    let riftAutoDivePending = false;
 
     const setRiftAutoMode = (mode) => {
       riftAutoMode = mode;
@@ -3487,172 +4405,6 @@
       world.dataset.worldProgress = worldProgress.toFixed(4);
       world.dataset.worldRangeMap = JSON.stringify(DEEP_SEA_WORLD_RANGES);
       return { worldProgress, worldDepth };
-    };
-
-    const setRiftAutoMotion = (progress) => {
-      riftAutoState.t = clamp(progress, 0, 1);
-      const t = riftAutoState.t;
-      const enteringBlend = smoothstep(clamp(t / .055, 0, 1));
-      const scrollProgress = clamp(currentDepth / Math.max(1, viewport.maxDepth), 0, 1);
-      const timelineExitBlend = smoothstep(clamp((t - .92) / .08, 0, 1));
-      const scrollExitBlend = riftAutoDive ? 0 : clamp(
-        (scrollProgress - riftAutoWindow.exitStart)
-        / Math.max(.0001, riftAutoWindow.chamberStart - riftAutoWindow.exitStart),
-        0,
-        1
-      );
-      const exitingBlend = Math.max(timelineExitBlend, scrollExitBlend);
-      const pathInfluence = t < .08 ? enteringBlend : 1;
-      const followWeight = 1 - pathInfluence;
-      if (exitingBlend > 0) setRiftAutoMode(RIFT_AUTO_STATES.EXITING_RIFT);
-      else if (t < .18) setRiftAutoMode(RIFT_AUTO_STATES.ENTERING_RIFT);
-      else if (t < .92) setRiftAutoMode(RIFT_AUTO_STATES.AUTO_DIVE);
-      else setRiftAutoMode(RIFT_AUTO_STATES.EXITING_RIFT);
-      if (riftAutoPath) {
-        const arc = Math.sin(t * Math.PI);
-        const centerEase = smoothstep(clamp(t / .62, 0, 1));
-        const caveApproachEase = smoothstep(clamp((t - .52) / .48, 0, 1));
-        const drift = Math.sin(t * Math.PI * 1.12) * (.006 + arc * riftAutoPath.drift);
-        const x = riftAutoPath.originX
-          + (riftAutoPath.centerX - riftAutoPath.originX) * centerEase
-          + (riftAutoPath.arrivalX - riftAutoPath.centerX) * caveApproachEase
-          + drift;
-        const y = riftAutoPath.originY
-          + (riftAutoPath.destinationY - riftAutoPath.originY) * (t * .22 + t * t * .78)
-          - arc * .006;
-        tracker.setCinematicTarget(x * viewport.width, y * viewport.height, pathInfluence);
-        const headDownBlend = smoothstep(clamp((t - .015) / .22, 0, 1));
-        const headingDelta = ((-90 - riftAutoPath.startHeading + 540) % 360) - 180;
-        const descentHeading = riftAutoPath.startHeading + headingDelta * headDownBlend;
-        const caveLiftBlend = smoothstep(clamp((t - .72) / .28, 0, 1));
-        tracker.setCinematicHeading(
-          descentHeading + (riftAutoPath.arrivalHeading - descentHeading) * caveLiftBlend
-        );
-      }
-      if (riftAutoScrollStart != null && riftAutoScrollEnd != null) {
-        const cameraT = smoothstep(t);
-        targetDepth = riftAutoScrollStart + (riftAutoScrollEnd - riftAutoScrollStart) * cameraT;
-        dirty = true;
-      }
-      riftAutoState.pathInfluence = pathInfluence;
-      riftAutoState.followWeight = followWeight;
-      world.dataset.riftAutoPathInfluence = pathInfluence.toFixed(3);
-      world.dataset.riftAutoFollowWeight = followWeight.toFixed(3);
-      world.style.setProperty('--rift-auto-progress', riftAutoState.t.toFixed(3));
-      world.style.setProperty('--rift-auto-distant', `${(riftAutoState.t * 34).toFixed(1)}px`);
-      world.style.setProperty('--rift-auto-middle', `${(riftAutoState.t * 78).toFixed(1)}px`);
-      world.style.setProperty('--rift-auto-foreground', `${(riftAutoState.t * 132).toFixed(1)}px`);
-      world.style.setProperty('--rift-auto-content', `${(riftAutoState.t * 84).toFixed(1)}px`);
-      renderRiftVisual(clamp(currentDepth / Math.max(1, viewport.maxDepth), 0, 1));
-    };
-
-    const lockRiftScroll = (event) => {
-      if (riftAutoDive) event.preventDefault();
-    };
-
-    const unlockRift = () => {
-      if (riftTimeline) riftTimeline.kill();
-      if (riftLandingTimer) window.clearTimeout(riftLandingTimer);
-      riftTimeline = null;
-      riftLandingTimer = null;
-      riftAutoDive = false;
-      riftCompleted = true;
-      riftAutoPath = null;
-      if (riftAutoScrollEnd != null) {
-        targetDepth = riftAutoScrollEnd;
-        window.scrollTo(0, riftAutoScrollEnd);
-      }
-      riftAutoScrollStart = null;
-      riftAutoScrollEnd = null;
-      window.removeEventListener('wheel', lockRiftScroll);
-      window.removeEventListener('touchmove', lockRiftScroll);
-      setRiftAutoMode(RIFT_AUTO_STATES.FREE_IN_CHAMBER);
-      world.classList.remove('is-rift-auto');
-      document.body.classList.remove('is-rift-auto');
-      world.style.setProperty('--rift-auto-progress', '0');
-      world.style.setProperty('--rift-auto-distant', '0px');
-      world.style.setProperty('--rift-auto-middle', '0px');
-      world.style.setProperty('--rift-auto-foreground', '0px');
-      world.style.setProperty('--rift-auto-content', '0px');
-      // Keep the visible landing point until the user's next real pointer
-      // movement; otherwise the restored follow target immediately erases the
-      // chosen chamber arrival on the same frame.
-      tracker.clearCinematicTarget({ preserveTarget: true });
-      tracker.clearCinematicHeading();
-      tracker.setPointerFollowEnabled(true);
-      tracker.holdPointerFollowAtCurrentPosition();
-      renderRiftVisual(clamp(currentDepth / Math.max(1, viewport.maxDepth), 0, 1));
-    };
-
-    const settleRiftLanding = () => {
-      // A short, still arrival makes the destination legible before free swim
-      // resumes. Cursor Light stays on the user's actual pointer throughout.
-      if (riftAutoPath) tracker.snapCinematicHeading(riftAutoPath.arrivalHeading);
-      setRiftAutoMode(RIFT_AUTO_STATES.SETTLING_IN_CHAMBER);
-      riftLandingTimer = window.setTimeout(unlockRift, 820);
-    };
-
-    const beginRiftAutoDive = () => {
-      const triggerStart = riftAutoWindow.triggerStart;
-      const triggerEnd = riftAutoWindow.triggerEnd;
-      const scrollProgress = clamp(targetDepth / Math.max(1, viewport.maxDepth), 0, 1);
-      if (
-        riftAutoMode !== RIFT_AUTO_STATES.FREE
-        || riftAutoDive
-        || riftCompleted
-        || ascentActive
-        || scrollProgress < triggerStart
-        || scrollProgress > triggerEnd
-      ) return;
-      riftAutoDive = true;
-      riftAutoScrollStart = clamp(currentDepth, 0, viewport.maxDepth);
-      riftAutoScrollEnd = clamp(
-        riftAutoWindow.chamberStart * viewport.maxDepth,
-        riftAutoScrollStart,
-        viewport.maxDepth
-      );
-      riftAutoState = { t: .055, pathInfluence: 0, followWeight: 1 };
-      world.classList.add('is-rift-auto');
-      document.body.classList.add('is-rift-auto');
-      window.addEventListener('wheel', lockRiftScroll, { passive: false });
-      window.addEventListener('touchmove', lockRiftScroll, { passive: false });
-      tracker.setPointerFollowEnabled(false);
-      const origin = tracker.getPosition();
-      const originX = clamp(origin.x / Math.max(1, viewport.width), .08, .92);
-      const originY = clamp(origin.y / Math.max(1, viewport.height), .18, .82);
-      riftAutoPath = {
-        originX,
-        originY,
-        startHeading: tracker.heading,
-        // Chamber landing is anchored to the approved composition: central
-        // lower waterway, head lifted toward the upper-left, clear of both
-        // walls and the Primary Cave mouth.
-        arrivalHeading: 42,
-        centerX: clamp(.5 + (originX - .5) * .2, .39, .61),
-        // Land in the open water immediately in front of the LTPO Primary
-        // Cave. This normalized screen position maps into the existing
-        // ltpoApproach polygon at the chamber handoff without moving its
-        // anchor or changing any collision geometry.
-        arrivalX: .29,
-        // Lift the first-arrival pose slightly in the chamber viewport while
-        // keeping the landing inside the existing LTPO approach polygon.
-        destinationY: .68,
-        drift: .010
-      };
-      setRiftAutoMotion(riftAutoState.t);
-      if (!gs || reducedMotion) {
-        riftAutoState.t = 1;
-        setRiftAutoMotion(1);
-        window.setTimeout(settleRiftLanding, reducedMotion ? 140 : 420);
-        return;
-      }
-      riftTimeline = gs.to(riftAutoState, {
-        t: 1,
-        duration: 6.25,
-        ease: 'power1.inOut',
-        onUpdate: () => setRiftAutoMotion(riftAutoState.t),
-        onComplete: settleRiftLanding
-      });
     };
 
     const dismissOnboarding = () => {
@@ -4045,20 +4797,22 @@
       renderSwimMapDebug(progress, downstreamState.worldProgress);
       renderCaseDiscovery();
       const riftTriggerStart = riftAutoWindow.triggerStart;
-      const riftTriggerEnd = riftAutoWindow.triggerEnd;
       const riftTriggerProgress = clamp(targetDepth / Math.max(1, viewport.maxDepth), 0, 1);
       if (
         riftAutoMode === RIFT_AUTO_STATES.FREE
         && !riftAutoDive
         && !riftCompleted
-        && riftTriggerProgress >= riftTriggerStart
-        && riftTriggerProgress <= riftTriggerEnd
+        && (riftAutoDivePending || (
+          riftTriggerProgress >= riftTriggerStart
+          && riftTriggerProgress <= riftAutoWindow.chamberStart
+        ))
       ) {
-        const diver = tracker.getPosition();
-        const nearRiftOpening = diver.y > viewport.height * riftAutoWindow.diverTriggerY;
-        const insideRiftLane = diver.x > viewport.width * riftAutoWindow.diverLaneLeft
-          && diver.x < viewport.width * riftAutoWindow.diverLaneRight;
-        if (nearRiftOpening && insideRiftLane) beginRiftAutoDive();
+        // Scroll direction and world depth establish the rift intent. The
+        // diver may be anywhere in its valid water lane, so it should not have
+        // to hit a second invisible, screen-space target to continue.
+        if (riftAutoDivePending || riftTriggerProgress >= riftTriggerStart) {
+          beginRiftAutoDive({ forceFromRiftCrossing: riftAutoDivePending });
+        }
       }
       const maxDepthMeters = 420;
       const depthMeters = 6 + Math.round((downstreamState?.worldProgress ?? progress) * (maxDepthMeters - 6));
@@ -4077,9 +4831,43 @@
       dirty = Math.abs(targetDepth - currentDepth) >= .08;
     };
 
+    // Reading is an opaque, independently scrolling layer. Keep the single
+    // global cursor/diver runtime alive across the overlay lifecycle; only the
+    // covered visual layers are hidden while Reading is open. Avoid removing
+    // and re-adding ticker callbacks, which can leave a restored world with a
+    // partially resumed interaction runtime.
+    const setReadingPerformanceSuspended = (suspended) => {
+      if (readingPerformanceSuspended === suspended) return;
+      readingPerformanceSuspended = suspended;
+      const worldVisualLayers = [
+        downstreamScene,
+        world.querySelector('.descent-layer-distant'),
+        world.querySelector('.descent-layer-middle'),
+        world.querySelector('.descent-layer-foreground'),
+        world.querySelector('.descent-layer-content'),
+        world.querySelector('.surface-look-up')
+      ].filter(Boolean);
+      worldVisualLayers.forEach((layer) => layer.classList.toggle('is-reading-suspended', suspended));
+      if (gs) {
+        if (!suspended) {
+          dirty = true;
+          render();
+        }
+      }
+    };
     const onScroll = () => {
       if (ascentActive) return;
       targetDepth = clamp(window.scrollY, 0, viewport.maxDepth);
+      const nextScrollProgress = clamp(targetDepth / Math.max(1, viewport.maxDepth), 0, 1);
+      if (
+        !riftCompleted
+        && nextScrollProgress > lastObservedScrollProgress
+        && lastObservedScrollProgress < riftAutoWindow.triggerStart
+        && nextScrollProgress >= riftAutoWindow.triggerStart
+      ) {
+        riftAutoDivePending = true;
+      }
+      lastObservedScrollProgress = nextScrollProgress;
       if (targetDepth > ONBOARDING_SCROLL_DISTANCE) {
         onboardingHasScrolled = true;
         maybeDismissOnboarding();
@@ -4236,7 +5024,7 @@
       const box = world.getBoundingClientRect();
       if (activeStation && !stationHovered && !cardHovered) {
         const rect = activeStation.getBoundingClientRect();
-        const distance = Math.hypot(current.x - (rect.left - box.left + rect.width / 2), current.y - (rect.top - box.top + rect.height / 2));
+        const distance = Math.hypot(current.x - (rect.left - box.left + rect.width / 2), current.y - (rect.top - box.top + rect.width / 2));
         if (distance > diverDismissDistance) scheduleHide();
       }
       stations.forEach((station) => {
@@ -4333,3 +5121,230 @@
     });
   }
 })();
+    const debugHiddenCave = DEBUG_HIDDEN_CAVE || new URLSearchParams(window.location.search).has('debug-hidden-cave');
+    document.body.classList.toggle('debug-hidden-cave', debugHiddenCave);
+    if (debugHiddenCave && scrollSpacer) scrollSpacer.style.height = '520vh';
+    const setRiftAutoMotion = (progress) => {
+      riftAutoState.t = clamp(progress, 0, 1);
+      const t = riftAutoState.t;
+      const enteringBlend = smoothstep(clamp(t / .055, 0, 1));
+      const scrollProgress = clamp(currentDepth / Math.max(1, viewport.maxDepth), 0, 1);
+      const timelineExitBlend = smoothstep(clamp((t - .92) / .08, 0, 1));
+      const scrollExitBlend = riftAutoDive ? 0 : clamp(
+        (scrollProgress - riftAutoWindow.exitStart)
+        / Math.max(.0001, riftAutoWindow.chamberStart - riftAutoWindow.exitStart),
+        0,
+        1
+      );
+      const exitingBlend = Math.max(timelineExitBlend, scrollExitBlend);
+      const pathInfluence = t < .08 ? enteringBlend : 1;
+      const followWeight = 1 - pathInfluence;
+      if (exitingBlend > 0) setRiftAutoMode(RIFT_AUTO_STATES.EXITING_RIFT);
+      else if (t < .18) setRiftAutoMode(RIFT_AUTO_STATES.ENTERING_RIFT);
+      else if (t < .92) setRiftAutoMode(RIFT_AUTO_STATES.AUTO_DIVE);
+      else setRiftAutoMode(RIFT_AUTO_STATES.EXITING_RIFT);
+      if (riftAutoPath) {
+        const arc = Math.sin(t * Math.PI);
+        const centerEase = smoothstep(clamp(t / .62, 0, 1));
+        const caveApproachEase = smoothstep(clamp((t - .52) / .48, 0, 1));
+        const drift = Math.sin(t * Math.PI * 1.12) * (.006 + arc * riftAutoPath.drift);
+        const x = riftAutoPath.originX
+          + (riftAutoPath.centerX - riftAutoPath.originX) * centerEase
+          + (riftAutoPath.arrivalX - riftAutoPath.centerX) * caveApproachEase
+          + drift;
+        const y = riftAutoPath.originY
+          + (riftAutoPath.destinationY - riftAutoPath.originY) * (t * .22 + t * t * .78)
+          - arc * .006;
+        tracker.setCinematicTarget(x * viewport.width, y * viewport.height, pathInfluence);
+        const headDownBlend = smoothstep(clamp((t - .015) / .22, 0, 1));
+        const headingDelta = ((-90 - riftAutoPath.startHeading + 540) % 360) - 180;
+        const descentHeading = riftAutoPath.startHeading + headingDelta * headDownBlend;
+        const caveLiftBlend = smoothstep(clamp((t - .72) / .28, 0, 1));
+        tracker.setCinematicHeading(
+          descentHeading + (riftAutoPath.arrivalHeading - descentHeading) * caveLiftBlend
+        );
+      }
+      if (riftAutoScrollStart != null && riftAutoScrollEnd != null) {
+        const cameraT = smoothstep(t);
+        targetDepth = riftAutoScrollStart + (riftAutoScrollEnd - riftAutoScrollStart) * cameraT;
+        dirty = true;
+      }
+      riftAutoState.pathInfluence = pathInfluence;
+      riftAutoState.followWeight = followWeight;
+      world.dataset.riftAutoPathInfluence = pathInfluence.toFixed(3);
+      world.dataset.riftAutoFollowWeight = followWeight.toFixed(3);
+      world.style.setProperty('--rift-auto-progress', riftAutoState.t.toFixed(3));
+      world.style.setProperty('--rift-auto-distant', `${(riftAutoState.t * 34).toFixed(1)}px`);
+      world.style.setProperty('--rift-auto-middle', `${(riftAutoState.t * 78).toFixed(1)}px`);
+      world.style.setProperty('--rift-auto-foreground', `${(riftAutoState.t * 132).toFixed(1)}px`);
+      world.style.setProperty('--rift-auto-content', `${(riftAutoState.t * 84).toFixed(1)}px`);
+      renderRiftVisual(clamp(currentDepth / Math.max(1, viewport.maxDepth), 0, 1));
+    };
+
+    const lockRiftScroll = (event) => {
+      if (riftAutoDive) event.preventDefault();
+    };
+
+    const unlockRift = () => {
+      if (riftTimeline) riftTimeline.kill();
+      if (riftLandingTimer) window.clearTimeout(riftLandingTimer);
+      riftTimeline = null;
+      riftLandingTimer = null;
+      riftAutoDive = false;
+      riftCompleted = true;
+      riftAutoPath = null;
+      if (riftAutoScrollEnd != null) {
+        targetDepth = riftAutoScrollEnd;
+        window.scrollTo(0, riftAutoScrollEnd);
+      }
+      riftAutoScrollStart = null;
+      riftAutoScrollEnd = null;
+      window.removeEventListener('wheel', lockRiftScroll);
+      window.removeEventListener('touchmove', lockRiftScroll);
+      setRiftAutoMode(RIFT_AUTO_STATES.FREE_IN_CHAMBER);
+      world.classList.remove('is-rift-auto');
+      document.body.classList.remove('is-rift-auto');
+      world.style.setProperty('--rift-auto-progress', '0');
+      world.style.setProperty('--rift-auto-distant', '0px');
+      world.style.setProperty('--rift-auto-middle', '0px');
+      world.style.setProperty('--rift-auto-foreground', '0px');
+      world.style.setProperty('--rift-auto-content', '0px');
+      // Keep the visible landing point until the user's next real pointer
+      // movement; otherwise the restored follow target immediately erases the
+      // chosen chamber arrival on the same frame.
+      tracker.clearCinematicTarget({ preserveTarget: true });
+      tracker.clearCinematicHeading();
+      tracker.setPointerFollowEnabled(true);
+      tracker.holdPointerFollowAtCurrentPosition();
+      renderRiftVisual(clamp(currentDepth / Math.max(1, viewport.maxDepth), 0, 1));
+    };
+
+    const settleRiftLanding = () => {
+      // A short, still arrival makes the destination legible before free swim
+      // resumes. Cursor Light stays on the user's actual pointer throughout.
+      if (riftAutoPath) tracker.snapCinematicHeading(riftAutoPath.arrivalHeading);
+      setRiftAutoMode(RIFT_AUTO_STATES.SETTLING_IN_CHAMBER);
+      riftLandingTimer = window.setTimeout(unlockRift, 820);
+    };
+
+    const beginRiftAutoDive = ({ forceFromRiftCrossing = false } = {}) => {
+      const triggerStart = riftAutoWindow.triggerStart;
+      const scrollProgress = clamp(targetDepth / Math.max(1, viewport.maxDepth), 0, 1);
+      if (
+        riftAutoMode !== RIFT_AUTO_STATES.FREE
+        || riftAutoDive
+        || riftCompleted
+        || ascentActive
+        || scrollProgress < triggerStart
+        // A fast wheel/trackpad gesture may cross the old narrow rift range in
+        // one scroll event. Catch it through the chamber threshold, but never
+        // pull someone back after they have already moved through the room.
+        || (scrollProgress > riftAutoWindow.chamberStart && !forceFromRiftCrossing)
+      ) return;
+      riftAutoDivePending = false;
+      riftAutoDive = true;
+      riftAutoScrollStart = clamp(currentDepth, 0, viewport.maxDepth);
+      riftAutoScrollEnd = clamp(
+        // Hold the arrival camera a trace above the Chamber start. This brings
+        // the full right Secondary Cave into the opening frame rather than
+        // clipping its upper edge, without changing either cave anchor.
+        Math.max(riftAutoWindow.exitStart, riftAutoWindow.chamberStart - .012) * viewport.maxDepth,
+        riftAutoScrollStart,
+        viewport.maxDepth
+      );
+      riftAutoState = { t: .055, pathInfluence: 0, followWeight: 1 };
+      world.classList.add('is-rift-auto');
+      document.body.classList.add('is-rift-auto');
+      window.addEventListener('wheel', lockRiftScroll, { passive: false });
+      window.addEventListener('touchmove', lockRiftScroll, { passive: false });
+      tracker.setPointerFollowEnabled(false);
+      const origin = tracker.getPosition();
+      const originX = clamp(origin.x / Math.max(1, viewport.width), .08, .92);
+      const originY = clamp(origin.y / Math.max(1, viewport.height), .18, .82);
+      riftAutoPath = {
+        originX,
+        originY,
+        startHeading: tracker.heading,
+        // Chamber landing is anchored to the approved composition: central
+        // upper-middle waterway, head lifted toward LTPO, clear of both cave
+        // mouths so the chamber reads before manual exploration resumes.
+        arrivalHeading: 42,
+        centerX: clamp(.5 + (originX - .5) * .2, .39, .61),
+        // Land in the open water immediately in front of the LTPO Primary
+        // Cave. This normalized screen position maps into the existing
+        // ltpoApproach polygon at the chamber handoff without moving its
+        // anchor or changing any collision geometry.
+        arrivalX: .29,
+        // Keep the swimmer high in the clear central water: both cave mouths
+        // remain legible below and alongside the arrival, while LTPO stays in
+        // natural proximity for voluntary entry.
+        destinationY: .45,
+        drift: .010
+      };
+      setRiftAutoMotion(riftAutoState.t);
+      if (!gs || reducedMotion) {
+        riftAutoState.t = 1;
+        setRiftAutoMotion(1);
+        window.setTimeout(settleRiftLanding, reducedMotion ? 140 : 420);
+        return;
+      }
+      riftTimeline = gs.to(riftAutoState, {
+        t: 1,
+        duration: 6.25,
+        ease: 'power1.inOut',
+        onUpdate: () => setRiftAutoMotion(riftAutoState.t),
+        onComplete: settleRiftLanding
+      });
+    };
+    // Local review shortcut: it invokes the existing 100-inch entry path and
+    // never replaces production proximity, pointer, cursor or Case lifecycle.
+    if (new URLSearchParams(window.location.search).get('hundredInchPreview') === '1') {
+      window.requestAnimationFrame(() => {
+        setCaseEntryState(CASE_ENTRY_STATES.PROXIMITY, 'hundredInch');
+        openCaseLanding('hundredInch');
+      });
+    }
+      if (hundredInchEntry) {
+        const item = nearby.get('hundredInch');
+        const anchorItem = DEEP_SEA_CASE_ANCHORS.find((candidate) => candidate.caseId === 'hundredInch');
+        if (anchorItem) {
+          const anchor = worldProjection.worldToScreen(anchorItem.worldAnchor);
+          hundredInchEntry.style.setProperty('--case-screen-x', `${(anchor.x - rootRect.left).toFixed(1)}px`);
+          hundredInchEntry.style.setProperty('--case-screen-y', `${(anchor.y - rootRect.top).toFixed(1)}px`);
+        }
+        hundredInchEntry.style.setProperty('--case-proximity', item?.proximity?.toFixed(3) || '0');
+        hundredInchEntry.dataset.caseState = item ? CASE_ENTRY_STATES.PROXIMITY : CASE_ENTRY_STATES.FREE;
+      }
+      if (beijing2022Entry) {
+        const item = nearby.get('beijing2022');
+        const anchorItem = DEEP_SEA_CASE_ANCHORS.find((candidate) => candidate.caseId === 'beijing2022');
+        if (anchorItem) {
+          const anchor = worldProjection.worldToScreen(anchorItem.worldAnchor);
+          beijing2022Entry.style.setProperty('--case-screen-x', `${(anchor.x - rootRect.left).toFixed(1)}px`);
+          beijing2022Entry.style.setProperty('--case-screen-y', `${(anchor.y - rootRect.top).toFixed(1)}px`);
+        }
+        beijing2022Entry.style.setProperty('--case-proximity', item?.proximity?.toFixed(3) || '0');
+        beijing2022Entry.dataset.caseState = item ? CASE_ENTRY_STATES.PROXIMITY : CASE_ENTRY_STATES.FREE;
+      }
+      caseCaveResponses.forEach((response, caseId) => {
+        const item = nearby.get(caseId);
+        const anchorItem = DEEP_SEA_CASE_ANCHORS.find((candidate) => candidate.caseId === caseId);
+        if (!item || !anchorItem) {
+          response.classList.remove('is-active');
+          response.style.setProperty('--case-proximity', '0');
+          return;
+        }
+        const anchor = worldProjection.worldToScreen(anchorItem.worldAnchor);
+        response.style.setProperty('--case-screen-x', `${(anchor.x - rootRect.left).toFixed(1)}px`);
+        response.style.setProperty('--case-screen-y', `${(anchor.y - rootRect.top).toFixed(1)}px`);
+        response.style.setProperty('--case-proximity', item.proximity.toFixed(3));
+        response.classList.add('is-active');
+      });
+    const hundredInchEntry = caseDiscoveryLayer?.querySelector('.hundred-inch-entry[data-case-id="hundredInch"]');
+    const beijing2022Entry = caseDiscoveryLayer?.querySelector('.beijing2022-entry[data-case-id="beijing2022"]');
+    const caseCaveResponses = new Map(
+      [...(caseDiscoveryLayer?.querySelectorAll('.case-cave-response[data-case-id]') || [])]
+        .map((response) => [response.dataset.caseId, response])
+    );
+    let writingArchiveWasNear = false;
+    let writingArchiveLeaveTimer = 0;
