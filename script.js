@@ -2306,6 +2306,15 @@
       node.style.setProperty('--information-base-opacity', '1');
     });
     const scrollSpacer = document.querySelector('.descent-scroll-spacer');
+    const highV2World = world.querySelector('[data-v2-world]');
+    const highV2Nodes = [...(highV2World?.querySelectorAll('.v2-depth-node[data-v2-z]') || [])];
+    const highV2CaseButtons = [...(highV2World?.querySelectorAll('.v2-case-site[data-case-id]') || [])];
+    const highV2WritingButtons = [...(highV2World?.querySelectorAll('.v2-writing-piece[data-writing-id]') || [])];
+    const highV2Enabled = Boolean(highV2World && highV2Nodes.length);
+    const HIGH_V2_CAMERA_LENGTH = 20400;
+    const verticalDescent = highV2Enabled ? window.createVerticalDescent(world, highV2World, tracker) : null;
+    let highV2CameraProgress = 0;
+    let highV2SwimMapReleased = false;
     let viewport = { width: 0, height: 0, halfW: 66, halfH: 47, maxDepth: 1 };
     let targetDepth = 0;
     let currentDepth = 0;
@@ -2417,6 +2426,12 @@
     const writingArchiveArticles = [...(writingArchiveReading?.querySelectorAll('[data-writing-article]') || [])];
     const writingArchiveReadingIndex = writingArchiveReading?.querySelector('[data-writing-reading-index]');
     const writingArchiveSources = [...(writingArchiveReading?.querySelectorAll('[data-writing-source]') || [])];
+    const hundredInchEntry = caseDiscoveryLayer?.querySelector('.hundred-inch-entry[data-case-id="hundredInch"]');
+    const beijing2022Entry = caseDiscoveryLayer?.querySelector('.beijing2022-entry[data-case-id="beijing2022"]');
+    const caseCaveResponses = new Map(
+      [...(caseDiscoveryLayer?.querySelectorAll('.case-cave-response[data-case-id]') || [])]
+        .map((response) => [response.dataset.caseId, response])
+    );
     const mediaLabWave = mediaLabReading?.querySelector('.media-lab-wave');
     const ltpoReadingSections = [...(ltpoReading?.querySelectorAll('[data-reading-step]') || [])];
     const caseDiscoveryButtons = new Map(
@@ -3929,6 +3944,120 @@
       });
     };
 
+    // High V2 treats scroll as camera travel. Every authored object owns an
+    // actual Z position, so it can be sensed at distance, cross the focal
+    // plane, pass the viewer, and fall behind the camera. Opacity only clips
+    // the far/near planes; spatial movement is carried by perspective.
+    const renderHighV2World = () => {
+      if (!highV2Enabled || !highV2World || caseEntryState === CASE_ENTRY_STATES.READING) return;
+      if (verticalDescent) {
+        const active = verticalDescent.render(currentDepth, viewport);
+        if (active) setCaseEntryState(CASE_ENTRY_STATES.PROXIMITY, active);
+        else if (caseEntryState !== CASE_ENTRY_STATES.FREE) setCaseEntryState(CASE_ENTRY_STATES.FREE);
+        return;
+      }
+      const startDepth = viewport.height * 9.5;
+      const endDepth = Math.max(startDepth + viewport.height * 8, viewport.maxDepth - viewport.height * .55);
+      const journey = clamp((currentDepth - startDepth) / Math.max(1, endDepth - startDepth), 0, 1);
+      const cameraZ = 10100 + journey * (HIGH_V2_CAMERA_LENGTH - 10100);
+      const arrival = smoothstep(clamp((currentDepth - viewport.height * .82) / (viewport.height * .9), 0, 1));
+      const pointer = tracker.getPointerPosition();
+      const diver = tracker.getPosition();
+      const pointerNX = pointer.x / Math.max(1, viewport.width) - .5;
+      const pointerNY = pointer.y / Math.max(1, viewport.height) - .5;
+      const cameraX = Math.sin(journey * Math.PI * 3.3) * viewport.width * .024 + pointerNX * viewport.width * .012;
+      const cameraY = Math.sin(journey * Math.PI * 2.1 + .6) * viewport.height * .018 + pointerNY * viewport.height * .01;
+      const mobileSpread = viewport.width < 760 ? .72 : 1;
+      let activeCase = null;
+      let activeCaseScore = 0;
+
+      highV2CameraProgress = journey;
+      world.classList.toggle('is-v2-camera-active', arrival > .015);
+      world.style.setProperty('--v2-world-presence', arrival.toFixed(3));
+      world.style.setProperty('--v2-legacy-presence', (1 - smoothstep(clamp((arrival - .12) / .72, 0, 1))).toFixed(3));
+      world.style.setProperty('--v2-depth-tone', smoothstep(journey).toFixed(3));
+      world.style.setProperty('--v2-camera-light-x', `${(pointerNX * 22).toFixed(2)}px`);
+      highV2World.style.setProperty('--v2-camera-x', `${(-cameraX * .22).toFixed(2)}px`);
+      highV2World.style.setProperty('--v2-camera-y', `${(-cameraY * .18).toFixed(2)}px`);
+      highV2World.style.setProperty('--v2-water-x', `${(-cameraX * .08).toFixed(2)}px`);
+      highV2World.style.setProperty('--v2-water-y', `${(-cameraY * .06).toFixed(2)}px`);
+      highV2World.style.setProperty('--v2-light-x', `${(pointerNX * viewport.width * .035).toFixed(2)}px`);
+      highV2World.style.setProperty('--v2-light-rotation', `${(-3 + pointerNX * 2.2).toFixed(2)}deg`);
+      highV2World.dataset.cameraState = cameraZ < 10100
+        ? 'selected-work'
+        : cameraZ < 17100
+          ? 'writing'
+          : cameraZ < 18800
+            ? 'ending'
+            : 'ending';
+
+      if (arrival > .5 && !highV2SwimMapReleased) {
+        // The old collision map describes the retired long background. Once
+        // the camera enters V2, keep the established Diver motion but release
+        // geology that no longer matches the visible world.
+        tracker.setSwimMap(null, null);
+        highV2SwimMapReleased = true;
+      }
+
+      highV2Nodes.forEach((node) => {
+        const authoredZ = Number(node.dataset.v2Z) || 0;
+        if (authoredZ < 10600) return;
+        const z = cameraZ - authoredZ;
+        const baseX = (Number(node.dataset.v2X) || 0) * viewport.width / 100 * mobileSpread;
+        const baseY = (Number(node.dataset.v2Y) || 0) * viewport.height / 100;
+        const yaw = Number(node.dataset.v2Yaw) || 0;
+        const roll = Number(node.dataset.v2Roll) || 0;
+        const depthDrift = clamp((-z) / 3200, -1, 1);
+        const x = baseX - cameraX * (1 + depthDrift * .16);
+        const y = baseY - cameraY * (1 + depthDrift * .1);
+        const farClip = smoothstep(clamp((z + 3900) / 1900, 0, 1));
+        const nearClip = 1 - smoothstep(clamp((z - 470) / 250, 0, 1));
+        const focus = smoothstep(clamp(1 - Math.abs(z + 25) / 980, 0, 1));
+        const perspectiveScale = 980 / Math.max(260, 980 - z);
+        const projectedX = viewport.width * .5 + x * perspectiveScale;
+        const projectedY = viewport.height * .5 + y * perspectiveScale;
+        const presenceRadius = clamp(viewport.width * .22, 180, 360);
+        const pointerPresence = clamp(1 - Math.hypot(pointer.x - projectedX, pointer.y - projectedY) / presenceRadius, 0, 1);
+        const diverPresence = clamp(1 - Math.hypot(diver.x - projectedX, diver.y - projectedY) / presenceRadius, 0, 1);
+        const humanPresence = Math.max(diverPresence, pointerPresence * .82) * focus;
+        const isTerrain = node.classList.contains('v2-terrain') || node.classList.contains('v2-current-line');
+        const baseAlpha = isTerrain ? .24 : .08;
+        const alpha = arrival * farClip * nearClip * clamp(baseAlpha + focus * .88 + humanPresence * .14, 0, 1);
+        const atmosphericBlur = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          ? 0
+          : Math.max(0, (1 - focus) * (isTerrain ? 1.2 : 2.2));
+        const interactive = node.matches('.v2-case-site,.v2-writing-piece');
+        const active = interactive && focus > .56 && z > -520 && z < 390;
+
+        node.style.transform = `translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,${z.toFixed(2)}px) translate(-50%,-50%) rotateY(${yaw}deg) rotateZ(${roll}deg)`;
+        node.style.setProperty('--v2-node-alpha', alpha.toFixed(3));
+        node.style.setProperty('--v2-node-focus', focus.toFixed(3));
+        node.style.setProperty('--v2-human-presence', humanPresence.toFixed(3));
+        node.style.setProperty('--v2-node-blur', `${atmosphericBlur.toFixed(2)}px`);
+        if (interactive) {
+          node.dataset.v2Active = active ? 'true' : 'false';
+          node.tabIndex = active ? 0 : -1;
+          if (active) node.removeAttribute('aria-hidden');
+          else node.setAttribute('aria-hidden', 'true');
+        }
+        if (active && node.matches('.v2-case-site[data-case-id]')) {
+          const score = focus + humanPresence * .24;
+          if (score > activeCaseScore) {
+            activeCaseScore = score;
+            activeCase = node.dataset.caseId;
+          }
+        }
+      });
+
+      if (activeCase) {
+        if (caseEntryState !== CASE_ENTRY_STATES.PROXIMITY || activeCaseId !== activeCase) {
+          setCaseEntryState(CASE_ENTRY_STATES.PROXIMITY, activeCase);
+        }
+      } else if (caseEntryState !== CASE_ENTRY_STATES.FREE) {
+        setCaseEntryState(CASE_ENTRY_STATES.FREE);
+      }
+    };
+
     const renderWritingArchiveDiscovery = () => {
       if (!writingArchiveDiscovery || caseEntryState === CASE_ENTRY_STATES.READING) return;
       const snapshot = worldProjection.refresh();
@@ -3971,6 +4100,7 @@
     };
 
     const renderCaseDiscovery = () => {
+      if (highV2Enabled) return;
       renderWritingArchiveDiscovery();
       if (!caseDiscoveryLayer || caseEntryState === CASE_ENTRY_STATES.READING) return;
       const snapshot = worldProjection.refresh();
@@ -4055,13 +4185,14 @@
     const openCaseLanding = (caseId, options = {}) => {
       const isWritingArchive = caseId === 'writingArchive';
       const directBeijingEntry = options.direct === true && caseId === 'beijing2022';
+      const directHighV2Entry = options.highV2 === true && highV2Enabled;
       if (!CASE_ENTRY_CONFIG[caseId] || !caseReadingLayer) return;
       if (isWritingArchive) {
         if (
           !WRITING_ARCHIVE_ARTICLES[activeWritingArticleId]
-          || !writingArchiveDiscovery?.classList.contains('is-near')
+          || (!directHighV2Entry && !writingArchiveDiscovery?.classList.contains('is-near'))
         ) return;
-      } else if (caseEntryState !== CASE_ENTRY_STATES.PROXIMITY && !directBeijingEntry) {
+      } else if (caseEntryState !== CASE_ENTRY_STATES.PROXIMITY && !directBeijingEntry && !directHighV2Entry) {
         return;
       }
       const item = isWritingArchive
@@ -4151,6 +4282,22 @@
       event.stopPropagation();
       openCaseLanding('beijing2022', { direct: true });
     });
+    highV2CaseButtons.forEach((button) => button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (button.dataset.v2Active !== 'true') return;
+      setCaseEntryState(CASE_ENTRY_STATES.PROXIMITY, button.dataset.caseId);
+      openCaseLanding(button.dataset.caseId, { highV2: true });
+    }));
+    highV2WritingButtons.forEach((button) => button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (button.dataset.v2Active !== 'true') return;
+      activeWritingArticleId = button.dataset.writingId;
+      writingArchivePreviewId = activeWritingArticleId;
+      setWritingArchivePreview(writingArchivePreviewId);
+      openCaseLanding('writingArchive', { highV2: true });
+    }));
     writingArchiveLinks.forEach((link) => {
       const preview = () => setWritingArchivePreview(link.dataset.writingId);
       const restorePreview = () => setWritingArchivePreview(writingArchivePreviewId);
@@ -4741,6 +4888,7 @@
     };
 
     const applyBounds = (progress) => {
+      if (verticalDescent) return;
       // The coarse collision map owns the world-space water lane. These are
       // only viewport safety margins for the rendered sprite itself.
       worldProjection.refresh();
@@ -4793,12 +4941,15 @@
       const downstreamState = renderDownstreamVisual(progress, currentDepth);
       applyBounds(progress);
       setLifelineDepth(legacyProgress);
-      renderRiftVisual(progress);
+      if (!highV2Enabled) renderRiftVisual(progress);
       renderSwimMapDebug(progress, downstreamState.worldProgress);
+      renderHighV2World();
       renderCaseDiscovery();
       const riftTriggerStart = riftAutoWindow.triggerStart;
       const riftTriggerProgress = clamp(targetDepth / Math.max(1, viewport.maxDepth), 0, 1);
       if (
+        !highV2Enabled
+        &&
         riftAutoMode === RIFT_AUTO_STATES.FREE
         && !riftAutoDive
         && !riftCompleted
@@ -4841,6 +4992,7 @@
       readingPerformanceSuspended = suspended;
       const worldVisualLayers = [
         downstreamScene,
+        highV2World,
         world.querySelector('.descent-layer-distant'),
         world.querySelector('.descent-layer-middle'),
         world.querySelector('.descent-layer-foreground'),
@@ -5121,6 +5273,10 @@
     });
   }
 })();
+if (false) {
+    // Quarantined legacy rift draft. High V2 no longer invokes this abandoned
+    // long-background camera path; the block is kept inert until a later,
+    // explicitly scoped cleanup so locked Reading code stays untouched.
     const debugHiddenCave = DEBUG_HIDDEN_CAVE || new URLSearchParams(window.location.search).has('debug-hidden-cave');
     document.body.classList.toggle('debug-hidden-cave', debugHiddenCave);
     if (debugHiddenCave && scrollSpacer) scrollSpacer.style.height = '520vh';
@@ -5348,3 +5504,4 @@
     );
     let writingArchiveWasNear = false;
     let writingArchiveLeaveTimer = 0;
+}

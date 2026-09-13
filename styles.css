@@ -3172,6 +3172,210 @@ body.is-ascent-active .descent-onboarding{opacity:0!important}
   .dive-descent .hundred-v4 .hundred-inch-state-return::before{animation:none!important}
 }
 
+/* -------------------------------------------------------------------------
+   Deep Sea High V2 — one fixed camera travelling through authored depth.
+   The stable Profile / Experience layer above remains unchanged. Everything
+   after it is a perspective world, not a stack of vertical page sections.
+   ------------------------------------------------------------------------- */
+.descent-body:has(.deep-v2-world){--deep-sea-master-height:2400svh;background:#06121f}
+.dive-descent:has(.deep-v2-world){
+  --v2-world-presence:0;
+  --v2-legacy-presence:1;
+  --v2-depth-tone:0;
+  background:
+    radial-gradient(ellipse at calc(50% + var(--v2-camera-light-x,0px)) -8%,rgba(154,215,220,calc(.24 - var(--v2-depth-tone)*.12)),transparent 48%),
+    linear-gradient(180deg,#2f6690 0%,#102e4d 44%,#061927 76%,#040d17 100%);
+}
+.dive-descent:has(.deep-v2-world)::after{
+  z-index:31;
+  background:
+    radial-gradient(ellipse 29% 34% at var(--focus-x,50%) var(--focus-y,52%),rgba(207,238,226,.055),transparent 68%),
+    radial-gradient(ellipse at 50% 48%,transparent 0 42%,rgba(2,8,17,.2) 77%,rgba(2,7,14,.55) 100%);
+  mix-blend-mode:normal;
+}
+.dive-descent.is-v2-camera-active .downstream-world-scene,
+.dive-descent.is-v2-camera-active .descent-layer-distant,
+.dive-descent.is-v2-camera-active .descent-layer-middle,
+.dive-descent.is-v2-camera-active .descent-layer-foreground,
+.dive-descent.is-v2-camera-active .surface-look-up{opacity:var(--v2-legacy-presence)!important}
+.dive-descent .case-discovery-layer{overflow:hidden;perspective:none}
+.deep-v2-world{
+  position:absolute;
+  inset:0;
+  z-index:2;
+  overflow:hidden;
+  opacity:var(--v2-world-presence);
+  pointer-events:none;
+  isolation:isolate;
+  will-change:opacity;
+}
+.deep-v2-world::before{
+  content:"";
+  position:absolute;
+  inset:-18%;
+  z-index:0;
+  background:
+    radial-gradient(ellipse 42% 54% at 13% 34%,rgba(22,72,94,.34),transparent 74%),
+    radial-gradient(ellipse 38% 45% at 83% 65%,rgba(27,54,79,.42),transparent 76%),
+    radial-gradient(ellipse 50% 36% at 52% 8%,rgba(116,185,196,.13),transparent 72%),
+    linear-gradient(180deg,rgba(9,41,63,.35),rgba(3,16,27,.72));
+  transform:translate3d(var(--v2-water-x,0px),var(--v2-water-y,0px),0) scale(1.08);
+  filter:saturate(.86);
+  will-change:transform;
+}
+.deep-v2-world::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:20;
+  background:linear-gradient(90deg,rgba(2,8,16,.32),transparent 18% 82%,rgba(2,7,14,.38));
+  pointer-events:none;
+}
+.deep-v2-water{position:absolute;inset:0;z-index:1;overflow:hidden;pointer-events:none}
+.deep-v2-water::before{
+  content:"";
+  position:absolute;
+  left:14%;
+  top:-25%;
+  width:72%;
+  height:135%;
+  background:linear-gradient(101deg,transparent 7%,rgba(189,230,224,.03) 34%,rgba(208,237,227,.09) 48%,rgba(159,213,215,.025) 69%,transparent 92%);
+  filter:blur(25px);
+  transform:rotate(var(--v2-light-rotation,-3deg)) translate3d(var(--v2-light-x,0px),0,0);
+  transform-origin:50% 0;
+  will-change:transform;
+}
+.deep-v2-water>i{position:absolute;display:block;width:3px;height:3px;border-radius:50%;background:rgba(210,237,228,.58);box-shadow:0 0 9px rgba(187,225,222,.34);opacity:.42;animation:v2-mote-rise 15s linear infinite}
+.deep-v2-water>i:nth-child(1){left:12%;top:84%;animation-duration:18s}
+.deep-v2-water>i:nth-child(2){left:31%;top:65%;animation-duration:23s;animation-delay:-11s}
+.deep-v2-water>i:nth-child(3){left:47%;top:91%;animation-duration:19s;animation-delay:-7s}
+.deep-v2-water>i:nth-child(4){left:66%;top:73%;animation-duration:25s;animation-delay:-17s}
+.deep-v2-water>i:nth-child(5){left:82%;top:88%;animation-duration:21s;animation-delay:-13s}
+.deep-v2-water>i:nth-child(6){left:91%;top:56%;animation-duration:27s;animation-delay:-19s}
+@keyframes v2-mote-rise{to{transform:translate3d(10px,-112vh,0);opacity:.06}}
+.deep-v2-camera{position:absolute;inset:0;z-index:3;perspective:980px;perspective-origin:calc(50% + var(--v2-camera-x,0px)) calc(50% + var(--v2-camera-y,0px));pointer-events:none}
+.deep-v2-volume{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
+.v2-depth-node{
+  --v2-node-alpha:0;
+  --v2-node-focus:0;
+  --v2-node-blur:0px;
+  position:absolute;
+  left:50%;
+  top:50%;
+  margin:0;
+  opacity:var(--v2-node-alpha);
+  filter:blur(var(--v2-node-blur));
+  transform-style:preserve-3d;
+  transform-origin:50% 50%;
+  backface-visibility:hidden;
+  will-change:transform,opacity;
+}
+.v2-terrain{
+  width:clamp(430px,52vw,980px);
+  height:128vh;
+  background:
+    linear-gradient(128deg,rgba(4,15,25,.5),rgba(15,44,59,.24) 47%,rgba(3,11,20,.62)),
+    url("assets/rift-dropoff-environment-v1.png") center 55% / cover no-repeat;
+  box-shadow:inset 0 0 8vw rgba(0,5,12,.62),0 0 8vw rgba(0,6,14,.28);
+  filter:saturate(.54) brightness(.58) contrast(1.1);
+}
+.v2-terrain--gate-left,.v2-terrain--closing-left{clip-path:polygon(0 0,100% 5%,72% 18%,91% 31%,63% 45%,84% 58%,52% 73%,74% 88%,37% 100%,0 94%)}
+.v2-terrain--gate-right,.v2-terrain--closing-right{clip-path:polygon(13% 0,100% 0,100% 96%,58% 100%,28% 88%,50% 72%,18% 58%,40% 42%,12% 27%,36% 13%);background-position:72% 43%}
+.v2-terrain--shelf{width:74vw;height:62vh;clip-path:polygon(0 35%,18% 17%,39% 24%,54% 5%,73% 19%,100% 9%,96% 100%,3% 100%);background-position:34% 78%;filter:saturate(.52) brightness(.49)}
+.v2-world-whisper{width:min(38vw,620px);color:rgba(198,225,221,.62);font:9px/1.2 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.23em;text-align:left;text-shadow:0 3px 18px rgba(0,8,19,.8)}
+.v2-world-whisper span{display:block;margin-bottom:16px;color:rgba(158,201,205,.48)}
+.v2-world-whisper b{display:block;color:rgba(217,235,229,.7);font:300 clamp(15px,1.5vw,24px)/1.55 "Noto Serif SC","Songti SC",serif;letter-spacing:.15em}
+.v2-current-line{width:58vw;height:1px;background:linear-gradient(90deg,transparent,rgba(157,207,207,.2),transparent);box-shadow:0 0 28px rgba(119,190,195,.12)}
+.v2-current-line::after{content:"";position:absolute;left:34%;top:-14vh;width:1px;height:28vh;background:linear-gradient(transparent,rgba(151,207,205,.14),transparent)}
+
+.v2-case-site{
+  width:min(46vw,760px);
+  min-height:50vh;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:#e7f1eb;
+  text-align:left;
+  cursor:none;
+  pointer-events:none;
+}
+.v2-case-site[data-v2-active="true"]{pointer-events:auto}
+.v2-case-site:focus-visible{outline:1px solid rgba(218,238,225,.64);outline-offset:16px}
+.v2-site-geology{position:absolute;inset:-16% -13%;z-index:-1;display:block;background:linear-gradient(145deg,rgba(4,17,27,.54),rgba(25,59,69,.22) 55%,rgba(3,13,23,.68)),url("assets/rift-dropoff-environment-v1.png") center 58% / cover no-repeat;clip-path:polygon(6% 14%,32% 4%,61% 10%,83% 0,100% 24%,92% 51%,99% 79%,72% 100%,44% 91%,18% 100%,0 72%,8% 43%);box-shadow:inset 0 0 70px rgba(1,8,15,.48),0 24px 70px rgba(0,6,14,.32);filter:saturate(.52) brightness(calc(.64 + var(--v2-node-focus)*.14 + var(--v2-human-presence)*.08)) contrast(1.08);transition:filter .45s ease}
+.v2-case-site--media .v2-site-geology{clip-path:polygon(0 27%,18% 8%,43% 14%,63% 2%,89% 13%,100% 43%,91% 74%,72% 92%,41% 84%,17% 100%,4% 69%);background-position:70% 49%}
+.v2-case-site--hundred .v2-site-geology{clip-path:polygon(3% 37%,18% 16%,43% 7%,69% 13%,91% 3%,100% 44%,92% 83%,64% 100%,37% 90%,14% 100%,0 67%);background-position:32% 74%}
+.v2-case-site--beijing .v2-site-geology{clip-path:polygon(0 31%,16% 10%,38% 17%,57% 0,79% 13%,100% 6%,94% 92%,67% 100%,41% 88%,15% 98%,4% 68%);background-position:75% 77%}
+.v2-site-index,.v2-site-meta,.v2-site-enter{display:block;font-family:"SF Mono","Roboto Mono",ui-monospace,monospace;text-transform:uppercase}
+.v2-site-index{margin-bottom:clamp(26px,4vh,52px);color:rgba(168,207,207,.55);font-size:clamp(8px,.62vw,10px);letter-spacing:.26em}
+.v2-case-site>strong{display:block;max-width:92%;font:300 clamp(54px,7.2vw,126px)/.86 "Helvetica Neue",Arial,sans-serif;letter-spacing:-.045em;text-shadow:0 8px 40px rgba(0,7,15,.58)}
+.v2-case-site--media>strong,.v2-case-site--beijing>strong{font-family:"Noto Serif SC","Songti SC",serif;font-size:clamp(42px,5.2vw,88px);line-height:1.08;letter-spacing:.04em}
+.v2-case-site--beijing>strong i{display:block;margin-bottom:7px;color:rgba(205,226,218,.58);font:300 clamp(14px,1.4vw,22px)/1 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.16em}
+.v2-site-meta{margin-top:clamp(18px,3vh,34px);color:rgba(201,226,221,.7);font-size:clamp(9px,.72vw,12px);letter-spacing:.14em;line-height:1.7}
+.v2-site-enter{position:absolute;left:0;bottom:-9vh;color:#e4d4ad;font-size:9px;letter-spacing:.24em;opacity:clamp(0,calc((var(--v2-node-focus) - .58)*2.4),1);transform:translate3d(0,calc((1 - var(--v2-node-focus))*12px),0);border-bottom:1px solid rgba(224,207,166,.45);padding-bottom:8px}
+.v2-case-site:is(:hover,:focus-visible) .v2-site-enter{color:#f1dfb4;border-bottom-color:rgba(241,223,180,.86)}
+.v2-hundred-mark,.v2-beijing-year{position:absolute;z-index:-1;pointer-events:none;color:rgba(157,198,196,.065);font:300 clamp(190px,29vw,480px)/.7 "Helvetica Neue",Arial,sans-serif;letter-spacing:-.09em}
+.v2-hundred-mark{left:-22%;top:-12%}
+.v2-beijing-year{right:-30%;top:-16%;font-size:clamp(150px,25vw,420px)}
+
+.v2-writing-threshold{width:min(44vw,720px);color:rgba(205,228,223,.75)}
+.v2-writing-threshold span{display:block;margin-bottom:20px;font:9px/1 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.28em}
+.v2-writing-threshold strong{font:300 clamp(27px,3.1vw,50px)/1.35 "Noto Serif SC","Songti SC",serif;letter-spacing:.08em}
+.v2-writing-piece{
+  width:min(48vw,790px);
+  padding:0;
+  border:0;
+  background:transparent;
+  color:rgba(227,239,233,.94);
+  text-align:left;
+  cursor:none;
+  pointer-events:none;
+}
+.v2-writing-piece[data-v2-active="true"]{pointer-events:auto}
+.v2-writing-piece:focus-visible{outline:1px solid rgba(220,239,229,.62);outline-offset:15px}
+.v2-writing-piece>span{display:block;margin-bottom:22px;color:rgba(166,207,206,.62);font:9px/1.3 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.2em}
+.v2-writing-piece>strong{display:block;font:300 clamp(28px,3.35vw,58px)/1.22 "Noto Serif SC","Songti SC",serif;letter-spacing:.045em;text-shadow:0 7px 32px rgba(0,7,16,.64)}
+.v2-writing-piece>strong i,.v2-writing-piece>strong b{font-style:normal;font-weight:300;color:rgba(231,220,188,.92)}
+.v2-writing-piece blockquote{max-width:36em;margin:28px 0 0;color:rgba(201,224,220,.7);font:300 clamp(12px,.95vw,16px)/1.9 "Noto Serif SC","Songti SC",serif;letter-spacing:.06em}
+.v2-writing-piece>p{max-width:34em;margin:22px 0 0;color:rgba(194,218,216,.68);font:300 clamp(11px,.9vw,15px)/1.8 "Noto Serif SC","Songti SC",serif;letter-spacing:.05em}
+.v2-writing-piece>small{display:block;width:max-content;margin-top:28px;padding-bottom:7px;border-bottom:1px solid rgba(224,207,166,.42);color:#dfcfaa;font:8px/1 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.22em;opacity:clamp(0,calc((var(--v2-node-focus) - .55)*2.6),1)}
+.v2-writing-image{width:min(31vw,510px);overflow:hidden;color:rgba(178,207,205,.55)}
+.v2-writing-image img{display:block;width:100%;height:auto;filter:saturate(.55) brightness(.64) contrast(.95);-webkit-mask-image:linear-gradient(135deg,transparent 0,#000 12%,#000 85%,transparent 100%);mask-image:linear-gradient(135deg,transparent 0,#000 12%,#000 85%,transparent 100%)}
+.v2-writing-image figcaption{margin-top:10px;font:8px/1.4 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.13em}
+.v2-editorial-fragment{width:min(30vw,490px);color:rgba(183,213,210,.58);font:300 clamp(12px,1.02vw,17px)/1.85 "Noto Serif SC","Songti SC",serif;letter-spacing:.07em}
+.v2-people-trace{display:flex;flex-wrap:wrap;gap:12px 24px;margin-top:28px;color:rgba(177,211,208,.66)}
+.v2-people-trace i{font:300 clamp(10px,.78vw,13px)/1.3 "Noto Serif SC","Songti SC",serif;font-style:normal;letter-spacing:.09em}
+.v2-people-trace b{margin-left:8px;color:rgba(230,218,184,.86);font-weight:400}
+
+.v2-editing-space{width:92vw;height:88vh;color:rgba(188,216,212,.58);pointer-events:none}
+.v2-editing-space p{position:absolute;left:50%;top:50%;margin:0;text-align:center;transform:translate(-50%,-50%)}
+.v2-editing-space p span{display:block;margin-bottom:20px;font:9px/1 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.32em}
+.v2-editing-space p strong{font:200 clamp(74px,14vw,250px)/.72 "Helvetica Neue",Arial,sans-serif;letter-spacing:-.065em;color:rgba(167,202,201,.085)}
+.v2-editing-space>i{position:absolute;top:4%;width:1px;height:92%;background:linear-gradient(transparent,rgba(169,211,210,.06),transparent);transform:rotate(8deg)}
+.v2-editing-space>i:nth-of-type(1){left:24%}.v2-editing-space>i:nth-of-type(2){left:51%;transform:rotate(-5deg)}.v2-editing-space>i:nth-of-type(3){left:78%;transform:rotate(11deg)}
+.v2-ending{width:min(58vw,860px);color:rgba(226,237,229,.9);text-align:center;pointer-events:none}
+.v2-ending span{display:block;margin-bottom:26px;color:rgba(154,196,199,.45);font:8px/1 "SF Mono","Roboto Mono",ui-monospace,monospace;letter-spacing:.3em}
+.v2-ending strong{display:block;font:300 clamp(23px,2.8vw,46px)/1.6 "Noto Serif SC","Songti SC",serif;letter-spacing:.09em;white-space:normal}
+
+@media(max-width:760px){
+  .descent-body:has(.deep-v2-world){--deep-sea-master-height:2200svh}
+  .deep-v2-camera{perspective:760px}
+  .v2-case-site,.v2-writing-piece{width:76vw}
+  .v2-case-site{min-height:44vh}
+  .v2-case-site>strong{font-size:clamp(48px,15vw,82px)}
+  .v2-case-site--media>strong,.v2-case-site--beijing>strong{font-size:clamp(36px,10.5vw,58px)}
+  .v2-site-geology{inset:-13% -22%}
+  .v2-writing-piece>strong{font-size:clamp(27px,8vw,44px)}
+  .v2-writing-image{width:58vw}
+  .v2-editorial-fragment{width:58vw}
+  .v2-world-whisper,.v2-writing-threshold{width:72vw}
+  .v2-ending{width:82vw}
+}
+@media(prefers-reduced-motion:reduce){
+  .deep-v2-water>i{animation:none}
+  .deep-v2-world::before,.deep-v2-water::before{transform:none!important}
+  .v2-depth-node{filter:none!important}
+}
+
 /* 100-inch visual refinement — one television boundary, one signal surface,
    one final television. Typography remains intentionally untouched this pass. */
 .dive-descent .hundred-v4-opening-bezel{
